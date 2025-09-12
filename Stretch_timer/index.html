@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ストレッチタイマー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #ffe4ec 0%, #e0f7fa 100%);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    .circle-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 1rem 0;
+    }
+
+    #exercise-name {
+      font-size: 1.6rem;
+      color: #333;
+      margin-top: 0rem;
+      text-align: center;
+      min-height: 2.2rem;
+      /* ← 最低限の高さを確保 */
+      line-height: 1.2;
+    }
+
+
+    #setCounter {
+      margin-top: 5px;
+      font-size: 1.5rem;
+      /* 通常テキストサイズ */
+      color: #575757;
+      min-height: 4rem;
+      /* 高さも確保して中央寄せ */
+      display: flex;
+      justify-content: center;
+      /* ベースラインを下にそろえる */
+      align-items: flex-end;
+      /* 縦中央寄せ */
+      text-align: center;
+    }
+
+    #setCounter .current {
+      font-size: 4rem;
+      /* 数字を大きく */
+      font-weight: bold;
+      line-height: 1;
+      display: inline-block;
+      margin-right: 0.2rem;
+      /* / との間隔 */
+    }
+
+    #setCounter .divider-total {
+      font-size: 2rem;
+      margin-left: 0.2rem;
+      display: inline-block;
+      line-height: 1;
+    }
+
+    #setCounter .divider-total::before {
+      content: "/";
+      /* スラッシュを追加 */
+      position: relative;
+      top: -0.15em;
+      /* 上に微調整 */
+      margin-right: 0.05em;
+      /* 数字との間隔 */
+    }
+
+    .progress-ring {
+      transform: rotate(-90deg);
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .progress-ring__background {
+      fill: none;
+      stroke: #eee;
+      stroke-width: 10;
+    }
+
+    .progress-ring__circle {
+      fill: none;
+      stroke: #bcddff;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+    .circle-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .timer {
+      font-size: 4rem;
+      color: #333;
+      margin-top: 1rem;
+      margin-bottom: 0rem;
+      line-height: 1;
+    }
+
+    .divider {
+      width: 150px;
+      border: none;
+      border-top: 1px solid #aaaaaa;
+      margin: 0.5rem 0;
+    }
+
+    .total-timer {
+      font-size: 2rem;
+      color: #999;
+      margin-top: 0rem;
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+
+    .exercise-name {
+      font-size: 1.25rem;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .controls button {
+      width: 80px;
+      /* ボタンの直径 */
+      height: 80px;
+      border-radius: 50%;
+      /* 円形 */
+      border: none;
+      font-size: 1.4rem;
+      /* 文字サイズも大きく */
+      cursor: pointer;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.25);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      /* 2列 */
+      gap: 0.5rem 1rem;
+      /* 行・列の間隔 */
+      list-style: none;
+      padding: 0;
+      max-width: 90%;
+      margin: 0 auto;
+    }
+
+    li {
+      font-size: 1rem;
+      padding: 0.4rem 0;
+      border-bottom: none;
+      /* 枠線を消す or 任意 */
+    }
+
+    .active {
+      font-weight: bold;
+      color: green;
+    }
+
+    .completed {
+      color: #aaa;
+      text-decoration: line-through;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      /* 左右配置は維持 */
+      margin: 1.5rem auto 0;
+      max-width: 400px;
+      /* 👈 横幅を制限して中央に寄せる */
+      width: 100%;
+      padding: 0 1rem;
+      /* 余白を足す（好みで調整） */
+    }
+
+
+    /* 左右それぞれに固定するためのラッパーを作る */
+    .controls-left,
+    .controls-right {
+      flex: 0 0 auto;
+      /* 幅を固定 */
+      min-width: 60px;
+      /* ボタンの大きさ分を確保 */
+      display: flex;
+      justify-content: flex-start;
+      /* 左は左寄せ */
+    }
+
+    .controls-right {
+      justify-content: flex-end;
+      /* 右は右寄せ */
+    }
+
+    .controls button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: background 0.2s;
+    }
+
+    /* ボタンごとの色 */
+    #start-btn {
+      background-color: #4caf50;
+    }
+
+    #start-btn:hover {
+      background-color: #45a049;
+    }
+
+    #pause-btn {
+      background-color: #ff9800;
+    }
+
+    #pause-btn:hover {
+      background-color: #f57c00;
+    }
+
+    #reset-btn {
+      background-color: #f44336;
+      margin-left: -10px;
+      /* 左に10pxずらす */
+    }
+
+    #reset-btn:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>ストレッチタイマー</h1>
+  <div class="setCounter" id="setCounter">準備中...</div>
+
+  <div class="circle-wrapper">
+    <svg class="progress-ring" width="220" height="220">
+      <circle class="progress-ring__background" cx="110" cy="110" r="100" />
+      <circle class="progress-ring__circle" cx="110" cy="110" r="100" />
+    </svg>
+
+    <div class="circle-content">
+      <div class="timer" id="timer">--</div>
+      <hr class="divider" />
+      <div class="total-timer" id="total-timer">--:--</div>
+    </div>
+  </div>
+
+  <div id="exercise-name"></div>
+
+  <div class="controls">
+    <div class="controls-left">
+      <button id="start-btn" onclick="startTimer()">スタート</button>
+      <button id="pause-btn" onclick="pauseTimer()" style="display:none;">一時停止</button>
+    </div>
+    <div class="controls-right">
+      <button id="reset-btn" onclick="resetTimer()">リセット</button>
+    </div>
+  </div>
+
+  <ul id="exercise-list"></ul>
+
+  <script>
+    const sets = 8;
+    const stretchTime = 20;
+    const restTime = 10;
+
+    let remain_stretch = sets;
+
+    let wakeLock = null;
+    async function requestWakeLock() {
+      try {
+        wakeLock = await navigator.wakeLock.request("screen");
+      } catch (err) {
+        console.error("WakeLock error:", err);
+      }
+    }
+    async function releaseWakeLock() {
+      if (wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    let sequence = [];
+    for (let i = 0; i < sets; i++) {
+      sequence.push({ name: `ストレッチ ${i + 1}`, duration: stretchTime });
+      if (i < sets - 1) {
+        sequence.push({ name: "休憩", duration: restTime });
+      }
+    }
+
+    let current = 0;
+    let remaining = sequence[0].duration;
+    let paused = false;
+    let elapsed = 0;
+    let countdownInterval = null;
+    let isCountdown = false;              // カウントダウン中かどうかのフラグ
+    let countdown = 3;                    // カウントダウン秒数（グローバルにする）
+    let countdownPaused = false;         // カウントダウンが一時停止されているか
+    let countdownAudio = null;           // 現在のカウントダウン音声オブジェクト
+    let isStarted = false;                //最後のリロードの後にスタートしたか
+
+    const setCounterEl = document.getElementById("setCounter");
+    const timerEl = document.getElementById("timer");
+    const listEl = document.getElementById("exercise-list");
+    const exerciseNameEl = document.getElementById("exercise-name");
+    const pauseBtn = document.getElementById("pause-btn");
+    const totalTimerEl = document.getElementById("total-timer");
+    const startBtn = document.getElementById("start-btn");
+    const totalDuration = sequence.reduce((acc, cur) => acc + cur.duration, 0);
+
+
+    // 円の初期設定
+    const circle = document.querySelector(".progress-ring__circle");
+    const radius = circle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+    circle.style.strokeDasharray = `${circumference}`;
+    circle.style.strokeDashoffset = `${circumference}`;
+
+    function setProgress(percent) {
+      const offset = circumference - (percent / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ja-JP";
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+    function playCountAudio(n) {
+      const audioId = `${n}`;
+      const audio = document.getElementById(audioId);
+
+      if (audio) {
+        // もし前の音声が再生中なら停止
+        if (countdownAudio && !countdownAudio.paused) {
+          countdownAudio.pause();
+          countdownAudio.currentTime = 0;
+        }
+
+        // 今回の音声を再生
+        audio.volume = 1.0;
+        audio.play().catch(e => console.warn(`カウント音声(${n})再生失敗:`, e));
+
+        // 再生中の音声として記録
+        countdownAudio = audio;
+      } else {
+        console.warn(`Audio要素が見つかりません: ${audioId}`);
+      }
+    }
+
+    function vibrate() {
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    }
+
+    // --- iOS/Android向けオーディオアンロック ---
+    function unlockAudios() {
+      if (!isStarted) {
+        document.querySelectorAll("audio").forEach(audio => {
+          audio.muted = true;
+          audio.play().catch(() => { });
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+        });
+      }
+    }
+
+
+    // 効果音を鳴らす関数
+    function playSound(id) {
+      const sound = document.getElementById(id);
+      if (sound) {
+        sound.currentTime = 0;
+        sound.volume = 1.0;
+        sound.play().catch((e) => {
+          console.warn("Audio play failed:", e);
+        });
+      }
+    }
+
+    //音声ファイルを順々に流す
+    function playSequence(ids, callback = null) {
+      let index = 0;
+
+      function next() {
+        if (index < ids.length) {
+          const sound = document.getElementById(ids[index]);
+          index++;
+
+          if (sound) {
+            sound.currentTime = 0;
+            sound.play()
+              .then(() => {
+                sound.onended = () => next();
+              })
+              .catch(e => {
+                console.warn("再生失敗:", e);
+                next(); // エラーでも次へ
+              });
+          } else {
+            next(); // 要素がなければスキップ
+          }
+        } else if (callback) {
+          callback();
+        }
+      }
+
+      next(); // 最初の再生
+    }
+
+    // 複数の候補からランダムに1つを選んで再生する関数
+    function playRandomSound(...ids) {
+      if (!ids || ids.length === 0) return;
+
+      const randomId = ids[Math.floor(Math.random() * ids.length)];
+      playSound(randomId);  // 既存の関数を利用
+    }
+
+
+    let currentBGM = null;
+
+    function playBGM() {
+      currentBGM = document.getElementById("bgm");
+      if (currentBGM) {
+        currentBGM.currentTime = 0;
+        //currentBGM.volume = 0.3;
+        currentBGM.play().catch(e => console.warn("BGM再生失敗:", e));
+      }
+    }
+
+    function pauseCurrentBGM() {
+      if (currentBGM) currentBGM.pause();
+    }
+
+    function resumeCurrentBGM() {
+      if (currentBGM) currentBGM.play().catch((e) => console.warn("BGM再開エラー:", e));
+    }
+
+    function stopCurrentBGM() {
+      if (currentBGM) {
+        currentBGM.pause();
+        currentBGM.currentTime = 0;
+      }
+    }
+
+    function stopAllAudios() {
+      document.querySelectorAll("audio").forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
+    function updateExerciseName() {
+      if (current >= sequence.length) {
+        exerciseNameEl.textContent = "完了";
+      } else {
+        const name = sequence[current].name;
+        if (name.includes("ストレッチ")) {
+          exerciseNameEl.textContent = "Stretch";
+        } else if (name.includes("休憩")) {
+          exerciseNameEl.textContent = "Interval";
+        } else {
+          exerciseNameEl.textContent = name;
+        }
+      }
+    }
+
+    function updateDisplay() {
+      const sec = String(remaining).padStart(2, '0');
+      timerEl.textContent = `${sec}`;
+
+      // 🔽 全体が終わったら完了表示
+      if (current >= sequence.length) {
+        setCounterEl.textContent = "完了！";
+        setCounter.textContent = "";
+        return;
+      }
+
+      // 🔽 通常時（ストレッチ・休憩共通）
+      setCounterEl.textContent = sequence[current]?.name || "";
+      const now = sets - remain_stretch + 1; // 現在のセット数
+      const total = sets;
+      setCounter.innerHTML = `<span class="current">${now}</span> <span class="divider-total"> ${total}</span>`;
+
+      updateExerciseName();
+    }
+
+    function updateList() {
+      listEl.innerHTML = "";
+      sequence.forEach((ex, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${ex.name}（${ex.duration}秒）`;
+        if (i < current) li.classList.add("completed");
+        else if (i === current) li.classList.add("active");
+        listEl.appendChild(li);
+      });
+    }
+
+    function updateTotalTimer() {
+      const remainingTotal = totalDuration - elapsed;
+      const min = Math.floor(remainingTotal / 60);
+      const sec = String(remainingTotal % 60).padStart(2, '0');
+      totalTimerEl.textContent = `${min}:${sec}`;
+    }
+
+    // requestAnimationFrame 用
+    let animationId = null;
+    let startTime = null;
+    let previousSecond = null;
+
+    let pausedElapsed = 0;  // 一時停止までの累積経過時間
+    function animateProgress(timestamp) {
+      if (!startTime) startTime = timestamp;
+
+      const currentDuration = sequence[current]?.duration || 1;
+      const elapsedSeconds = (timestamp - startTime) / 1000 + pausedElapsed;
+      const timeLeft = Math.max(currentDuration - elapsedSeconds, 0);
+      remaining = Math.ceil(timeLeft);
+
+      if (previousSecond !== remaining) {
+        previousSecond = remaining;
+        if (previousSecond !== null) elapsed++;
+        updateDisplay();
+        updateTotalTimer();
+        if (remaining >= 1 && remaining <= 3) {
+          playCountAudio(remaining);
+          vibrate();
+        }
+      }
+
+      const percent = (timeLeft / currentDuration) * 100;
+      setProgress(percent);
+
+      if (timeLeft > 0) {
+        animationId = requestAnimationFrame(animateProgress);
+      } else {
+        // タイマー終了処理
+        elapsed--;
+        animationId = null;
+        startTime = null;
+        pausedElapsed = 0;
+        previousSecond = null;
+        nextStep();
+      }
+    }
+
+    function nextStep() {
+      current++;
+      if (current < sequence.length) {
+        remaining = sequence[current].duration;
+
+        if (sequence[current]?.name.includes("休憩")) {
+          remain_stretch--;
+          circle.style.stroke = "#dcd5ca";  // 灰色がちょっと濁った感じ
+          playSound("休憩");
+          //speak("休憩");
+        } else {
+          circle.style.stroke = "#bcddff";  // パステル青
+          playSequence(["残り", String(remain_stretch), "回"]);
+        }
+
+        //speak(sequence[current].name);
+        vibrate();
+        updateList();
+        updateTotalTimer();
+        updateExerciseName();
+        requestAnimationFrame(animateProgress);
+      } else {
+        pauseBtn.style.display = "none";
+        setCounterEl.textContent = "すべてのストレッチが完了しました！";
+        timerEl.textContent = "00";
+        playSequence(["ゴール",
+          ["頑張ったね", "よくできました", "マーベラス", "エクセレント"][Math.floor(Math.random() * 4)]]);//ランダム再生
+        vibrate();
+        setProgress(0);
+        stopCurrentBGM();
+      }
+    }
+
+    function startTimer() {
+      if (animationId || current >= sequence.length) return;
+      unlockAudios();
+      isStarted = true;
+
+      startBtn.style.display = "none";
+      pauseBtn.style.display = "none";
+      stopAllAudios();
+
+      startCountdown();
+
+      // 「始めます」を0.5秒遅らせて再生
+      setTimeout(() => {
+        playSound("始めます");
+      }, 500);
+    }
+
+    function startCountdown() {
+      isCountdown = true;
+      exerciseNameEl.textContent = "";
+      countdown = 5;
+      timerEl.textContent = countdown;
+      setCounterEl.textContent = "まもなく開始...";
+
+      // 🔽 カウントダウン音声を開始
+      if (countdownAudio) {
+        countdownAudio.currentTime = 0;
+        countdownAudio.play().catch((e) => console.warn("カウント音声再生失敗:", e));
+      }
+
+      countdownInterval = setInterval(() => {
+        if (countdownPaused) return;
+
+        if (countdown > 0) {
+          timerEl.textContent = countdown;
+
+          // 秒ごとに対応する音声を再生
+          if (countdown <= 3) {
+            const audio = document.getElementById(`${countdown}`);
+            if (audio) {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.play().catch(e => console.warn("カウント音声再生失敗:", e));
+            }
+          }
+          countdown--;
+        } else {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+          isCountdown = false;
+
+          playSound("スタート");
+          requestWakeLock();
+          vibrate();
+          updateList();
+          updateDisplay();
+          updateTotalTimer();
+          requestAnimationFrame(animateProgress);
+          playBGM();
+          elapsed--;
+
+          pauseBtn.style.display = "inline-block";
+          pauseBtn.textContent = "一時停止";
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      paused = !paused;
+      pauseBtn.textContent = paused ? "再開" : "一時停止";
+
+      if (paused) {
+        if (isCountdown) {
+          // カウントダウン中なら interval を止める
+          countdownPaused = true;
+          if (countdownAudio) countdownAudio.pause();
+        } else {
+          pausedElapsed += (performance.now() - startTime) / 1000;
+          startTime = null;
+          cancelAnimationFrame(animationId);
+          animationId = null;
+          pauseCurrentBGM();
+        }
+      } else {
+        if (isCountdown) {
+          // カウントダウン再開
+          countdownPaused = false;
+          if (countdownAudio) countdownAudio.play().catch(e => console.warn("再開エラー", e));
+        } else {
+          startTime = performance.now();
+          requestAnimationFrame(animateProgress);
+          resumeCurrentBGM();
+        }
+      }
+    }
+
+    function resetTimer() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      cancelAnimationFrame(animationId);
+      animationId = null;
+      startTime = null;
+      current = 0;
+      remaining = sequence[0].duration;
+      elapsed = 0;
+      paused = false;
+      pausedElapsed = 0;
+      previousSecond = null;
+      remain_stretch = sets;
+      exerciseNameEl.textContent = "";
+
+      // ボタンの状態
+      startBtn.style.display = "inline-block";
+      pauseBtn.style.display = "none";
+      pauseBtn.textContent = "一時停止";
+
+      updateList();
+      updateDisplay();
+      exerciseNameEl.textContent = ""; // ← この行を追加
+      updateTotalTimer();
+      setProgress(100);
+      circle.style.stroke = "#bcddff";  // パステル青
+      releaseWakeLock();
+      stopCurrentBGM();
+    }
+
+    // 初期化
+    updateList();
+    updateDisplay();
+    updateTotalTimer();
+    setProgress(100);
+    pausedElapsed = 0;
+    pauseBtn.style.display = "none";
+    exerciseNameEl.textContent = "";
+
+  </script>
+
+  <audio id="スタート" src="「スタート」.mp3" preload="auto"></audio>
+  <audio id="残り" src="「残り」.mp3" preload="auto"></audio>
+  <audio id="回" src="「回」.mp3" preload="auto"></audio>
+  <audio id="始めます" src="「始めます」.mp3" preload="auto"></audio>
+  <audio id="ゴール" src="「ゴーーール！」.mp3" preload="auto"></audio>
+  <audio id="頑張ったね" src="「頑張ったね」 .mp3" preload="auto"></audio>
+  <audio id="よくできました" src="「よくできました」.mp3" preload="auto"></audio>
+  <audio id="マーベラス" src="「マーベラス」.mp3" preload="auto"></audio>
+  <audio id="エクセレント" src="「エクセレント」.mp3" preload="auto"></audio>
+  <audio id="8" src="「8」.mp3" preload="auto"></audio>
+  <audio id="7" src="「7」.mp3" preload="auto"></audio>
+  <audio id="6" src="「6」.mp3" preload="auto"></audio>
+  <audio id="5" src="「5」.mp3" preload="auto"></audio>
+  <audio id="4" src="「4（よん）」.mp3" preload="auto"></audio>
+  <audio id="3" src="「3」.mp3" preload="auto"></audio>
+  <audio id="2" src="「2」.mp3" preload="auto"></audio>
+  <audio id="1" src="「1」.mp3" preload="auto"></audio>
+  <audio id="休憩" src="rest.mp3" preload="auto"></audio>
+  <audio id="bgm" src="MOCHIKOストレッチ.wav" preload="auto" loop></audio>
+</body>
+
+</html>
