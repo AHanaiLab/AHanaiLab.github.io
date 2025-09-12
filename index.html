@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>タバタタイマー</title>
+  <!-- CSSを外部読み込み -->
+  <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+  <!-- ============================
+       --- タイトル・ワーク名 ---
+  ============================ -->
+  <h1>タバタタイマー</h1>
+  <div class="exercise-name" id="exercise-name">準備中...</div>
+
+  <!-- ============================
+       --- 円形タイマー表示 ---
+  ============================ -->
+  <div class="circle-wrapper">
+    <svg class="progress-ring" width="220" height="220">
+      <circle class="progress-ring__background" cx="110" cy="110" r="100"></circle>
+      <circle class="progress-ring__circle" cx="110" cy="110" r="100"></circle>
+    </svg>
+    <div class="circle-content">
+      <div class="timer" id="timer">--</div>
+      <hr class="divider" />
+      <div class="total-timer" id="total-timer">--:--</div>
+    </div>
+  </div>
+
+  <!-- ============================
+       --- 操作ボタン ---
+  ============================ -->
+  <div class="controls">
+    <button id="start-btn">スタート</button>
+    <button id="pause-btn" style="display:none">一時停止</button>
+    <button id="reset-btn">リセット</button>
+    <button id="toggle-panel-btn">音量</button>
+    <button id="info-btn">説明</button>
+
+  </div>
+  <!-- ============================
+     --- 説明モーダル ---
+============================ -->
+  <div id="info-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>説明</h3>
+      <div class="info-text">
+        <div class="info-section">
+          <h4>📌 タバタタイマー</h4>
+          <p>ワーク20秒・休憩10秒を8セット繰り返すタバタトレーニング専用のタイマーです。</p>
+        </div>
+
+        <div class="info-section">
+          <h4>🎵 音量設定</h4>
+          <ul>
+            <li><b>BGM</b> … 後ろで流れる音楽の音量を調節します</li>
+            <li><b>効果音</b> … 開始3秒前、ワーク・休憩開始3秒前、ワーク・休憩開始時に流れる音の音量を調節します</li>
+            <li><b>声</b> … ワーク開始時に今が何回目かを知らせる声と、全てのセットが終了したことを知らせる声の音量を調節します</li>
+          </ul>
+        </div>
+
+        <div class="info-section">
+          <h4>⚠️ 注意</h4>
+          <p>タイマーを開始した後、別の画面に行くとタイマーは止まります。</p>
+        </div>
+      </div>
+      <button class="close-btn" id="close-info-btn">閉じる</button>
+    </div>
+  </div>
+
+
+
+
+  <!-- ============================
+       --- 音量設定モーダル ---
+  ============================ -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h3>音量設定</h3>
+      <div class="volume-controls" id="volume-controls">
+        <div>
+          <label for="bgm-volume">BGM: <span id="bgm-volume-display">0.4</span></label>
+          <input type="range" id="bgm-volume" min="0" max="1" step="0.01" value="0.4">
+        </div>
+        <div>
+          <label for="se-volume">効果音: <span id="se-volume-display">0.6</span></label>
+          <input type="range" id="se-volume" min="0" max="1" step="0.01" value="0.6">
+        </div>
+        <div>
+          <label for="voice-volume">声: <span id="voice-volume-display">1</span></label>
+          <input type="range" id="voice-volume" min="0" max="1" step="0.01" value="1">
+        </div>
+      </div>
+      <button class="close-btn" id="close-modal-btn">閉じる</button>
+    </div>
+  </div>
+
+  <!-- ============================
+       --- 全体進捗バー ---
+  ============================ -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+
+
+
+
+
+  <!-- ============================
+       --- JavaScriptを外部読み込み ---
+  ============================ -->
+  <script src="audio.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>
