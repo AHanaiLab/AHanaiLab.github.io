@@ -1,0 +1,256 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+header p {
+    color: #718096;
+    margin-bottom: 2rem;
+}
+
+.timer-modes {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.mode-btn:hover:not(.active) {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.timer-display {
+    margin: 2rem 0;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 15px;
+    border: 3px solid #e2e8f0;
+}
+
+.current-phase {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #4a5568;
+}
+
+.time-remaining {
+    font-size: 4rem;
+    font-weight: bold;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    color: #2d3748;
+}
+
+.round-info {
+    font-size: 1.2rem;
+    color: #718096;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.control-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-btn.primary {
+    background: #48bb78;
+    color: white;
+}
+
+.control-btn.primary:hover:not(:disabled) {
+    background: #38a169;
+}
+
+.control-btn:not(.primary) {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.control-btn:not(.primary):hover:not(:disabled) {
+    background: #cbd5e0;
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.settings {
+    background: #f7fafc;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.settings h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #4a5568;
+}
+
+.setting-group {
+    margin-bottom: 1rem;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #4a5568;
+}
+
+.setting-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.setting-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    width: 0%;
+    transition: width 0.1s ease;
+    border-radius: 4px;
+}
+
+/* Phase-specific colors */
+.timer-display.work {
+    border-color: #f56565;
+    background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+}
+
+.timer-display.work .current-phase {
+    color: #c53030;
+}
+
+.timer-display.work .time-remaining {
+    color: #9b2c2c;
+}
+
+.timer-display.rest {
+    border-color: #48bb78;
+    background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+}
+
+.timer-display.rest .current-phase {
+    color: #2f855a;
+}
+
+.timer-display.rest .time-remaining {
+    color: #276749;
+}
+
+.timer-display.prepare {
+    border-color: #ed8936;
+    background: linear-gradient(135deg, #feebc8 0%, #fbd38d 100%);
+}
+
+.timer-display.prepare .current-phase {
+    color: #c05621;
+}
+
+.timer-display.prepare .time-remaining {
+    color: #9c4221;
+}
+
+.timer-display.finished {
+    border-color: #805ad5;
+    background: linear-gradient(135deg, #e9d8fd 0%, #d6bcfa 100%);
+}
+
+.timer-display.finished .current-phase {
+    color: #553c9a;
+}
+
+.timer-display.finished .time-remaining {
+    color: #44337a;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+    
+    .time-remaining {
+        font-size: 3rem;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+}

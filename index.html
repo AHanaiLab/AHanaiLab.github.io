@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Timers - HIIT & Slow Training</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Exercise Timers</h1>
+            <p>HIIT & Slow Training Timer</p>
+        </header>
+
+        <div class="timer-modes">
+            <button id="hiit-mode" class="mode-btn active">HIIT Mode</button>
+            <button id="slow-mode" class="mode-btn">Slow Training</button>
+        </div>
+
+        <div class="timer-display">
+            <div class="current-phase" id="current-phase">Get Ready</div>
+            <div class="time-remaining" id="time-remaining">00:10</div>
+            <div class="round-info">
+                <span>Round: <span id="current-round">1</span>/<span id="total-rounds">8</span></span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="start-btn" class="control-btn primary">Start</button>
+            <button id="pause-btn" class="control-btn" disabled>Pause</button>
+            <button id="reset-btn" class="control-btn">Reset</button>
+        </div>
+
+        <div class="settings" id="settings">
+            <h3>Timer Settings</h3>
+            
+            <div class="hiit-settings" id="hiit-settings">
+                <div class="setting-group">
+                    <label for="work-time">Work Time (seconds):</label>
+                    <input type="number" id="work-time" value="20" min="5" max="300">
+                </div>
+                <div class="setting-group">
+                    <label for="rest-time">Rest Time (seconds):</label>
+                    <input type="number" id="rest-time" value="10" min="5" max="300">
+                </div>
+                <div class="setting-group">
+                    <label for="rounds">Number of Rounds:</label>
+                    <input type="number" id="rounds" value="8" min="1" max="50">
+                </div>
+                <div class="setting-group">
+                    <label for="prep-time">Preparation Time (seconds):</label>
+                    <input type="number" id="prep-time" value="10" min="0" max="60">
+                </div>
+            </div>
+
+            <div class="slow-settings" id="slow-settings" style="display: none;">
+                <div class="setting-group">
+                    <label for="exercise-time">Exercise Time (minutes):</label>
+                    <input type="number" id="exercise-time" value="2" min="1" max="20">
+                </div>
+                <div class="setting-group">
+                    <label for="break-time">Break Time (minutes):</label>
+                    <input type="number" id="break-time" value="1" min="0" max="10">
+                </div>
+                <div class="setting-group">
+                    <label for="slow-rounds">Number of Sets:</label>
+                    <input type="number" id="slow-rounds" value="5" min="1" max="20">
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
