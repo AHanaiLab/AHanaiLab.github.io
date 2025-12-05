@@ -827,14 +827,18 @@
         <!-- ↓ このブロックを追加 ↓ -->
         <div style="display:flex; justify-content:center; gap:10px; width:80%;">
         
-            <div style="display:flex; flex-direction:column; width:50%;">
-                <label style="color:white; margin-bottom:5px; text-align:left;">身長(cm)</label>
-                <input type="number" id="user-height" class="input-area" style="margin:0;" value="170">
+            <!-- 身長 -->
+            <div style="display:flex; align-items:center; width:45%; gap:5px;">
+                <span style="color:white; white-space:nowrap;">身長(cm)</span>
+                <input type="number" id="user-height" class="input-area"
+                       style="flex:1; margin:0;" value="170">
             </div>
         
-            <div style="display:flex; flex-direction:column; width:50%;">
-                <label style="color:white; margin-bottom:5px; text-align:left;">体重(kg)</label>
-                <input type="number" id="user-weight" class="input-area" style="margin:0;" value="65">
+            <!-- 体重 -->
+            <div style="display:flex; align-items:center; width:45%; gap:5px;">
+                <span style="color:white; white-space:nowrap;">体重(kg)</span>
+                <input type="number" id="user-weight" class="input-area"
+                       style="flex:1; margin:0;" value="65">
             </div>
         
         </div>
@@ -1469,6 +1473,7 @@
 </body>
 
 </html>
+
 
 
 
