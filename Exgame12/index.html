@@ -953,7 +953,7 @@
 
         <button class="cloud-btn" id="cloud-btn" onclick="sendToGoogleSheets()">クラウドに保存 (DB)</button>
         <button class="dl-btn" onclick="downloadCSV()">CSVで保存</button>
-        <button class="close-btn" onclick="location.reload()">タイトルへ</button>
+        <button class="close-btn" onclick="goHome()">タイトルへ</button>
     </div>
 
     <script>
@@ -1092,6 +1092,12 @@
         function backToMain() {
             getEl('squat-menu').style.display = 'none'; getEl('measure-menu').style.display = 'none';
             getEl('main-menu').style.display = 'flex';
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+
+        function goHome() {
+            location.reload();
+            window.scrollTo(0, 0);
         }
 
         function startApp() {
@@ -1472,6 +1478,7 @@
 </body>
 
 </html>
+
 
 
 
