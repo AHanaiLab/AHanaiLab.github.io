@@ -1238,7 +1238,7 @@
         function checkBalance(lAnkle, rAnkle) {
             const diff = Math.abs(lAnkle.y - rAnkle.y);
             if (diff > 0.05) {
-                if (!metrics.isBalancing) { metrics.isBalancing = true; metrics.balanceStart = Date.now(); speak("計測中"); els.balStatus.innerText = "計測中"; els.balStatus.style.color = "#00e676"; }
+                if (!metrics.isBalancing) { metrics.isBalancing = true; metrics.balanceStart = Date.now(); speak("計測ちゅう"); els.balStatus.innerText = "計測中"; els.balStatus.style.color = "#00e676"; }
                 const t = (Date.now() - metrics.balanceStart) / 1000;
                 metrics.currentBalanceTime = t;
                 if (t > metrics.maxBalanceTime) metrics.maxBalanceTime = t;
@@ -1462,3 +1462,4 @@
 </body>
 
 </html>
+
