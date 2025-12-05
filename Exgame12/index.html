@@ -825,22 +825,20 @@
         <input type="text" id="patient-id" class="input-area" placeholder="IDを入力">
 
         <!-- ↓ このブロックを追加 ↓ -->
-        <div style="display:flex; justify-content:center; gap:10px; width:80%;">
-        
+        <div style="display:flex; justify-content:center; gap:20px; width:80%;">
+
             <!-- 身長 -->
-            <div style="display:flex; align-items:center; width:45%; gap:5px;">
-                <span style="color:white; white-space:nowrap;">身長(cm)</span>
-                <input type="number" id="user-height" class="input-area"
-                       style="flex:1; margin:0;" value="170">
+            <div style="display:flex; flex-direction:column; align-items:center; width:45%;">
+                <label style="color:white; margin-bottom:5px; text-align:center;">身長(cm)</label>
+                <input type="number" id="user-height" class="input-area" style="width:100%; margin:0;" value="170">
             </div>
-        
+
             <!-- 体重 -->
-            <div style="display:flex; align-items:center; width:45%; gap:5px;">
-                <span style="color:white; white-space:nowrap;">体重(kg)</span>
-                <input type="number" id="user-weight" class="input-area"
-                       style="flex:1; margin:0;" value="65">
+            <div style="display:flex; flex-direction:column; align-items:center; width:45%;">
+                <label style="color:white; margin-bottom:5px; text-align:center;">体重(kg)</label>
+                <input type="number" id="user-weight" class="input-area" style="width:100%; margin:0;" value="65">
             </div>
-        
+
         </div>
         <!-- ↑ 追加ここまで ↑ -->
 
@@ -1473,6 +1471,7 @@
 </body>
 
 </html>
+
 
 
 
