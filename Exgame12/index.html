@@ -896,57 +896,97 @@
         <button class="survey-done-btn" onclick="submitSurvey()">結果を見る</button>
     </div>
 
+    <!-- ▼ RESULT画面（スクワット / CS30 / バランス / バンザイ） -->
     <div id="result-screen" class="overlay-screen">
-        <h2 style="color:white; border-bottom:2px solid #00e676;">RESULT</h2>
 
-        <div id="res-squat-area">
-            <div id="game-result-area" style="display:none; text-align:center; margin-bottom:10px;">
-                <div style="font-size:60px; font-weight:900; color:#ffd700;" id="res-rank">S</div>
-                <div style="color:#ffeb3b; font-size:24px;">SCORE: <span id="res-score-final">0</span></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; width:95%; max-width:400px;">
-                <div class="stat-card">
-                    <div style="font-size:12px;">回数</div>
-                    <div class="stat-val" id="res-reps">0</div>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size:12px;">疲労指数</div>
-                    <div class="stat-val" id="res-fatigue">--</div>
-                </div>
-            </div>
+        <h2 style="color:white; border-bottom:2px solid #00e676; width:100%; max-width:1000px; margin-bottom:10px;">
+            RESULT
+        </h2>
 
-            <!-- ↓ このブロックを追加 ↓ -->
-            <div id="science-metrics"
-                style="width:95%; max-width:400px; background:#444; border-radius:10px; padding:10px; margin-bottom:10px; display:none;">
-                <div
-                    style="font-size:14px; color:#00e676; font-weight:bold; border-bottom:1px solid #777; margin-bottom:5px;">
-                    🧪 推定値 (Research Grade)</div>
-                <div style="display:flex; justify-content:space-around; text-align:center;">
-                    <div>
-                        <div style="font-size:10px; color:#aaa;">下肢筋パワー</div>
-                        <div style="font-size:20px; font-weight:bold; color:#fff;">
-                            <span id="val-power">0</span> <span style="font-size:12px;">W</span>
-                        </div>
-                        <div style="font-size:10px; color:#aaa;" id="val-power-rel">0 W/kg</div>
+        <!-- 横並びレイアウト本体 -->
+        <div id="result-body">
+            <!-- 左カラム：基本情報＋研究指標 -->
+            <div id="res-left">
+
+                <!-- ▼ スクワット関連の結果エリア -->
+                <div id="res-squat-area">
+
+                    <!-- ゲームモード専用：ランクとスコア -->
+                    <div id="game-result-area" style="display:none; text-align:center; margin-bottom:10px;">
+                        <div style="font-size:56px; font-weight:900; color:#ffd700;" id="res-rank">S</div>
+                        <div style="color:#ffeb3b; font-size:22px;">SCORE: <span id="res-score-final">0</span></div>
                     </div>
-                    <div>
-                        <div style="font-size:10px; color:#aaa;">推定VO2peak</div>
-                        <div style="font-size:20px; font-weight:bold; color:#fff;">
-                            <span id="val-vo2">0</span> <span style="font-size:12px;">ml/kg</span>
+
+                    <!-- 回数・疲労指数（2つの小パネル） -->
+                    <div class="res-cards-row">
+                        <div class="stat-card">
+                            <div style="font-size:12px;">回数</div>
+                            <div class="stat-val" id="res-reps">0</div>
                         </div>
-                        <div style="font-size:10px; color:#aaa;">(METs: <span id="val-mets">0</span>)</div>
+                        <div class="stat-card">
+                            <div style="font-size:12px;">疲労指数</div>
+                            <div class="stat-val" id="res-fatigue">--</div>
+                        </div>
+                    </div>
+
+                    <!-- ▼ 研究指標（下肢筋パワー・VO2peak 推定など） -->
+                    <div id="science-metrics"
+                        style="width:100%; background:#444; border-radius:10px; padding:8px; margin-top:6px; display:none;">
+
+                        <div
+                            style="font-size:13px; color:#00e676; font-weight:bold; border-bottom:1px solid #777; margin-bottom:4px;">
+                            🧪 推定値 (Research Grade)
+                        </div>
+
+                        <!-- 左右2ブロック（パワー・VO2peak） -->
+                        <div style="display:flex; justify-content:space-around; text-align:center;">
+                            <div>
+                                <div style="font-size:10px; color:#aaa;">下肢筋パワー</div>
+                                <div style="font-size:18px; font-weight:bold; color:#fff;">
+                                    <span id="val-power">0</span> <span style="font-size:11px;">W</span>
+                                </div>
+                                <div style="font-size:10px; color:#aaa;" id="val-power-rel">0 W/kg</div>
+                            </div>
+
+                            <div>
+                                <div style="font-size:10px; color:#aaa;">推定VO2peak</div>
+                                <div style="font-size:18px; font-weight:bold; color:#fff;">
+                                    <span id="val-vo2">0</span> <span style="font-size:11px;">ml/kg</span>
+                                </div>
+                                <div style="font-size:10px; color:#aaa;">(METs: <span id="val-mets">0</span>)</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size:9px; color:#888; text-align:right; margin-top:4px;">
+                            *Alcazar(2018) / ACSM Logic
+                        </div>
                     </div>
                 </div>
-                <div style="font-size:9px; color:#888; text-align:right; margin-top:5px;">*Alcazar(2018) / ACSM Logic
+
+                <!-- ▼ バランス / バンザイ（単一数値の結果） -->
+                <div id="res-simple-area" style="display:none; text-align:center; width:100%; margin-top:10px;">
+                    <div style="font-size:18px; color:#aaa;" id="res-simple-label">記録</div>
+                    <div style="font-size:42px; font-weight:bold; color:#00e676;" id="res-simple-val">0</div>
                 </div>
             </div>
-            <!-- ↑ 追加ここまで ↑ -->
 
-            <div style="width:100%; max-width:400px; margin-top:10px;">
+            <!-- 右カラム：グラフ -->
+            <div id="res-right">
+                <div class="chart-title">▼ スピード推移</div>
                 <div class="chart-box"><canvas id="speedChart"></canvas></div>
+
+                <div class="chart-title">▼ 深さとエラー</div>
                 <div class="chart-box"><canvas id="depthChart"></canvas></div>
             </div>
         </div>
+
+        <!-- 下部ボタン（クラウド保存 / CSV保存 / タイトルへ） -->
+        <div id="result-buttons">
+            <button class="cloud-btn" id="cloud-btn" onclick="sendToGoogleSheets()">クラウドに保存 (DB)</button>
+            <button class="dl-btn" onclick="downloadCSV()">CSVで保存 (予備)</button>
+            <button class="close-btn" onclick="location.reload()">タイトルへ</button>
+        </div>
+    </div>
 
         <div id="res-simple-area" style="display:none; text-align:center; width:100%;">
             <div style="font-size:20px; color:#aaa;" id="res-simple-label">記録</div>
@@ -1476,10 +1516,116 @@
         const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
         pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         pose.onResults(onResults);
+
+        /* --------------------------------------------------
+   Result 画面 レイアウト（横並び 2カラム）
+-------------------------------------------------- */
+
+#result-screen {
+    /* 共通 overlay-screen の flex 設定を上書き */
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: hidden;  /* 通常は縦スクロール不要にする */
+}
+
+/* 中央部を左右 2 カラムに分割 */
+#result-body {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    max-width: 1000px;   /* PC の横幅を有効活用 */
+    gap: 16px;
+    align-items: stretch;
+}
+
+/* 左右カラム共通 */
+#res-left,
+#res-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 回数・疲労カードの行 */
+.res-cards-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* グラフのタイトル */
+.chart-title {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 4px;
+}
+
+/* グラフの箱は縦を少し低めにして 1画面に収まるよう調整 */
+.chart-box {
+    width: 100%;
+    height: 40%;
+    max-height: 190px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+/* 下部の 3 ボタンを横一列 or 均等配置 */
+#result-buttons {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+/* RESULT の 3 ボタン幅をやや小さめ＆揃える */
+#result-buttons .cloud-btn,
+#result-buttons .dl-btn,
+#result-buttons .close-btn {
+    display: inline-block;
+    width: 220px;
+    max-width: 32%;
+    margin: 0;
+}
+
+/* 画面が狭いスマホでは縦並びにフォールバック */
+@media (max-width: 800px) {
+    #result-screen {
+        overflow-y: auto;          /* スマホではスクロール許可 */
+    }
+
+    #result-body {
+        flex-direction: column;    /* 上下レイアウトに戻す */
+    }
+
+    #result-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #result-buttons .cloud-btn,
+    #result-buttons .dl-btn,
+    #result-buttons .close-btn {
+        max-width: 80%;
+        width: 260px;
+        margin-top: 6px;
+    }
+}
+
     </script>
 </body>
 
 </html>
+
 
 
 
