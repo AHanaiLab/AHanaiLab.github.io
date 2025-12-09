@@ -1,0 +1,820 @@
+        /* Base */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+            overflow-x: hidden;
+            /* 横スクロールは禁止 */
+            overflow-y: auto;
+            /* 縦スクロールを許可 */
+            touch-action: manipulation;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100dvh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        #input_video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 0;
+        }
+
+        #output_canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* === 共通パーツ === */
+        .control-area {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .finish-btn {
+            background: linear-gradient(45deg, #f44336, #ff9800);
+            color: white;
+            border: none;
+            padding: 15px 60px;
+            font-size: 22px;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+        }
+
+        .warning-text {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff1744;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 3px solid red;
+            display: none;
+            width: 80%;
+            text-align: center;
+            z-index: 50;
+        }
+
+        .status-lamp {
+            position: absolute;
+            bottom: 38px;
+            right: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            width: 80px;
+        }
+
+        .lamp-ready {
+            background-color: rgba(0, 230, 118, 0.6);
+            /* ← 透明度つき */
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.6);
+        }
+
+        .lamp-squat {
+            background-color: rgba(85, 85, 85, 0.6);
+            /* ← 透明度つき */
+        }
+
+        /* === スクワット用UI === */
+        #squat-ui {
+            display: none;
+        }
+
+        #depth-gauge-container {
+            position: absolute;
+            left: 15px;
+            top: 25%;
+            bottom: 25%;
+            width: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            border: 2px solid #fff;
+        }
+
+        #depth-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: #00bcd4;
+            transition: height 0.05s linear;
+        }
+
+        #target-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #ff4081;
+            z-index: 5;
+        }
+
+        #target-label {
+            position: absolute;
+            left: 55px;
+            color: #ff4081;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 black;
+        }
+
+        #pacer-container {
+            position: absolute;
+            right: 15px;
+            top: 25%;
+            bottom: 25%;
+            width: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        #pacer-ghost {
+            position: absolute;
+            left: -16px;
+            width: 40px;
+            height: 40px;
+            background: #2979ff;
+            border: 3px solid white;
+            border-radius: 50%;
+            top: 100%;
+            box-shadow: 0 0 15px #2979ff;
+        }
+
+        /* トレーニングモード用 */
+        #training-info {
+            display: none;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            width: 110px;
+            border: 1px solid #777;
+            pointer-events: auto;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #ccc;
+        }
+
+        .info-val {
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1.0;
+        }
+
+        .timer-box {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #000;
+            color: #00e676;
+            padding: 5px 15px;
+            border-radius: 8px;
+            font-size: 28px;
+            font-weight: bold;
+            border: 2px solid #00e676;
+            display: none;
+        }
+
+        .pacer-counter {
+            position: absolute;
+            bottom: 120px;
+            right: 60px;
+            background: rgba(41, 121, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+            display: none;
+            width: 80px;
+            font-size: 12px;
+        }
+
+        /* ゲームモード用 */
+        #game-info {
+            display: none;
+        }
+
+        .game-header-L {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 10px;
+            color: white;
+            border: 1px solid #ffd700;
+        }
+
+        .game-header-R {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            text-align: right;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #ffd700;
+            font-weight: bold;
+            display: block;
+        }
+
+        .score-val {
+            font-size: 42px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px #ffd700, 2px 2px 0 #000;
+            font-style: italic;
+            line-height: 1.0;
+        }
+
+        #battle-stage {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            text-align: center;
+        }
+
+        #monster-name {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 10px;
+            border-radius: 10px;
+            color: #00e676;
+            font-weight: bold;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 5px;
+            border: 1px solid #00e676;
+        }
+
+        #monster {
+            font-size: 100px;
+            filter: drop-shadow(0 0 10px red);
+            transition: transform 0.1s;
+            display: inline-block;
+        }
+
+        .hp-container {
+            width: 100%;
+            height: 18px;
+            background: #333;
+            border: 2px solid white;
+            border-radius: 10px;
+            margin-top: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #hp-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff1744, #ff4081);
+            transition: width 0.3s;
+        }
+
+        #hp-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            line-height: 18px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .damage-shake {
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(10deg);
+            }
+
+            75% {
+                transform: rotate(-10deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        #combo-display {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-5deg);
+            font-size: 60px;
+            font-weight: 900;
+            color: #ffeb3b;
+            text-shadow: 3px 3px 0 #f57f17, -1px -1px 0 white;
+            font-style: italic;
+            pointer-events: none;
+            opacity: 0;
+            transition: transform 0.1s, opacity 0.3s;
+            z-index: 20;
+        }
+
+        .combo-active {
+            opacity: 1 !important;
+            transform: translate(-50%, -50%) rotate(-5deg) scale(1.3) !important;
+        }
+
+        /* === バランス用UI === */
+        #balance-ui {
+            display: none;
+        }
+
+        .balance-timer-main {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #00bcd4;
+            text-align: center;
+        }
+
+        .balance-msg {
+            font-size: 24px;
+            color: #00e676;
+            margin-top: 10px;
+        }
+
+        /* === バンザイ用UI === */
+        #banzai-ui {
+            display: none;
+        }
+
+        .banzai-gauge {
+            position: absolute;
+            bottom: 20%;
+            width: 40px;
+            height: 40%;
+            background: rgba(50, 50, 50, 0.6);
+            border: 2px solid #fff;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        #banzai-gauge-L {
+            left: 20px;
+        }
+
+        #banzai-gauge-R {
+            right: 20px;
+        }
+
+        .banzai-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            transition: height 0.1s;
+        }
+
+        #banzai-bar-L {
+            background: #ff4081;
+        }
+
+        #banzai-bar-R {
+            background: #2979ff;
+        }
+
+        .banzai-text {
+            position: absolute;
+            bottom: 14%;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 0 black;
+        }
+
+        #bz-angle-l {
+            left: 20px;
+            color: #ff4081;
+        }
+
+        #bz-angle-r {
+            right: 20px;
+            color: #2979ff;
+        }
+
+        .banzai-guide-text {
+            position: absolute;
+            top: 15%;
+            width: 100%;
+            text-align: center;
+            font-size: 20px;
+            color: #aaa;
+        }
+
+        /* Overlays */
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100dvh;
+            /* 画面より短くはならないが、内容が長ければその分だけ伸びる */
+            background: #222;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            pointer-events: auto;
+            padding-top: 40px;
+            padding-bottom: 60px;
+            /* overflow-y は body 側にまかせるので削除 */
+        }
+
+        #countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 15;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .countdown-text {
+            font-size: 100px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 30px cyan;
+            text-align: center;
+        }
+
+        /* Survey */
+        #survey-screen {
+            display: none;
+        }
+
+        .survey-card {
+            background: #333;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+
+        .survey-label {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: block;
+            color: #00e676;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .rpe-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            color: #aaa;
+        }
+
+        .rpe-val {
+            font-size: 40px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .pain-btn {
+            background: #444;
+            border: 1px solid #777;
+            color: #fff;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 16px;
+            min-width: 70px;
+        }
+
+        .pain-btn.active {
+            background: #ff1744;
+            border-color: red;
+            font-weight: bold;
+        }
+
+        button.survey-done-btn {
+            background: #2979ff;
+            color: white;
+            padding: 15px 50px;
+            border-radius: 30px;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Result */
+        #result-screen {
+            display: none;
+        }
+
+        .stat-card {
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+            width: 45%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .chart-box {
+            width: 95%;
+            max-width: 400px;
+            height: 180px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        /* --------------------------------------------------
+   Result 画面 レイアウト（横並び 2カラム）
+-------------------------------------------------- */
+
+        #result-screen {
+            /* 共通 overlay-screen の flex 設定を上書き */
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: hidden;
+            /* 通常は縦スクロール不要にする */
+        }
+
+        /* 中央部を左右 2 カラムに分割 */
+        #result-body {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            max-width: 1000px;
+            /* PC の横幅を有効活用 */
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        /* 左右カラム共通 */
+        #res-left,
+        #res-right {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 回数・疲労カードの行 */
+        .res-cards-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        /* グラフのタイトル */
+        .chart-title {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        /* グラフの箱は縦を少し低めにして 1画面に収まるよう調整 */
+        .chart-box {
+            width: 100%;
+            height: 40%;
+            max-height: 190px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        /* 下部の 3 ボタンを横一列 or 均等配置 */
+        #result-buttons {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        /* RESULT の 3 ボタン幅をやや小さめ＆揃える */
+        #result-buttons .cloud-btn,
+        #result-buttons .dl-btn,
+        #result-buttons .close-btn {
+            display: inline-block;
+            width: 220px;
+            max-width: 32%;
+            margin: 0;
+        }
+
+        /* 画面が狭いスマホでは縦並びにフォールバック */
+        @media (max-width: 800px) {
+            #result-screen {
+                overflow-y: auto;
+                /* スマホではスクロール許可 */
+            }
+
+            #result-body {
+                flex-direction: column;
+                /* 上下レイアウトに戻す */
+            }
+
+            #result-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #result-buttons .cloud-btn,
+            #result-buttons .dl-btn,
+            #result-buttons .close-btn {
+                max-width: 80%;
+                width: 260px;
+                margin-top: 6px;
+            }
+        }
+
+
+        /* Buttons */
+        .big-btn {
+            width: 85%;
+            padding: 40px;
+            margin: 15px;
+            border-radius: 20px;
+            border: none;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .btn-squat {
+            background: linear-gradient(135deg, #00c853, #64dd17);
+        }
+
+        .btn-measure {
+            background: linear-gradient(135deg, #2979ff, #00e5ff);
+        }
+
+        .sub-btn {
+            width: 80%;
+            padding: 15px;
+            margin: 8px;
+            border-radius: 10px;
+            border: 2px solid #555;
+            font-size: 18px;
+            color: white;
+            background: #333;
+            cursor: pointer;
+        }
+
+        .sub-btn.selected {
+            border-color: #00e676;
+            background: #003300;
+        }
+
+        .input-area {
+            padding: 15px;
+            font-size: 20px;
+            text-align: center;
+            border-radius: 8px;
+            width: 70%;
+            margin-bottom: 20px;
+        }
+
+        button.start-btn {
+            background: #00e676;
+            color: #003300;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            width: 80%;
+            border: none;
+            border-radius: 30px;
+            font-size: 20px;
+        }
+
+        button.cloud-btn {
+            background: #2962ff;
+            color: white;
+            padding: 15px 30px;
+            /* 横方向少し広め、幅は中身＋paddingで決まる */
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        button.dl-btn {
+            background: #555;
+            color: white;
+            margin-top: 10px;
+            font-size: 14px;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        button.close-btn {
+            background: #333;
+            color: #aaa;
+            margin-top: 30px;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #555;
+        }
+
+        /* RESULT画面の3ボタンを同じ幅・中央配置にする */
+        button.cloud-btn,
+        button.dl-btn,
+        button.close-btn {
+            display: block;
+            width: 240px;
+            /* お好みで調整可（px でも良いし、200〜260pxくらいが無難） */
+            max-width: 80%;
+            /* 画面がかなり狭いときは自動で少し細くなる */
+            margin-left: auto;
+            margin-right: auto;
+        }
