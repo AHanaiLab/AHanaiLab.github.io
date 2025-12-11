@@ -381,7 +381,7 @@ function onResults(results) {
                 const minAng = 180, maxAng = 70;
                 let p = (minAng - kneeAngle) / (minAng - maxAng) * 100; if (p < 0) p = 0; if (p > 100) p = 100;
                 els.depthBar.style.height = p + "%";
-                let tp = (minAng - DEPTH_THRESHOLD) / (minAng - maxAng) * 100; els.targetLine.style.top = tp + "%";
+                let tp = (minAng - DEPTH_THRESHOLD) / (minAng - maxAng) * 100; els.targetLine.style.top = tp + "%"; els.targetLabel.style.top = tp + "%";
                 if (appState.subMode === 'self' || appState.subMode === 'game') els.pacerGhost.style.top = p + "%";
 
                 canvasCtx.beginPath(); canvasCtx.moveTo(lms[sIdx].x * canvasElement.width, lms[sIdx].y * canvasElement.height); canvasCtx.lineTo(lms[hIdx].x * canvasElement.width, lms[hIdx].y * canvasElement.height); canvasCtx.lineTo(lms[kIdx].x * canvasElement.width, lms[kIdx].y * canvasElement.height); canvasCtx.strokeStyle = "yellow"; canvasCtx.lineWidth = 5; canvasCtx.stroke();
