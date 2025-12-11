@@ -77,7 +77,17 @@ function fireConfetti() { confetti({ particleCount: 80, spread: 60, origin: { y:
 function showComboEffect(val) { els.comboDisp.innerText = val + " COMBO!"; els.comboDisp.classList.add("combo-active"); playSound('hit'); setTimeout(() => els.comboDisp.classList.remove("combo-active"), 800); }
 
 function updateRPE(val) { document.getElementById('rpe-val').innerText = val; surveyData.rpe = val; }
-function setPain(val, btn) { surveyData.pain = val; document.querySelectorAll('.pain-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+function setPain(val, btn) {
+    // クリックされたボタンの active をトグル（ON/OFF）
+    btn.classList.toggle('active');
+
+    // 今 active のものを全て取得して配列化
+    const selected = [...document.querySelectorAll('.pain-btn.active')]
+        .map(b => b.innerText);
+
+    // 保存形式を配列に変更
+    surveyData.pain = selected;
+}
 
 // Game Logic
 function spawnMonster() { let lv = metrics.monsterLevel; if (lv >= MONSTERS.length) lv = MONSTERS.length - 1; const m = MONSTERS[lv]; els.monster.innerText = m[0]; els.monsterName.innerText = `Lv.${lv + 1} ${m[1]}`; metrics.monsterHP = m[1]; updateHP(m[1], m[1]); }
@@ -536,3 +546,4 @@ function downloadCSV() {
 const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
 pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
 pose.onResults(onResults);
+
