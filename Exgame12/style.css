@@ -776,6 +776,26 @@
             margin-bottom: 20px;
         }
 
+        #patient-id {
+            max-width: 68%;
+        }
+
+        #user-height,
+        #user-weight {
+            max-width: 93%;
+        }
+
+        @media (max-width: 480px) {
+            #patient-id {
+                max-width: 70%;
+            }
+
+            #user-height,
+            #user-weight {
+                max-width: 85%;
+            }
+        }
+
         button.start-btn {
             background: #00e676;
             color: #003300;
@@ -830,3 +850,4 @@
             margin-left: auto;
             margin-right: auto;
         }
+
