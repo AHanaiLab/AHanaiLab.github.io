@@ -138,6 +138,7 @@
 
         #target-line {
             position: absolute;
+            top: 50% !important;
             left: 0;
             width: 100%;
             height: 4px;
@@ -147,7 +148,9 @@
 
         #target-label {
             position: absolute;
+            top: 49% !important;
             left: 55px;
+            /* 上下中央揃え */
             color: #ff4081;
             font-weight: bold;
             font-size: 14px;
@@ -606,8 +609,8 @@
         }
 
         /* --------------------------------------------------
-   Result 画面 レイアウト（横並び 2カラム）
--------------------------------------------------- */
+        Result 画面 レイアウト（横並び 2カラム）
+        -------------------------------------------------- */
 
         #result-screen {
             /* 共通 overlay-screen の flex 設定を上書き */
@@ -638,6 +641,14 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
+        }
+
+        #science-metrics {
+            width: calc(90% + 8px);
+            /* 45% + 45% + gap 8px */
+            margin-left: auto;
+            margin-right: 0;
+            /* 右端揃え */
         }
 
         /* 回数・疲労カードの行 */
@@ -682,9 +693,10 @@
         #result-buttons .dl-btn,
         #result-buttons .close-btn {
             display: inline-block;
-            width: 220px;
-            max-width: 32%;
+            width: 300px;
+            max-width: 90%;
             margin: 0;
+            font-size: 20px;
         }
 
         /* 画面が狭いスマホでは縦並びにフォールバック */
@@ -707,8 +719,8 @@
             #result-buttons .cloud-btn,
             #result-buttons .dl-btn,
             #result-buttons .close-btn {
-                max-width: 80%;
-                width: 260px;
+                max-width: 90%;
+                width: 500px;
                 margin-top: 6px;
             }
         }
