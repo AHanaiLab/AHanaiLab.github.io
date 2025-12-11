@@ -137,8 +137,29 @@ function backToMain() {
 }
 
 function goHome() {
-    location.reload();
-    window.scrollTo(0, 0);
+    // すべての画面を閉じる
+    getEl('squat-ui').style.display = 'none';
+    getEl('balance-ui').style.display = 'none';
+    getEl('banzai-ui').style.display = 'none';
+    getEl('result-screen').style.display = 'none';
+    getEl('survey-screen').style.display = 'none';
+
+    // メニューを表示
+    getEl('main-menu').style.display = 'flex';
+    getEl('start-screen').style.display = 'flex';
+
+    // ★ まずハッシュジャンプ（ブラウザ標準）
+    location.hash = "#top";
+
+    // ★ UI レイアウトが安定するまで何度も 0 に押し戻す
+    let lock = setInterval(() => {
+        window.scrollTo(0, 0);
+    }, 30);
+
+    // ★ 0.6 秒後に解除（十分安定）
+    setTimeout(() => {
+        clearInterval(lock);
+    }, 600);
 }
 
 function startApp() {
