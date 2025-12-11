@@ -11,10 +11,18 @@
             touch-action: manipulation;
         }
 
+        html,
+        body {
+            height: 100%;
+            overflow-y: auto;
+            scroll-behavior: auto;
+        }
+
+
         .container {
             position: relative;
             width: 100vw;
-            height: 100dvh;
+            height: 100%;
             padding-bottom: env(safe-area-inset-bottom);
         }
 
@@ -796,6 +804,7 @@
             }
         }
 
+
         button.start-btn {
             background: #00e676;
             color: #003300;
@@ -850,4 +859,3 @@
             margin-left: auto;
             margin-right: auto;
         }
-
