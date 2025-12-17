@@ -1,1 +1,1 @@
-# exercise_timers
+Created by Akiko Hanai, OTR, Ph.D
