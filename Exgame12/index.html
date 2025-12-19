@@ -88,18 +88,18 @@
                     </div>
                     <div class="timer-box" id="tr-timer">30</div>
                     <div class="pacer-counter" id="tr-pacer-box">
-                        <div style="font-size:10px; color:#ccc;">ペース</div>
-                        <div style="font-size:24px; font-weight:bold;" id="tr-pacer-val">0</div>
+                        <div style="font-size:15px; color:#ccc;">ペース</div>
+                        <div style="font-size:30px; font-weight:bold;" id="tr-pacer-val">0</div>
                     </div>
                 </div>
 
                 <div id="game-info">
                     <div class="game-header-L">
-                        <div style="font-size:12px; color:#ccc;">LEVEL</div>
-                        <div style="font-size:20px; font-weight:bold;" id="gm-lvl-val">1</div>
+                        <div style="font-size:15px; color:#ccc;">LEVEL</div>
+                        <div style="font-size:30px; font-weight:bold;" id="gm-lvl-val">1</div>
                         <div style="height:5px;"></div>
-                        <div style="font-size:12px; color:#ccc;">COMBO</div>
-                        <div style="font-size:24px; font-weight:bold; color:#ffeb3b;" id="gm-combo-val">0</div>
+                        <div style="font-size:15px; color:#ccc;">COMBO</div>
+                        <div style="font-size:30px; font-weight:bold; color:#ffeb3b;" id="gm-combo-val">0</div>
                     </div>
                     <div class="game-header-R">
                         <div class="score-label">SCORE</div>
@@ -152,18 +152,20 @@
 
         <h1 style="color:#00e676; text-shadow:0 0 10px green; margin-bottom:20px;">SQUAT MASTER</h1>
 
-        <input type="text" id="patient-id" class="input-area" placeholder="IDを入力" style="margin-bottom:5px;">
+        <div style="width: 100%; margin: 0 auto 10px auto; display: flex; flex-direction: column; align-items: center;">
+            <input type="text" id="patient-id" class="input-area" placeholder="IDを入力"
+                style="width: 100%; margin-bottom: 5px;">
+        </div>
 
-        <!-- 身長・体重 -->
-        <div style="display:flex; justify-content:center; gap:20px; width:80%; margin-bottom:20px;">
-            <div style="display:flex; flex-direction:column; align-items:center; width:45%;">
-                <label style="color:white; margin-bottom:5px;">身長(cm)</label>
-                <input type="number" id="user-height" class="input-area" style="width:100%;" value="170">
+        <div style="display: flex; justify-content: center; gap: 15px; width: 85%; margin: 0 auto 20px auto;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 50%;">
+                <label style="color: white; margin-bottom: 5px;">身長(cm)</label>
+                <input type="number" id="user-height" class="input-area" style="width: 100%;" value="170">
             </div>
 
-            <div style="display:flex; flex-direction:column; align-items:center; width:45%;">
-                <label style="color:white; margin-bottom:5px;">体重(kg)</label>
-                <input type="number" id="user-weight" class="input-area" style="width:100%;" value="65">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 50%;">
+                <label style="color: white; margin-bottom: 5px;">体重(kg)</label>
+                <input type="number" id="user-weight" class="input-area" style="width: 100%;" value="65">
             </div>
         </div>
 
@@ -220,7 +222,7 @@
 
         <div class="survey-card">
             <span class="survey-label">Q2. 痛みはありますか？</span>
-            <button class="pain-btn active" onclick="setPain('None',this)">なし</button>
+            <button id="pain-none" class="pain-btn active-none" onclick="setPain('None', this)">なし</button>
             <button class="pain-btn" onclick="setPain('Knee',this)">膝</button>
             <button class="pain-btn" onclick="setPain('Back',this)">腰</button>
             <button class="pain-btn" onclick="setPain('Other',this)">他</button>
@@ -237,14 +239,14 @@
         </h2>
 
         <div id="res-page-1" class="result-page" style="display: flex; flex-direction: column; flex-grow: 1;">
-            <div id="res-summary-area">
+            <div id="res-summary-area" style="width: 95%; max-width: 650px; margin: 0 auto;">
 
                 <!-- ▼ スクワット / ゲーム用結果 -->
                 <div id="game-result-area">
 
                     <div id="res-rank-score-box" class="stat-card" style="width:100%; margin-bottom: 20px;">
-                        <div id="res-rank" class="stat-val" style="font-size:60px; color:#ffd700;">-</div>
-                        <div style="color:#ffeb3b; font-size:22px;">SCORE: <span id="res-score-final">0</span></div>
+                        <div id="res-rank" class="stat-val" style="font-size:70px; color:#ffd700;">-</div>
+                        <div style="font-size:22px;">SCORE: <span id="res-score-final">0</span></div>
                     </div>
 
                     <div id="res-squat-stats-row" class="res-cards-row">
@@ -273,7 +275,7 @@
 
                 <!-- ▼ 推定値（必ず枠を持たせる） -->
                 <div id="science-metrics" class="stat-card" style="margin-top:15px;">
-                    <div class="stat-label">🧪 推定値 (Research Grade)</div>
+                    <div class="stat-label" style="font-size:18px;">🧪 推定値 (Research Grade)</div>
 
                     <div style="display:flex; justify-content:space-around; margin-top:10px;">
                         <div style="text-align:center;">
