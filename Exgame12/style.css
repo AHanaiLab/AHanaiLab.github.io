@@ -215,12 +215,12 @@
         }
 
         .info-label {
-            font-size: 11px;
+            font-size: 15px;
             color: #ccc;
         }
 
         .info-val {
-            font-size: 32px;
+            font-size: 40px;
             font-weight: bold;
             line-height: 1.0;
         }
@@ -233,7 +233,7 @@
             color: #00e676;
             padding: 5px 15px;
             border-radius: 8px;
-            font-size: 28px;
+            font-size: 50px;
             font-weight: bold;
             border: 2px solid #00e676;
             display: none;
@@ -277,14 +277,14 @@
         }
 
         .score-label {
-            font-size: 12px;
+            font-size: 15px;
             color: #ffd700;
             font-weight: bold;
             display: block;
         }
 
         .score-val {
-            font-size: 42px;
+            font-size: 50px;
             font-weight: 900;
             color: #fff;
             text-shadow: 0 0 10px #ffd700, 2px 2px 0 #000;
@@ -307,14 +307,14 @@
             border-radius: 10px;
             color: #00e676;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 15px;
             display: inline-block;
             margin-bottom: 5px;
             border: 1px solid #00e676;
         }
 
         #monster {
-            font-size: 100px;
+            font-size: 110px;
             filter: drop-shadow(0 0 10px red);
             transition: transform 0.1s;
             display: inline-block;
@@ -344,7 +344,7 @@
             left: 0;
             width: 100%;
             text-align: center;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             color: white;
             line-height: 18px;
@@ -482,8 +482,13 @@
             top: 15%;
             width: 100%;
             text-align: center;
-            font-size: 20px;
-            color: #aaa;
+            font-size: 30px;
+            font-weight: bold;
+            color: #00e676;
+            text-shadow: 1px 1px 0 black, -1px -1px 0 black,
+                -1px 1px 0 black, 1px -1px 0 black,
+                0px 1px 0 black, 0-1px 0 black,
+                -1px 0 0 black, 1px 0 0 black;
         }
 
         /* Overlays */
@@ -544,7 +549,7 @@
         }
 
         .survey-label {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin-bottom: 15px;
             display: block;
@@ -559,12 +564,12 @@
         .rpe-scale {
             display: flex;
             justify-content: space-between;
-            font-size: 16px;
+            font-size: 18px;
             color: #aaa;
         }
 
         .rpe-val {
-            font-size: 40px;
+            font-size: 45px;
             font-weight: bold;
             color: #fff;
         }
@@ -576,8 +581,16 @@
             padding: 12px 20px;
             margin: 5px;
             border-radius: 20px;
-            font-size: 16px;
+            font-size: 18px;
             min-width: 70px;
+        }
+
+        /* 「なし」ボタンがアクティブな時の色（水色） */
+        .pain-btn.active-none {
+            background-color: #00e676 !important;
+            border-color: #00cc69 !important;
+            color: #000 !important;
+            font-weight: bold !important;
         }
 
         .pain-btn.active {
@@ -592,7 +605,7 @@
             padding: 15px 50px;
             border-radius: 30px;
             border: none;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             margin-top: 20px;
         }
@@ -897,9 +910,10 @@
 
         /* グラフのタイトル */
         .chart-title {
-            font-size: 12px;
+            font-size: 15px;
             color: #aaa;
             margin-bottom: 4px;
+            margin-left: 15px;
         }
 
         /* グラフの箱は縦を少し低めにして 1画面に収まるよう調整 */
@@ -1003,7 +1017,7 @@
             margin: 8px;
             border-radius: 10px;
             border: 2px solid #555;
-            font-size: 18px;
+            font-size: 20px;
             color: white;
             background: #333;
             cursor: pointer;
@@ -1024,17 +1038,17 @@
         }
 
         #patient-id {
-            max-width: 68%;
+            max-width: 82%;
         }
 
         #user-height,
         #user-weight {
-            max-width: 93%;
+            max-width: 94%;
         }
 
         @media (max-width: 480px) {
             #patient-id {
-                max-width: 70%;
+                max-width: 79%;
             }
 
             #user-height,
@@ -1053,5 +1067,5 @@
             width: 80%;
             border: none;
             border-radius: 30px;
-            font-size: 20px;
+            font-size: 22px;
         }
