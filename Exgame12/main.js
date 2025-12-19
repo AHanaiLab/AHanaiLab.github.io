@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (labelEl) labelEl.innerText = "最大可動域 (L/R)";
                 let angL = Math.floor(metrics.maxAngleL || 0);
                 let angR = Math.floor(metrics.maxAngleR || 0);
-                if (valEl) valEl.innerText = angL + "° / " + angR + "°";
+                if (valEl) valEl.innerText = angL + "°/" + angR + "°";
             }
         }
     };
@@ -815,3 +815,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // EOF
+
