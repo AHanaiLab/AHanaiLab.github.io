@@ -711,17 +711,54 @@ document.addEventListener('DOMContentLoaded', () => {
             // ランク・スコア (ゲームモードのみ)
             if (appState.subMode === 'game') {
                 if (boxRankScore) boxRankScore.style.display = 'block';
-                const rScore = getElSafe('res-score-final'); if (rScore) rScore.innerText = metrics.score || 0;
+
+                const rScore = getElSafe('res-score-final');
                 const rRank = getElSafe('res-rank');
+                const scoreBox = getElSafe('res-rank-score-box'); // 親ボックスを取得
+
                 if (rRank) {
                     let score = metrics.score || 0;
-                    let count = metrics.count || 1;
+                    let count = Math.max(metrics.count, 1);
                     let rank = "B";
-                    if (score > count * 120) rank = "S";
-                    else if (score > count * 100) rank = "A";
+                    let mainColor = "#ffffff"; // ランクごとのテーマ色
+                    let glow = "none";
+
+                    // --- ランク判定と色の決定 ---
+                    if (score > count * 120) {
+                        rank = "S";
+                        mainColor = "#00ffff"; // シアン
+                        glow = "0 0 20px rgba(0, 255, 255, 0.6)";
+                    } else if (score > count * 100) {
+                        rank = "A";
+                        mainColor = "#ffd700"; // ゴールド
+                        glow = "0 0 15px rgba(255, 215, 0, 0.5)";
+                    } else {
+                        rank = "B";
+                        mainColor = "#ff8a65"; // 銅色に近いオレンジ
+                        glow = "none";
+                    }
+
+                    // --- スタイルの一括適用 ---
+                    // 1. ランク文字
                     rRank.innerText = rank;
+                    rRank.style.color = mainColor;
+                    rRank.style.textShadow = glow;
+
+                    // 2. スコア部分（ラベルと数値の両方を含むボックス全体）
+                    if (scoreBox) {
+                        // ボックス内のすべての文字色をランクの色に合わせる
+                        scoreBox.style.color = mainColor;
+                    }
+
+                    // 3. スコアの数値だけを更新
+                    if (rScore) {
+                        rScore.innerText = score;
+                        rScore.style.color = mainColor; // 数値も同じ色に
+                    }
                 }
             } else {
+                // CS-30（appState.exercise === 'cs30'）や
+                // 通常トレーニング時はここに入り、確実に非表示にする
                 if (boxRankScore) boxRankScore.style.display = 'none';
             }
 
@@ -810,9 +847,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // provide compatibility functions expected by HTML
     window.updateRPE = function (v) { document.getElementById('rpe-val').innerText = v; surveyData.rpe = v; };
-    window.setPain = function (v, btn) { surveyData.pain = v; document.querySelectorAll('.pain-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); };
+    window.setPain = function (v, btn) {
+        const noneBtn = document.getElementById('pain-none'); // 「なし」ボタン
+        const allBtns = document.querySelectorAll('.pain-btn');
 
+        if (v === 'None') {
+            // --- 「なし」が押された場合 ---
+            surveyData.pain = 'None';
+            // 一旦すべてのアクティブクラスを削除
+            allBtns.forEach(b => {
+                b.classList.remove('active');
+                b.classList.remove('active-none');
+            });
+            // 「なし」だけを水色にする
+            if (btn) btn.classList.add('active-none');
+        } else {
+            // --- 「膝・腰・他」が押された場合 ---
+            // 1. まず「なし」の選択を解除
+            if (noneBtn) noneBtn.classList.remove('active-none');
+
+            // 2. 自分自身の赤色を切り替える（トグル）
+            if (btn) btn.classList.toggle('active');
+
+            // 3. 現在アクティブなボタンから値を集計して surveyData.pain に入れる
+            let selected = [];
+            allBtns.forEach(b => {
+                if (b.classList.contains('active')) {
+                    // onclick="setPain('Knee', this)" の 'Knee' など、引数から判定するのが難しいため
+                    // ボタンのテキストや、もしあればデータ属性から取得します
+                    selected.push(b.innerText);
+                }
+            });
+            surveyData.pain = selected.length > 0 ? selected.join(',') : 'None';
+
+            // 4. もし全部外れたら「なし」を自動でONにする
+            if (selected.length === 0 && noneBtn) {
+                noneBtn.classList.add('active-none');
+                surveyData.pain = 'None';
+            }
+        }
+    };
 });
 
 // EOF
-
