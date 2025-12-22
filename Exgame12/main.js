@@ -563,11 +563,83 @@ function sendToGoogleSheets() {
         .catch(e => { alert("エラー"); if (btn) btn.disabled = false; });
 }
 
-function downloadCSV() {
-    let c = "ID,Time,Rep,Depth,Duration,Note\n";
-    metrics.logs.forEach(r => c += `${r.id},${r.time},${r.rep},${r.depth},${r.duration},${r.note}\n`);
-    const a = document.createElement("a"); a.href = encodeURI("data:text/csv;charset=utf-8," + c); a.download = "log.csv"; a.click();
-}
+// 関数の外（スクリプトのトップレベル）にフラグを定義
+let isDownloading = false;
+
+window.downloadCSV = function (event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (isDownloading) return;
+    isDownloading = true;
+
+    try {
+        const pid = document.getElementById('patient-id')?.value.trim() || "unknown";
+        const date = new Date().toLocaleString();
+        const mode = appState.exercise; // 'squat', 'balance', 'banzai'
+
+        let csv = "";
+        let header = "ID,日付,モード,";
+        let body = "";
+
+        // --- モード別の分岐処理 ---
+        if (mode === 'squat') {
+            header += "回数,深さ,持続時間,備考\n";
+            if (metrics.logs && metrics.logs.length > 0) {
+                metrics.logs.forEach(r => {
+                    body += `${pid},${r.time || date},${mode},${r.rep},${r.depth},${r.duration},${r.note || ""}\n`;
+                });
+            } else {
+                // ログがない場合（サマリーのみ）
+                const reps = document.getElementById('res-reps')?.innerText || "0";
+                body += `${pid},${date},${mode},${reps},,,サマリーのみ\n`;
+            }
+
+        } else if (mode === 'balance') {
+            header += "静止時間\n";
+            // 静止時間を取得（ID: res-simple-val または metricsから）
+            const balanceTime = document.getElementById('res-simple-val')?.innerText || "0";
+            body += `${pid},${date},${mode},${balanceTime}\n`;
+
+        } else if (mode === 'banzai') {
+            header += "最大角度(左),最大角度(右)\n";
+            // 左右の角度を取得（metricsに保存されている最大値、または画面表示値から）
+            const angleL = metrics.maxAngleL || metrics.angleL || 0;
+            const angleR = metrics.maxAngleR || metrics.angleR || 0;
+            body += `${pid},${date},${mode},${angleL},${angleR}\n`;
+        }
+
+        const finalCsv = header + body;
+
+        // --- ダウンロード処理 ---
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excel文字化け防止
+        const blob = new Blob([bom, finalCsv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.style.display = 'none';
+        a.href = url;
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        a.download = `log_${mode}_${pid}_${dateStr}.csv`;
+
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+    } catch (err) {
+        console.error("Download failed:", err);
+    } finally {
+        // 1秒後にダウンロードロックを解除
+        setTimeout(() => { isDownloading = false; }, 1000);
+    }
+};
 
 // --------- MediaPipe Pose 初期化（外部スクリプトが読み込まれている前提） ----------
 const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
