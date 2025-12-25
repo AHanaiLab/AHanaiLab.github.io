@@ -2,7 +2,8 @@
 // 注意: HTML に <div id="camera-screen"> を作成しておくこと
 
 // --------- 設定 ----------
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyKqUnAi2JcfbQCzeI4498mTYEXFDCo1itE9pdnOQB9JJfyFHGvM4Z2SpkZsMjGRPsk/exec";
+const GAS_URL_sq = "https://script.google.com/macros/s/AKfycbwXna5al48qGjhWujDyoWYQF0WJ77fJbcWfyEUak2b55LQd0DU7eUlzrWcq90Dd9xfH/exec";
+const GAS_URL_ms = "https://script.google.com/macros/s/AKfycbwXna5al48qGjhWujDyoWYQF0WJ77fJbcWfyEUak2b55LQd0DU7eUlzrWcq90Dd9xfH/exec";
 
 const KNEE_IN_THRESHOLD = 0.04;
 const BAD_POSTURE_ANGLE = 75;
@@ -533,35 +534,109 @@ function calcScienceMetrics() {
     const mets = predVO2 / 3.5;
 
     const elP = getElSafe('val-power'); if (elP) elP.innerText = Math.round(stsPower);
-    const elPr = getElSafe('val-power-rel'); if (elPr) elPr.innerText = stsPowerRel.toFixed(2) + " W/kg";
+    const elPr = getElSafe('val-power-rel'); if (elPr) elPr.innerText = "( " + stsPowerRel.toFixed(2) + " W/kg )";
     const elV = getElSafe('val-vo2'); if (elV) elV.innerText = Math.round(predVO2);
     const elM = getElSafe('val-mets'); if (elM) elM.innerText = mets.toFixed(1);
     const sm = getElSafe('science-metrics'); if (sm) sm.style.display = (appState.exercise === 'squat') ? 'block' : 'none';
 }
 
-// --------- 送信 / CSV ----------
+
+// --------- 送信 / CSV ---------- //今後書き換え？
 function sendToGoogleSheets() {
     const btn = getElSafe('cloud-btn'); if (btn) { btn.innerText = "送信中..."; btn.disabled = true; }
-    const sID = appState.patientID + "_" + Date.now();
-    const fatigue = (appState.exercise === 'squat') ? (getElSafe('res-fatigue') && getElSafe('res-fatigue').innerText) : "-";
-    let scoreVal = metrics.score, maxVal = metrics.maxCombo;
-    if (appState.exercise === 'balance') maxVal = metrics.maxBalanceTime;
-    if (appState.exercise === 'banzai') scoreVal = (metrics.maxAngleL + metrics.maxAngleR) / 2;
+
+    const pID = appState.patientID || "unknown"; // ID不明ならunknown
+    const date = getNowStr();
+    const exercise = appState.exercise; // 'squat', 'cs30', 'balance', 'banzai'
+    const subMode = appState.subMode;   // 'slow', 'self', 'game'
+
+    let targetURL = "";
+    let summaryPayload = {};
+
+    // --- 1. スクワットグループ (slow, self, game) ---
+    if (exercise === 'squat') {
+        targetURL = GAS_URL_sq;
+
+        // ゲーム時のみのデータを取得
+        const isGame = (subMode === 'game');
+        const rankEl = getElSafe('res-rank');
+        const fatigueEl = getElSafe('res-fatigue');
+        const powerEl = getElSafe('val-power');
+        const vo2El = getElSafe('val-vo2');
+
+        summaryPayload = {
+            date: date,
+            patientID: pID,
+            subMode: subMode,
+            rpe: surveyData.rpe,
+            pain: surveyData.pain,
+            rank: isGame ? (rankEl ? rankEl.innerText : "-") : "-",
+            score: isGame ? (metrics.score || 0) : "-",
+            reps: metrics.count || 0,
+            fatigue: fatigueEl ? fatigueEl.innerText : "-",
+            power: powerEl ? powerEl.innerText : "-",
+            vo2: vo2El ? vo2El.innerText : "-"
+        };
+
+    }
+    // --- 2. 測定グループ (cs-30, balance, banzai) ---
+    else {
+        targetURL = GAS_URL_ms;
+
+        let resultVal = "-";
+        let fatigue = "-";
+        let power = "-";
+        let vo2 = "-";
+
+        if (exercise === 'cs-30') {
+            resultVal = metrics.count || 0;
+            fatigue = getElSafe('res-fatigue')?.innerText;
+            power = getElSafe('val-power')?.innerText || "-";
+            vo2 = getElSafe('val-vo2')?.innerText || "-";
+        } else if (exercise === 'balance') {
+            resultVal = metrics.maxBalanceTime || 0;
+        } else if (exercise === 'banzai') {
+            resultVal = (metrics.maxAngleL || 0) + "° / " + (metrics.maxAngleR || 0) + "°";
+        }
+
+        summaryPayload = {
+            date: date,
+            patientID: pID,
+            mode: exercise,
+            rpe: surveyData.rpe || "-",
+            pain: surveyData.pain || "-",
+            result: resultVal,
+            fatigue: fatigue,
+            power: power,
+            vo2: vo2
+        };
+    }
+
+    // 送信データ全体の構築
     const payload = {
-        sessionID: sID,
-        summary: {
-            patientID: appState.patientID, date: getNowStr(),
-            mode: appState.exercise + "_" + appState.subMode,
-            reps: metrics.count, score: scoreVal,
-            maxCombo: maxVal, fatigue: fatigue,
-            rpe: surveyData.rpe, pain: surveyData.pain
-        },
-        logs: metrics.logs
+        sessionID: pID + "_" + Date.now(),
+        summary: summaryPayload,
+        logs: metrics.logs || []
     };
-    fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload), headers: { "Content-Type": "text/plain" } })
-        .then(() => { alert("完了"); if (btn) btn.innerText = "送信済み"; })
-        .catch(e => { alert("エラー"); if (btn) btn.disabled = false; });
+
+    // 指定のURLへ送信
+    fetch(targetURL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "text/plain" }
+    })
+        .then(() => {
+            alert("クラウドへの保存が完了しました");
+            if (btn) btn.innerText = "送信済み";
+        })
+        .catch(e => {
+            console.error(e);
+            alert("送信エラーが発生しました");
+            if (btn) btn.disabled = false;
+            if (btn) btn.innerText = "再試行";
+        });
 }
+
 
 // 関数の外（スクリプトのトップレベル）にフラグを定義
 let isDownloading = false;
@@ -579,6 +654,7 @@ window.downloadCSV = function (event) {
         const pid = document.getElementById('patient-id')?.value.trim() || "unknown";
         const date = new Date().toLocaleString();
         const mode = appState.exercise; // 'squat', 'balance', 'banzai'
+        const subMode = appState.subMode; // 'slow', 'self', 'cs30', 'game' など
 
         let csv = "";
         let header = "ID,日付,モード,";
@@ -589,12 +665,12 @@ window.downloadCSV = function (event) {
             header += "回数,深さ,持続時間,備考\n";
             if (metrics.logs && metrics.logs.length > 0) {
                 metrics.logs.forEach(r => {
-                    body += `${pid},${r.time || date},${mode},${r.rep},${r.depth},${r.duration},${r.note || ""}\n`;
+                    body += `${pid},${r.time || date},${subMode}_${mode},${r.rep},${r.depth},${r.duration},${r.note || ""}\n`;
                 });
             } else {
                 // ログがない場合（サマリーのみ）
                 const reps = document.getElementById('res-reps')?.innerText || "0";
-                body += `${pid},${date},${mode},${reps},,,サマリーのみ\n`;
+                body += `${pid},${date},${subMode}_${mode},${reps},,,サマリーのみ\n`;
             }
 
         } else if (mode === 'balance') {
@@ -622,7 +698,7 @@ window.downloadCSV = function (event) {
         a.style.display = 'none';
         a.href = url;
 
-        const dateStr = new Date().toISOString().split('T')[0];
+        const dateStr = new Date().toISOString();
         a.download = `log_${mode}_${pid}_${dateStr}.csv`;
 
         document.body.appendChild(a);
