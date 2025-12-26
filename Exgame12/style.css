@@ -63,6 +63,64 @@
             z-index: 10;
         }
 
+        /* === BGMスイッチスタイル === */
+        /* スイッチ全体のサイズ */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        /* 隠れたチェックボックス */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* スライダー（背景） */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        /* ONの時の背景色（鮮やかな青） */
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        /* ONの時の丸いポッチの移動 */
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        /* 角を丸くする */
+        .slider.round {
+            border-radius: 24px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
         /* === 共通パーツ === */
         .control-area {
             position: absolute;
@@ -1087,4 +1145,3 @@
             border-radius: 30px;
             font-size: 22px;
         }
-
