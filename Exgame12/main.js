@@ -2,8 +2,7 @@
 // 注意: HTML に <div id="camera-screen"> を作成しておくこと
 
 // --------- 設定 ----------
-const GAS_URL_sq = "https://script.google.com/macros/s/AKfycbwXna5al48qGjhWujDyoWYQF0WJ77fJbcWfyEUak2b55LQd0DU7eUlzrWcq90Dd9xfH/exec";
-const GAS_URL_ms = "https://script.google.com/macros/s/AKfycbwXna5al48qGjhWujDyoWYQF0WJ77fJbcWfyEUak2b55LQd0DU7eUlzrWcq90Dd9xfH/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwptY96GJx-A_kXHRLvokJXK0e_fH19t0hoC_Ayijbbz1nzfZClmDj1WzLQfD9P9AvO/exec";
 
 const KNEE_IN_THRESHOLD = 0.04;
 const BAD_POSTURE_ANGLE = 75;
@@ -18,6 +17,42 @@ const CHAIR_HEIGHT = 0.40;
 
 // --------- 状態 ----------
 let appState = { exercise: "", subMode: "", isRunning: false, isFinished: false, isCameraReady: false, startTime: null, repStart: 0, patientID: "Guest" };
+// BGMの音源設定（実際のファイルパスに合わせて書き換えてください）
+const bgmFiles = {
+    'squat': 'audio/bgm_squat.mp3',
+    'cs-30': 'audio/bgm_cs30.mp3',
+    'balance': 'audio/bgm_balance.mp3',
+    'banzai': 'audio/bgm_banzai.mp3'
+};
+
+let currentAudio = null; // 現在再生中のAudioオブジェクト
+
+// BGM再生用の関数
+function playBGM(exercise) {
+    const isEnabled = document.getElementById('bgm-switch').checked;
+    if (!isEnabled) return;
+
+    // すでに再生中なら一旦止める
+    stopBGM();
+
+    const filePath = bgmFiles[exercise];
+    if (filePath) {
+        currentAudio = new Audio(filePath);
+        currentAudio.loop = true;  // ループ再生
+        currentAudio.volume = 0.4; // 音量は控えめ（0.0〜1.0）
+        currentAudio.play().catch(e => console.log("Audio play blocked: ", e));
+    }
+}
+
+// BGM停止用の関数
+function stopBGM() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+}
+
 let metrics = {
     count: 0, minAngle: 180, isDeep: false, isMoving: false, isClean: true,
     score: 0, combo: 0, maxCombo: 0, monsterLevel: 0, monsterHP: 0, defeated: 0, logs: [],
@@ -543,97 +578,78 @@ function calcScienceMetrics() {
 
 // --------- 送信 / CSV ---------- //今後書き換え？
 function sendToGoogleSheets() {
-    const btn = getElSafe('cloud-btn'); if (btn) { btn.innerText = "送信中..."; btn.disabled = true; }
+    const btn = getElSafe('cloud-btn');
+    if (btn) { btn.innerText = "送信中..."; btn.disabled = true; }
 
-    const pID = appState.patientID || "unknown"; // ID不明ならunknown
+    // --- 値を安全に取得し、"--" を "-" に変換する補助関数 ---
+    const getCleanText = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return "-";
+        let text = el.innerText.trim();
+        return (text === "" || text === "--") ? "-" : text;
+    };
+
+    const pID = (document.getElementById('patient-id')?.value || "Guest").trim();
     const date = getNowStr();
-    const exercise = appState.exercise; // 'squat', 'cs30', 'balance', 'banzai'
-    const subMode = appState.subMode;   // 'slow', 'self', 'game'
+    const exercise = appState.exercise;
+    const subMode = appState.subMode;
 
-    let targetURL = "";
-    let summaryPayload = {};
+    // 1. 基本情報の整理
+    let modeName = (exercise === 'squat') ? subMode : exercise;
+    let rpe = surveyData.rpe || "-";
+    let pain = surveyData.pain || "-";
 
-    // --- 1. スクワットグループ (slow, self, game) ---
-    if (exercise === 'squat') {
-        targetURL = GAS_URL_sq;
+    // 2. 数値情報の取得（画面の "--" を "-" に置換）
+    let rank = (subMode === 'game') ? getCleanText('res-rank') : "-";
+    let score = (subMode === 'game') ? (metrics.score || "0") : "-";
 
-        // ゲーム時のみのデータを取得
-        const isGame = (subMode === 'game');
-        const rankEl = getElSafe('res-rank');
-        const fatigueEl = getElSafe('res-fatigue');
-        const powerEl = getElSafe('val-power');
-        const vo2El = getElSafe('val-vo2');
-
-        summaryPayload = {
-            date: date,
-            patientID: pID,
-            subMode: subMode,
-            rpe: surveyData.rpe,
-            pain: surveyData.pain,
-            rank: isGame ? (rankEl ? rankEl.innerText : "-") : "-",
-            score: isGame ? (metrics.score || 0) : "-",
-            reps: metrics.count || 0,
-            fatigue: fatigueEl ? fatigueEl.innerText : "-",
-            power: powerEl ? powerEl.innerText : "-",
-            vo2: vo2El ? vo2El.innerText : "-"
-        };
-
-    }
-    // --- 2. 測定グループ (cs-30, balance, banzai) ---
-    else {
-        targetURL = GAS_URL_ms;
-
-        let resultVal = "-";
-        let fatigue = "-";
-        let power = "-";
-        let vo2 = "-";
-
-        if (exercise === 'cs-30') {
-            resultVal = metrics.count || 0;
-            fatigue = getElSafe('res-fatigue')?.innerText;
-            power = getElSafe('val-power')?.innerText || "-";
-            vo2 = getElSafe('val-vo2')?.innerText || "-";
-        } else if (exercise === 'balance') {
-            resultVal = metrics.maxBalanceTime || 0;
-        } else if (exercise === 'banzai') {
-            resultVal = (metrics.maxAngleL || 0) + "° / " + (metrics.maxAngleR || 0) + "°";
-        }
-
-        summaryPayload = {
-            date: date,
-            patientID: pID,
-            mode: exercise,
-            rpe: surveyData.rpe || "-",
-            pain: surveyData.pain || "-",
-            result: resultVal,
-            fatigue: fatigue,
-            power: power,
-            vo2: vo2
-        };
+    // repsの判定（モードにより中身を変える）
+    let reps = "-";
+    if (exercise === 'squat' || exercise === 'cs-30') {
+        reps = metrics.count || "0";
+    } else if (exercise === 'balance') {
+        reps = metrics.maxBalanceTime || "0";
+    } else if (exercise === 'banzai') {
+        reps = (metrics.maxAngleL.toPrecision([4]) || 0) + " / " + (metrics.maxAngleR.toPrecision([4]) || 0);
     }
 
-    // 送信データ全体の構築
+    // 3. 推定値の取得（画面から直接取る）
+    let fatigue = getCleanText('res-fatigue');
+    let power = getCleanText('val-power');
+    let vo2 = getCleanText('val-vo2');
+
+    // --- 【重要】GASに送る「順番」を確定させる ---
+    const summaryPayload = {
+        date: date,          // A列
+        patientID: pID,     // B列
+        mode: modeName,      // C列
+        rpe: rpe,            // D列
+        pain: pain,          // E列
+        rank: rank,          // F列
+        score: score,        // G列
+        reps: reps,          // H列
+        fatigue: fatigue,    // I列
+        power: power,        // J列
+        vo2: vo2             // K列
+    };
+
     const payload = {
-        sessionID: pID + "_" + Date.now(),
         summary: summaryPayload,
         logs: metrics.logs || []
     };
 
-    // 指定のURLへ送信
-    fetch(targetURL, {
+    fetch(GAS_URL, {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { "Content-Type": "text/plain" }
     })
         .then(() => {
-            alert("クラウドへの保存が完了しました");
+            alert("保存完了");
             if (btn) btn.innerText = "送信済み";
         })
         .catch(e => {
-            console.error(e);
-            alert("送信エラーが発生しました");
-            if (btn) btn.disabled = false;
-            if (btn) btn.innerText = "再試行";
+            alert("エラー");
+            if (btn) { btn.disabled = false; btn.innerText = "再試行"; }
         });
 }
 
