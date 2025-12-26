@@ -140,6 +140,32 @@
 
             <div class="warning-text" id="warning-msg"></div>
             <div class="status-lamp lamp-squat" id="status-lamp">待機</div>
+
+            <div id="bgm-control-ui" style="
+                position: absolute; 
+                bottom: 25px; 
+                left: 45px; 
+                transform: translateX(-50%); 
+                background: rgba(0,0,0,0.6); 
+                padding: 10px 12px; 
+                border-radius: 15px; 
+                color: white; 
+                display: flex; 
+                flex-direction: column; /* 縦並びに設定 */
+                align-items: center; 
+                gap: 5px; 
+                z-index: 100; 
+                backdrop-filter: blur(5px);
+                min-width: 60px;">
+
+                <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">BGM</span>
+
+                <label class="switch">
+                    <input type="checkbox" id="bgm-switch" checked onchange="handleBgmToggle(this)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
             <div class="control-area">
                 <button class="finish-btn" onclick="finishSession()">終了</button>
             </div>
