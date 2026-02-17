@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Exercise Oncology App - Backend & Frontend Infrastructure
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 256
+    Runtime: python3.10
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,POST,GET,PUT,PATCH,DELETE'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # --- DynamoDB Tables ---
+  ActivityPacingMainTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ActivityPacing_Main
+      AttributeDefinitions:
+        - AttributeName: param
+          AttributeType: S
+      KeySchema:
+        - AttributeName: param
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ActivityPacingLogsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ActivityPacing_Logs
+      AttributeDefinitions:
+        - AttributeName: subjectId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: subjectId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # --- Lambda Function ---
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./backend/ # Assumes code is in a 'backend' folder locally
+      Handler: lambda_function.lambda_handler
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_MAIN: !Ref ActivityPacingMainTable
+          DYNAMODB_TABLE_LOGS: !Ref ActivityPacingLogsTable
+          BEDROCK_MODEL_ID: "anthropic.claude-3-5-sonnet-20240620-v1:0"
+          SES_SENDER_EMAIL: "noreply@example.com" # Update after deploy
+      Layers:
+        - arn:aws:lambda:ap-northeast-1:770693421928:layer:Klayers-p310-pandas:25
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ActivityPacingMainTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ActivityPacingLogsTable
+        - Version: '2012-10-17' # Bedrock Access
+          Statement:
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: "*"
+        - Version: '2012-10-17' # SES Access
+          Statement:
+            - Effect: Allow
+              Action: ses:SendEmail
+              Resource: "*"
+        - Version: '2012-10-17' # Marketplace Access (For Model Enablement)
+          Statement:
+            - Effect: Allow
+              Action: 
+                - aws-marketplace:ViewSubscriptions
+                - aws-marketplace:Subscribe
+                - aws-marketplace:Unsubscribe
+              Resource: "*"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        ExercisesApi:
+          Type: Api
+          Properties:
+            Path: /exercises
+            Method: GET
+        ProjectsApi:
+          Type: Api
+          Properties:
+            Path: /projects
+            Method: GET
+        ExportApi:
+          Type: Api
+          Properties:
+            Path: /export
+            Method: GET
+        ProposalApi:
+          Type: Api
+          Properties:
+            Path: /proposal
+            Method: POST
+
+  # --- Frontend Hosting (S3 + CloudFront) ---
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "activity-pacing-frontend-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FrontendOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties: 
+      OriginAccessControlConfig: 
+        Description: "OAC for Frontend Bucket"
+        Name: !Sub "FrontendOAC-${AWS::StackName}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt FrontendOAC.Id
+            S3OriginConfig: {}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+            - Effect: Allow
+              Principal:
+                Service: cloudfront.amazonaws.com
+              Action: s3:GetObject
+              Resource: !Sub "arn:aws:s3:::${FrontendBucket}/*"
+              Condition:
+                StringEquals:
+                  AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}"
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway Endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  CloudFrontUrl:
+    Description: "Frontend URL"
+    Value: !GetAtt FrontendDistribution.DomainName
