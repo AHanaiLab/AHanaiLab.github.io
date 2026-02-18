@@ -4,27 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Squat Master v9.1 (Fixed)</title>
+    <title>Squat Master v9.1 (Clean)</title>
 
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script type="module">
+        import {
+            PoseLandmarker,
+            FilesetResolver,
+            DrawingUtils
+        } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+
+        window.PoseLandmarker = PoseLandmarker;
+        window.FilesetResolver = FilesetResolver;
+        window.DrawingUtils = DrawingUtils;
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <link rel="stylesheet" href="style.css">
 
-    <!-- ★ スクロールなし全画面化 CSS -->
     <style>
-        /* ====== 全画面共通 screen ====== */
         .screen {
             position: fixed;
             top: 0;
@@ -35,7 +38,6 @@
             display: none;
         }
 
-        /* ====== カメラ画面 ====== */
         .container {
             position: fixed;
             top: 0;
@@ -57,7 +59,6 @@
 </head>
 
 <body>
-
     <!-- ▼ カメラ画面（スクワット / バランス / バンザイ） -->
     <div class="container screen" id="camera-screen">
         <video id="input_video" playsinline></video>
@@ -161,13 +162,13 @@
                 <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">BGM</span>
 
                 <label class="switch">
-                    <input type="checkbox" id="bgm-switch" checked onchange="handleBgmToggle(this)">
+                    <input type="checkbox" id="bgm-switch" checked>
                     <span class="slider round"></span>
                 </label>
             </div>
 
             <div class="control-area">
-                <button class="finish-btn" onclick="finishSession()">終了</button>
+                <button class="finish-btn" id="btn-finish">終了</button>
             </div>
         </div>
     </div>
@@ -179,7 +180,7 @@
         <h1 style="color:#00e676; text-shadow:0 0 10px green; margin-bottom:20px;">SQUAT MASTER</h1>
 
         <div style="width: 100%; margin: 0 auto 10px auto; display: flex; flex-direction: column; align-items: center;">
-            <input type="text" id="patient-id" class="input-area" placeholder="IDを入力"
+            <input type="text" id="patient-id" class="input-area" placeholder="IDを入力（半角コンマ不可）"
                 style="width: 100%; margin-bottom: 5px;">
         </div>
 
@@ -197,12 +198,12 @@
 
         <!-- メインメニュー -->
         <div id="main-menu" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-            <button class="big-btn btn-squat" onclick="selectCategory('squat')">
+            <button class="big-btn btn-squat" id="btn-cat-squat">
                 <div>🏋️ スクワット</div>
                 <div style="font-size:14px; margin-top:5px;">スロトレ・セルフ・ゲーム</div>
             </button>
 
-            <button class="big-btn btn-measure" onclick="selectCategory('measure')">
+            <button class="big-btn btn-measure" id="btn-cat-measure">
                 <div>📊 測定 (テスト)</div>
                 <div style="font-size:14px; margin-top:5px;">CS-30・バランス・バンザイ</div>
             </button>
@@ -212,12 +213,12 @@
         <div id="squat-menu" style="display:none; width:100%; flex-direction:column; align-items:center;">
             <h3 style="color:#ccc;">スクワット (トレーニング)</h3>
 
-            <button class="sub-btn selected" id="opt-slow" onclick="setSquatMode('slow')">🐢 スロトレ</button>
-            <button class="sub-btn" id="opt-self" onclick="setSquatMode('self')">🙂 セルフペース</button>
-            <button class="sub-btn" id="opt-game" onclick="setSquatMode('game')">⚔️ ゲームモード</button>
+            <button class="sub-btn selected mode-opt" id="opt-slow">🐢 スロトレ</button>
+            <button class="sub-btn mode-opt" id="opt-self">🙂 セルフペース</button>
+            <button class="sub-btn mode-opt" id="opt-game">⚔️ ゲームモード</button>
 
-            <button class="start-btn" onclick="startApp()">スタート</button>
-            <button onclick="backToMain()"
+            <button class="start-btn">スタート</button>
+            <button id="btn-back-main-1" class="text-back-btn"
                 style="font-size:18px; background:transparent; border:none; color:#aaa; margin-top:20px;">戻る</button>
         </div>
 
@@ -225,12 +226,12 @@
         <div id="measure-menu" style="display:none; width:100%; flex-direction:column; align-items:center;">
             <h3 style="color:#ccc;">測定 (テスト)</h3>
 
-            <button class="sub-btn" id="opt-cs30" onclick="setMode('squat','cs30')">⏱ CS-30(30秒立ち座り)</button>
-            <button class="sub-btn" id="opt-balance" onclick="setMode('balance','normal')">🦩 片足立ちテスト</button>
-            <button class="sub-btn" id="opt-banzai" onclick="setMode('banzai','normal')">🙆 バンザイ(可動域テスト)</button>
+            <button class="sub-btn mode-opt" id="opt-cs30">⏱ CS-30(30秒立ち座り)</button>
+            <button class="sub-btn mode-opt" id="opt-balance">🦩 片足立ちテスト</button>
+            <button class="sub-btn mode-opt" id="opt-banzai">🙆 バンザイ(可動域テスト)</button>
 
-            <button class="start-btn" onclick="startApp()">スタート</button>
-            <button onclick="backToMain()"
+            <button class="start-btn">スタート</button>
+            <button id="btn-back-main-2" class="text-back-btn"
                 style="font-size:18px; background:transparent; border:none; color:#aaa; margin-top:20px;">戻る</button>
         </div>
     </div>
@@ -242,19 +243,19 @@
         <div class="survey-card">
             <span class="survey-label">Q1. きつさは？ (0〜10)</span>
             <div class="rpe-val" id="rpe-val">3</div>
-            <input type="range" id="rpe-slider" min="0" max="10" value="3" oninput="updateRPE(this.value)">
+            <input type="range" id="rpe-slider" min="0" max="10" value="3">
             <div class="rpe-scale"><span>楽</span><span>普通</span><span>きつい</span></div>
         </div>
 
         <div class="survey-card">
             <span class="survey-label">Q2. 痛みはありますか？</span>
-            <button id="pain-none" class="pain-btn active-none" onclick="setPain('None', this)">なし</button>
-            <button class="pain-btn" onclick="setPain('Knee',this)">膝</button>
-            <button class="pain-btn" onclick="setPain('Back',this)">腰</button>
-            <button class="pain-btn" onclick="setPain('Other',this)">他</button>
+            <button id="pain-none" class="pain-btn active-none" data-pain="None">なし</button>
+            <button class="pain-btn" data-pain="Knee">膝</button>
+            <button class="pain-btn" data-pain="Back">腰</button>
+            <button class="pain-btn" data-pain="Other">他</button>
         </div>
 
-        <button class="survey-done-btn" onclick="submitSurvey()">結果を見る</button>
+        <button class="survey-done-btn" id="btn-submit-survey">結果を見る</button>
     </div>
 
     <!-- ▼ RESULT 画面：2ページ切替 -->
@@ -264,7 +265,7 @@
             RESULT
         </h2>
 
-        <div id="res-page-1" class="result-page" style="display: flex; flex-direction: column; flex-grow: 1;">
+        <div id="res-page-1" class="result-page">
             <div id="res-summary-area" style="width: 95%; max-width: 650px; margin: 0 auto;">
 
                 <!-- ▼ スクワット / ゲーム用結果 -->
@@ -334,22 +335,22 @@
 
             </div>
 
-            <div id="nav-area-page1" class="nav-area">
+            <div id="nav-area-page1" class="nav-area" style="margin-top: 20px;">
                 <button id="btn-res-next">
                     次へ &gt;
                 </button>
 
                 <div id="simple-mode-buttons" class="nav-area"
                     style="display:none; flex-direction: column; width:100%; gap:12px;">
-                    <button class="cloud-btn" onclick="sendToGoogleSheets()">クラウドへ保存</button>
-                    <button class="dl-btn" onclick="downloadCSV(event)">CSVダウンロード</button>
-                    <button class="close-btn" onclick="location.reload()">閉じる</button>
+                    <button class="cloud-btn">クラウドへ保存</button>
+                    <button class="dl-btn">CSVダウンロード</button>
+                    <button class="close-btn">閉じる</button>
                 </div>
             </div>
         </div>
 
         <div id="res-page-2" class="result-page" style="display:none; flex-direction: column; flex-grow: 1;">
-            <div class="chart-container">
+            <div class="chart-container" style="margin-bottom: 10px;">
                 <div class="chart-title">スピード推移 (秒/rep)</div>
                 <div class="chart-box">
                     <canvas id="speedChart"></canvas>
@@ -361,15 +362,15 @@
                 </div>
             </div>
 
-            <div class="nav-area" style="flex-direction: column;">
-                <button class="cloud-btn" onclick="sendToGoogleSheets()">クラウドへ保存</button>
-                <button class="dl-btn" onclick="downloadCSV(event)">CSVダウンロード</button>
+            <div class="nav-area" style="flex-direction: column; margin-top: 0px;">
+                <button class="cloud-btn">クラウドへ保存</button>
+                <button class="dl-btn">CSVダウンロード</button>
 
                 <div style="margin-top: 20px; display:flex; gap:10px; justify-content:center; width:100%;">
                     <button id="btn-res-prev" class="sub-btn">
                         &lt; 前へ
                     </button>
-                    <button class="close-btn" onclick="location.reload()" style="margin:0; width:auto; flex:1;">
+                    <button class="close-btn" style="margin:0; width:auto; flex:1;">
                         閉じる
                     </button>
                 </div>
@@ -378,7 +379,7 @@
 
     </div>
 
-    <script src="main.js"></script>
+    <script type="module" src="main_mps.js"></script>
 </body>
 
 </html>
