@@ -1,5 +1,13 @@
-console.log("TEST V149");
-/* oncology_app/app.js - Refactored for Firebase Integration */
+console.log("TEST V150 Amplify");
+/* oncology_app/app.js - Refactored for Amplify Integration */
+import { Amplify } from 'aws-amplify';
+import { get, post, put } from 'aws-amplify/api';
+// Assuming amplify_outputs.json is available in the same directory or served at root
+import outputs from './amplify_outputs.json' with { type: 'json' };
+
+Amplify.configure(outputs);
+
+const PACING_API_NAME = "pacingAPI";
 
 /* ===== 共通状態 / State ===== */
 const STORAGE_KEY_VO2 = "eo_vo2_records_v1";
@@ -67,12 +75,11 @@ window.openScheduleSettings = function () {
 };
 
 
-/* Util for Safe URL Generation */
+/* Util for Safe URL Generation - DEPRECATED for Pacing API */
 function getApiUrl(path) {
-    // Validates window.AWS_CONFIG presence
+    // Legacy support for non-Pacing API calls if any
     const config = window.AWS_CONFIG || {};
     const base = config.apiBase || "";
-    // Robust join (removes trailing slash from base, leading slash from path)
     const cleanBase = base.replace(/\/+$/, '');
     const cleanPath = path.replace(/^\/+/, '');
     return `${cleanBase}/${cleanPath}`;
@@ -427,12 +434,14 @@ const MoveCare = {
             localStorage.setItem("currentUser", JSON.stringify(sessionData));
             if (mode) localStorage.setItem("mc-auth-mode", mode);
 
-            // 被験者データに予定があれば反映
             if (userData.daily_schedule && Array.isArray(userData.daily_schedule) && userData.daily_schedule.length > 0) {
-                console.log("Syncing daily_schedule from profile...");
+                // Legacy sync - prefer fetching from Pacing API
+                console.log("Syncing daily_schedule from legacy profile...");
                 AppState.dailyPlan = userData.daily_schedule;
-                localStorage.setItem("eo_daily_plan_v1", JSON.stringify(AppState.dailyPlan));
             }
+
+            // V150: Fetch Daily Plan from Pacing API
+            await MoveCare.fetchDailyPlan();
 
             // Success Transition
             console.log(">>> UI Rendering Start <<<");
@@ -805,22 +814,74 @@ const MoveCare = {
             if (inputView) inputView.classList.add("hidden");
             if (resultView) resultView.classList.remove("hidden");
 
-            // Call API Gateway
+            // Call Pacing API: PUT Daily State
             let result = null;
             try {
-                const res = await fetch(getApiUrl('proposal'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        subjectId: String(AppState.subject.id),
-                        currentCondition: context
-                    })
+                const todayStr = getJSTDateStr();
+
+                // 1. Save Daily State
+                const statePayload = {
+                    energy_budget_0_100: parseInt(context.energy_budget_0_100),
+                    fatigue_0_10: parseInt(context.fatigue_0_10),
+                    pain_0_10: parseInt(context.pain_0_10),
+                    sleep_quality: parseInt(context.sleep_quality)
+                };
+
+                console.log("Putting Daily State:", statePayload);
+                const stateOp = put({
+                    apiName: PACING_API_NAME,
+                    path: `/planner/daily-state/${todayStr}`,
+                    options: {
+                        body: statePayload
+                    }
                 });
-                if (res.ok) {
-                    result = await res.json();
+                const stateRes = await stateOp.response;
+                const savedState = await stateRes.body.json();
+                console.log("Daily State Saved:", savedState);
+
+                // 2. Fetch Suggestions (if needed) or just use the local logic/response
+                // The new API doesn't return a schedule on PUT state. 
+                // We should fetch suggestions or re-fetch the plan if the backend did something smart.
+                // For now, let's look for suggestions.
+                const suggOp = get({
+                    apiName: PACING_API_NAME,
+                    path: `/planner/suggestions`,
+                    options: { queryParams: { date: todayStr } }
+                });
+                const suggRes = await suggOp.response;
+                const suggestionData = await suggRes.body.json();
+                console.log("Suggestions:", suggestionData);
+
+                // Map SuggestionResponse to the "result" structure expected by UI
+                // Note: The UI expects 'daily_schedule' array. 
+                // Since the API only returns cards, we might need to rely on the *existing* schedule + suggestions.
+                // Or maybe the user wants to see the suggestion cards in the "result" view.
+
+                // Construct a result object compatible with renderDailyAdvice
+                result = {
+                    message: `今日のコンディション(Score: ${savedState.good_day_score_0_100})に基づき、プランを提案します。`,
+                    daily_schedule: [], // Suggestions are separate now
+                    suggestion: suggestionData // Pass raw suggestions for custom rendering if needed
+                };
+
+                // Temporary: convert suggestion cards to "AI Tasks" for visualization if allowed
+                if (suggestionData.cards && suggestionData.cards.length > 0) {
+                    // Since the UI renders "daily_schedule", we can mock some items or allow user to pick from cards.
+                    // IMPORTANT: The existing UI renders `actionEl` chips from `daily_schedule`.
+                    // We will map cards to this structure.
+                    result.daily_schedule = suggestionData.cards.map(card => ({
+                        title: card.title,
+                        // Assign a mock time or slot based on logic? 
+                        // Or just list them. The existing code handles undefined startMinute.
+                        time: "推奨",
+                        isAI: true,
+                        planned_mets: card.mets,
+                        planned_duration_min: card.duration_options_min[0] || 15
+                    }));
                 } else {
-                    throw new Error("AI Server error.");
+                    result.message += " 今日はゆっくり休むことをお勧めします。";
                 }
+
             } catch (e) {
                 console.warn("API Error", e);
                 alert("AIサーバーへの接続に失敗しました。もう一度お試しください。");
@@ -1235,16 +1296,59 @@ const MoveCare = {
         };
 
         try {
-            // 2. AWS Logging
-            const res = await fetch(getApiUrl('logs'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    subjectId: String(AppState.subject.id),
-                    log: logData
-                })
+            // 2. AWS Logging via Amplify Pacing API (POST /planner/tasks)
+            // Note: Data structure must match "TaskCreate" (planned_mets, planned_duration_min etc)
+            // However, logActivity implies a DONE task. The API has POST /planner/tasks (planned) + POST /complete?
+            // Or maybe we just create it as planned (auto-rest might trigger) then locally mark done?
+            // The prompt says "data structure ... map exactly".
+            // TaskCreate: { date, time_block, title, category, planned_duration_min, planned_mets }
+
+            const todayStr = getJSTDateStr(); // YYYY-MM-DD
+            const now = new Date();
+            const timeBlock = now.getHours() < 12 ? "AM" : (now.getHours() < 18 ? "PM" : "EVENING");
+
+            const taskPayload = {
+                date: todayStr,
+                time_block: timeBlock,
+                title: logData.name,
+                category: "EXERCISE", // Default to EXERCISE or map from item.category
+                planned_duration_min: duration,
+                planned_mets: parseFloat(logData.mets),
+                auto_rest: true // Let server decide
+            };
+
+            if (item.category) taskPayload.category = item.category;
+
+            console.log("Creating Task (Log):", taskPayload);
+            const taskOp = post({
+                apiName: PACING_API_NAME,
+                path: '/planner/tasks',
+                options: {
+                    body: taskPayload
+                }
             });
-            if (!res.ok) console.warn("Log upload failed", res.status);
+
+            const taskRes = await taskOp.response;
+            const createdTask = await taskRes.body.json();
+            console.log("Task Created:", createdTask);
+
+            // If we need to mark it as DONE on server immediately:
+            if (createdTask.id) {
+                const completePayload = {
+                    status: "DONE",
+                    actual_duration_min: duration,
+                    actual_mets: parseFloat(logData.mets),
+                    post_fatigue_0_10: AppState.dailyState.fatigue_0_10 || 0, // Fallback
+                    perceived_difficulty: 0,
+                    carryover_to_nextday: false
+                };
+                const compOp = post({
+                    apiName: PACING_API_NAME,
+                    path: `/planner/tasks/${createdTask.id}/complete`,
+                    options: { body: completePayload }
+                });
+                await compOp.response;
+            }
 
             // 3. Local Log Update (V146: Restored for immediate UI update)
             if (!AppState.subject.logs) AppState.subject.logs = [];
@@ -1307,15 +1411,25 @@ const MoveCare = {
             fatigue, pain, mood
         };
         try {
-            const res = await fetch(getApiUrl('logs'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ subjectId: AppState.subject.id, log: logData })
+            // Amplify PUT /planner/daily-state/{date}
+            const todayStr = getJSTDateStr();
+            const statePayload = {
+                energy_budget_0_100: 50, // Default or calc
+                fatigue_0_10: fatigue,
+                pain_0_10: pain,
+                sleep_quality: 1
+            };
+            if (mood === 'high') statePayload.energy_budget_0_100 = 90;
+            if (mood === 'low') statePayload.energy_budget_0_100 = 30;
+
+            const op = put({
+                apiName: PACING_API_NAME,
+                path: `/planner/daily-state/${todayStr}`,
+                options: { body: statePayload }
             });
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || "API Error " + res.status);
-            }
+            await op.response;
+
+            // Local update
             if (!AppState.subject.logs) AppState.subject.logs = [];
             AppState.subject.logs.push(logData);
         } catch (e) { console.error("Log Condition Error", e); }
@@ -1448,8 +1562,55 @@ MoveCare.openQuickPlanModal = function (activity) {
 };
 
 MoveCare.proposeSingleActivity = function (activity) {
-    // 既存互換用
     MoveCare.openQuickPlanModal(activity);
+};
+
+// V150: New Method to Fetch Daily Plan
+MoveCare.fetchDailyPlan = async function () {
+    try {
+        const todayStr = getJSTDateStr();
+        console.log("Fetching Daily Plan for:", todayStr);
+        const op = get({
+            apiName: PACING_API_NAME,
+            path: '/planner/day',
+            options: { queryParams: { date: todayStr } }
+        });
+        const res = await op.response;
+        const data = await res.body.json(); // { date, tasks, rest_blocks, ... }
+
+        if (data && data.tasks) {
+            // Map API Tasks to AppState.dailyPlan structure
+            // API: { id, title, planned_duration_min, planned_mets, status, start_at/time_block ... }
+            // App: { title, startMinute, planned_duration_min, planned_mets, isAI, isDone ... }
+
+            AppState.dailyPlan = data.tasks.map(t => {
+                let startMean = 0;
+                // Convert time_block or start_at to startMinute
+                // This is an estimation if start_at is null.
+                if (t.start_at) {
+                    const d = new Date(t.start_at);
+                    startMean = d.getHours() * 60 + d.getMinutes();
+                } else if (t.time_block === 'AM') startMean = 9 * 60;
+                else if (t.time_block === 'PM') startMean = 14 * 60;
+                else startMean = 19 * 60;
+
+                return {
+                    id: t.id,
+                    title: t.title,
+                    category: t.category,
+                    planned_mets: t.planned_mets,
+                    planned_duration_min: t.planned_duration_min,
+                    startMinute: startMean, // Approximation
+                    isDone: t.status === 'DONE',
+                    isAI: false // API doesn't seem to have isAI flag in Task schema?
+                };
+            });
+
+            renderPlanTimeline();
+        }
+    } catch (e) {
+        console.warn("Failed to fetch daily plan:", e);
+    }
 };
 
 // --- Render Program List (Scheduled & Anytime [Categorized]) ---
