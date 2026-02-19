@@ -1,13 +1,10 @@
 /* oncology_app/app.js - V152/V177 AWS Migration */
 
 // 1. 関数の器だけ先に定義（二重宣言を避けるため let を使用）
-let get, post, put, del;
-
 function bootstrapAmplify() {
     const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
     if (!lib || !lib.Amplify) return false;
 
-    // 定数は既存の宣言（45行目付近）と衝突しないよう、直接文字列で設定
     lib.Amplify.configure({
         API: { REST: { "pacingAPI": { 
             endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com", 
@@ -15,14 +12,17 @@ function bootstrapAmplify() {
         } } }
     });
 
-    get  = lib.Amplify.API.get.bind(lib.Amplify.API);
-    post = lib.Amplify.API.post.bind(lib.Amplify.API);
-    put  = lib.Amplify.API.put.bind(lib.Amplify.API);
-    del  = lib.Amplify.API.del.bind(lib.Amplify.API);
+    // ここで window オブジェクトにも確実に割り当てる
+    window.get = lib.Amplify.API.get.bind(lib.Amplify.API);
+    window.post = lib.Amplify.API.post.bind(lib.Amplify.API);
+    window.put = lib.Amplify.API.put.bind(lib.Amplify.API);
+    window.del = lib.Amplify.API.del.bind(lib.Amplify.API);
+    
+    // グローバルの変数にも代入
+    get = window.get; post = window.post; put = window.put; del = window.del;
     
     return true;
 }
-
 // 2. ライブラリがロードされるまで待機し、完了後にのみメインロジックを開始
 const initRetry = setInterval(() => {
     if (bootstrapAmplify()) {
@@ -1619,6 +1619,30 @@ function intensityToRPE(percent) {
     else return { range: "13–15", label: "きつめ〜かなりきつい" };
 }
 
+function renderBottomNav() {
+    const container = document.querySelector('.bottom-nav-inner');
+    if (!container) return;
+
+    container.innerHTML = APP_MENUS.map(menu => {
+        const isVisible = AppState.settings.visibility[menu.id] !== false;
+        if (!isVisible) return '';
+        return `
+            <button onclick="switchScreen('${menu.screen}'); setActiveNav('${menu.id}')" 
+                    id="${menu.id}" class="nav-item">
+                <span class="text-xl">${menu.icon}</span>
+                <span class="text-[10px] font-bold">${menu.label}</span>
+            </button>
+        `;
+    }).join('');
+}
+
+// 関連して setActiveNav も必要です
+window.setActiveNav = function(id) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-emerald-600'));
+    const activeEl = document.getElementById(id);
+    if (activeEl) activeEl.classList.add('active', 'text-emerald-600');
+};
+
 function getTriAxisPrescription(percentOverride) {
     if (!AppState.currentVo2max) return null;
 
@@ -1649,6 +1673,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
