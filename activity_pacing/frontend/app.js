@@ -1,48 +1,57 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
-(function() {
-    console.log("TEST V152 AWS Migration - Application Startup");
+console.log("TEST V152 AWS Migration - Application Startup");
 
-    const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+// 1. 関数の器をグローバルに作成（エラーを物理的に防ぐ）
+window.get = function() { 
+    console.warn("API calling before initialization...");
+    return { response: Promise.resolve({ body: { json: () => ({}) } }) }; 
+};
+window.post = window.get; window.put = window.get; window.del = window.get;
 
-    // 1. グローバルに関数の器だけ先に作る（エラー落ち防止）
-    window.get = function() { return { response: Promise.resolve({ body: { json: () => ({}) } }) }; };
-    window.post = window.get; window.put = window.get; window.del = window.get;
-
-    const startApp = () => {
-        const lib = window.aws_amplify;
-        if (!lib || !lib.Amplify) return false;
-
+// 2. 初期化関数を「どこからでも見える場所」に定義
+window.initializeAmplifyDirectly = function() {
+    // window.aws_amplify または直接 Amplify を探す
+    const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
+    
+    if (lib && lib.Amplify) {
         console.log("Amplify Library Detected! Configuring...");
         lib.Amplify.configure({
-            API: { REST: { "pacingAPI": { endpoint: PACING_API_ENDPOINT, region: "ap-northeast-1" } } }
+            API: {
+                REST: {
+                    "pacingAPI": {
+                        endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
+                        region: "ap-northeast-1"
+                    }
+                }
+            }
         });
         
-        // 2. 本物の関数を紐付け
+        // 関数を実体に差し替え
         window.get  = lib.Amplify.API.get.bind(lib.Amplify.API);
         window.post = lib.Amplify.API.post.bind(lib.Amplify.API);
         window.put  = lib.Amplify.API.put.bind(lib.Amplify.API);
         window.del  = lib.Amplify.API.del.bind(lib.Amplify.API);
         
-        console.log("Amplify Functions Initialized.");
+        console.log("Amplify Functions Ready.");
         return true;
-    };
+    }
+    return false;
+};
 
-    // 3. ライブラリがロードされるまで 100ミリ秒おきにチェックする
-    let checkCount = 0;
-    const checkTimer = setInterval(() => {
-        checkCount++;
-        if (startApp()) {
-            clearInterval(checkTimer);
-            // ライブラリが準備できてからLIFFを初期化するように指示（フラグ立て）
-            window.amplify_ready = true;
-        } else if (checkCount > 50) { // 5秒待ってもダメなら
-            clearInterval(checkTimer);
-            console.error("Amplify load timeout.");
-        }
-    }, 100);
-})();
+// 3. ライブラリが届くまでしつこく回す（50ms間隔で最大100回 = 5秒）
+let retryCount = 0;
+const setupTimer = setInterval(() => {
+    retryCount++;
+    if (window.initializeAmplifyDirectly()) {
+        clearInterval(setupTimer);
+        console.log("Initialization Success!");
+    } else if (retryCount > 100) {
+        clearInterval(setupTimer);
+        console.error("Critical Error: Amplify library not found. Network blocked?");
+    }
+}, 50);
 
-// --- 以降は既存の AppState 等の定義 ---
+// --- 4. 既存の AppState 定義へ ---
 
 // 即座に実行
 initializeAmplifyDirectly();
@@ -1658,6 +1667,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
