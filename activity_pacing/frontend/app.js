@@ -1,49 +1,45 @@
-/* oncology_app/app.js - V152/V177 AWS Migration Full Integration */
+/* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
 
-// 1. グローバル変数の定義（実体はまだ入れない）
-let get, post, put, del;
+// 1. 最初に関数の器だけ作っておく (順序問題を物理的に回避)
+let get = async () => { console.warn("API not ready"); return { response: { body: { json: () => ({}) } } }; };
+let post = get; let put = get; let del = get;
 
-// 2. アプリ全体の初期化と起動を司る関数
-function bootstrapApp() {
-    // window.aws_amplify または window.Amplify を確認
+const PACING_API_NAME = "pacingAPI";
+const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+
+// 2. 初期化関数
+function bootstrapAmplify() {
     const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
-    
-    if (!lib || !lib.Amplify) {
-        console.warn("Waiting for AWS Amplify library...");
-        return false; 
-    }
+    if (!lib || !lib.Amplify) return false;
 
-    console.log("Amplify Library Detected! Initializing...");
-
-    // AWS構成の適用
+    console.log("Amplify Library Found. Configuring...");
     lib.Amplify.configure({
         API: {
             REST: {
-                "pacingAPI": {
-                    endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
+                [PACING_API_NAME]: {
+                    endpoint: PACING_API_ENDPOINT,
                     region: "ap-northeast-1"
                 }
             }
         }
     });
 
-    // 関数の実体をグローバル変数に紐付け
+    // 器の中身を本物に差し替える
     get  = lib.Amplify.API.get.bind(lib.Amplify.API);
     post = lib.Amplify.API.post.bind(lib.Amplify.API);
     put  = lib.Amplify.API.put.bind(lib.Amplify.API);
     del  = lib.Amplify.API.del.bind(lib.Amplify.API);
-
-    console.log("Amplify Fully Ready. Starting Modules...");
+    
+    console.log("Amplify API Functions Ready.");
     return true;
 }
 
-// 3. ライブラリが届くまで 50ms おきにチェック
-const startTimer = setInterval(() => {
-    if (bootstrapApp()) {
-        clearInterval(startTimer);
-        // ここで初めてログイン処理などのメインロジックが動けるようになる
-    }
+// 3. ライブラリが届くまで回す
+const setupInterval = setInterval(() => {
+    if (bootstrapAmplify()) clearInterval(setupInterval);
 }, 50);
+
+/* ===== 共通状態 / State (ここからは既存のコード) ===== */
 // ------------------------------------------
 
 const PACING_API_NAME = "pacingAPI";
@@ -1656,6 +1652,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
