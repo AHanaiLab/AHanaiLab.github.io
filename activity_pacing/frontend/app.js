@@ -1,14 +1,16 @@
-/* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
-console.log("TEST V152 AWS Migration - Sync Check...");
+/* oncology_app/app.js - V152/V177 AWS Migration Final */
+console.log("TEST V152 AWS Migration - Initializing...");
 
-// 1. 関数の器を window オブジェクト（グローバル）に作成
-window.api_get = null;
-window.api_post = null;
+// 1. 関数の器を window に作成し、最初から「空の関数」を入れておく（クラッシュ防止）
+window.get = window.get || function() { console.error("Amplify GET not initialized yet"); };
+window.post = window.post || function() { console.error("Amplify POST not initialized yet"); };
+window.put = window.put || function() { console.error("Amplify PUT not initialized yet"); };
+window.del = window.del || function() { console.error("Amplify DEL not initialized yet"); };
 
 const initializeAmplifyDirectly = () => {
     const lib = window.aws_amplify;
     if (lib && lib.Amplify) {
-        console.log("Amplify Library Detected!");
+        console.log("Amplify Library Status: Loaded!");
         lib.Amplify.configure({
             API: {
                 REST: {
@@ -20,14 +22,20 @@ const initializeAmplifyDirectly = () => {
             }
         });
         
-        // 2. 器の中に実際の Amplify 機能を流し込む
-        window.api_get  = lib.Amplify.API.get.bind(lib.Amplify.API);
-        window.api_post = lib.Amplify.API.post.bind(lib.Amplify.API);
+        // 2. ここで本物の関数を上書き代入する
+        window.get = lib.Amplify.API.get.bind(lib.Amplify.API);
+        window.post = lib.Amplify.API.post.bind(lib.Amplify.API);
+        window.put = lib.Amplify.API.put.bind(lib.Amplify.API);
+        window.del = lib.Amplify.API.del.bind(lib.Amplify.API);
         
-        return lib;
+        // ローカル変数 get にも参照を渡す
+        window.api_ready = true;
+        return true;
     }
-    return null;
+    return false;
 };
+
+// 即座に実行
 initializeAmplifyDirectly();
 // ------------------------------------------
 
@@ -1641,6 +1649,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
