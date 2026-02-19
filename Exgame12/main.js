@@ -15,6 +15,19 @@ const MONSTERS = [["👾", 300], ["🦇", 500], ["👻", 800], ["👹", 1200], [
 const G_ACC = 9.81;
 const CHAIR_HEIGHT = 0.40;
 
+const FATIGUE_THRESHOLD = 1.0;
+const SQUAT_MIN_ANGLE = 70;
+const SQUAT_MAX_ANGLE = 180;
+const SQUAT_START_THRESHOLD = 165;
+const CLEAN_FORM_THRESHOLD = 160;
+const CRITICAL_DEPTH_ANGLE = 100;
+const DAMAGE_BASE = 100;
+const DAMAGE_CRIT_BASE = 150;
+const DAMAGE_COMBO_BONUS = 5;
+const DAMAGE_CRIT_BONUS = 10;
+const DAMAGE_MISS = 10;
+const MAX_MONSTER_LEVEL = 5;
+
 
 let poseLandmarker = null;
 let drawingUtils = null;
@@ -268,7 +281,7 @@ function setupElements() {
     };
 
     // ボタンに便利なショートハンド（存在チェックしてから）
-    const cloudBtn = getElSafe('cloud-btn'); if (cloudBtn) cloudBtn.addEventListener('click', sendToGoogleSheets);
+    const cloudBtn = getElSafe('cloud-btn'); if (cloudBtn) cloudBtn.addEventListener('click', () => { initAudio(); playSound('ok'); sendToGoogleSheets(); });
 }
 
 // --------- UI 操作関数（画面切替 / メニュー） ----------
@@ -490,7 +503,7 @@ function damageEffect(dmg, isCrit) {
         setTimeout(() => {
             playSound('win'); speak("撃破！");
             metrics.monsterLevel++; metrics.defeated++;
-            if (metrics.monsterLevel >= 5) { finishSession(); return; }
+            if (metrics.monsterLevel >= MAX_MONSTER_LEVEL) { finishSession(); return; }
             spawnMonster();
         }, 500);
     }
@@ -529,6 +542,129 @@ function checkBanzai(sL, eL, sR, eR, hL, hR) {
     if (els.bzAngleL) els.bzAngleL.innerText = Math.floor(angL) + "°"; if (els.bzAngleR) els.bzAngleR.innerText = Math.floor(angR) + "°";
     if (els.bzBarL) els.bzBarL.style.height = (angL / 180 * 100) + "%"; if (els.bzBarR) els.bzBarR.style.height = (angR / 180 * 100) + "%";
 }
+
+function processSquatLogic(lms) {
+    let side = "RIGHT", sIdx = 12, hIdx = 24, kIdx = 26, aIdx = 28;
+    if (lms[11].visibility > lms[12].visibility) { side = "LEFT"; sIdx = 11; hIdx = 23; kIdx = 25; aIdx = 27; }
+
+    if (lms[sIdx].visibility > 0.5 && lms[hIdx].visibility > 0.5) {
+        const kneeAngle = calculateAngle(lms[hIdx], lms[kIdx], lms[aIdx]);
+        const hipAngle = calculateAngle(lms[sIdx], lms[hIdx], lms[kIdx]);
+
+        const minAng = SQUAT_MAX_ANGLE, maxAng = SQUAT_MIN_ANGLE;
+        let p = (minAng - kneeAngle) / (minAng - maxAng) * 100; if (p < 0) p = 0; if (p > 100) p = 100;
+
+        if (els.depthBar) els.depthBar.style.height = p + "%";
+
+        let tp = (minAng - DEPTH_THRESHOLD) / (minAng - maxAng) * 100;
+        if (els.targetLine) els.targetLine.style.top = tp + "%";
+        if (els.targetLabel) els.targetLabel.style.top = tp + "%";
+
+        if (appState.subMode === 'self' || appState.subMode === 'game') {
+            if (els.pacerGhost) els.pacerGhost.style.top = p + "%";
+        }
+
+        // Draw Skeleton for Squat
+        if (canvasCtx && canvasElement) {
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(lms[sIdx].x * canvasElement.width, lms[sIdx].y * canvasElement.height);
+            canvasCtx.lineTo(lms[hIdx].x * canvasElement.width, lms[hIdx].y * canvasElement.height);
+            canvasCtx.lineTo(lms[kIdx].x * canvasElement.width, lms[kIdx].y * canvasElement.height);
+            canvasCtx.strokeStyle = "yellow"; canvasCtx.lineWidth = 5; canvasCtx.stroke();
+        }
+
+        let warning = "", isKneeIn = false;
+        if (side === "RIGHT" && lms[kIdx].x > lms[aIdx].x + KNEE_IN_THRESHOLD) isKneeIn = true;
+        if (side === "LEFT" && lms[kIdx].x < lms[aIdx].x - KNEE_IN_THRESHOLD) isKneeIn = true;
+
+        if (isKneeIn && kneeAngle < CLEAN_FORM_THRESHOLD) {
+            if (metrics.isMoving && metrics.isClean) { warning = "ひざを開いて！"; metrics.isClean = false; speak("ひざ"); playSound('ng'); }
+        }
+        if (hipAngle < BAD_POSTURE_ANGLE && kneeAngle < CLEAN_FORM_THRESHOLD) {
+            if (metrics.isMoving && metrics.isClean) { warning = "胸を張って！"; metrics.isClean = false; speak("むね"); playSound('ng'); }
+        }
+
+        if (warning) {
+            if (els.warningMsg) { els.warningMsg.innerText = warning; els.warningMsg.style.display = 'block'; }
+        } else {
+            if (els.warningMsg) els.warningMsg.style.display = 'none';
+        }
+
+        if (appState.isRunning) {
+            // Start movement check
+            if (kneeAngle < SQUAT_START_THRESHOLD && !metrics.isMoving) {
+                metrics.isMoving = true;
+                appState.repStart = Date.now();
+                metrics.minAngle = SQUAT_MAX_ANGLE;
+                metrics.isDeep = false;
+                metrics.isClean = true;
+            }
+
+            if (metrics.isMoving) {
+                if (kneeAngle < metrics.minAngle) metrics.minAngle = kneeAngle;
+                if (kneeAngle < DEPTH_THRESHOLD) metrics.isDeep = true;
+
+                // Reset check (Rep complete)
+                if (kneeAngle > RESET_ANGLE) {
+                    if (metrics.isDeep) {
+                        metrics.count++;
+                        const dur = (Date.now() - appState.repStart) / 1000;
+
+                        // Game Mode Logic
+                        if (appState.subMode === 'game') {
+                            let damage = 0, isCrit = false;
+                            if (metrics.isClean) {
+                                metrics.combo++;
+                                if (metrics.combo > metrics.maxCombo) metrics.maxCombo = metrics.combo;
+
+                                if (metrics.minAngle < CRITICAL_DEPTH_ANGLE) {
+                                    damage = DAMAGE_CRIT_BASE + metrics.combo * DAMAGE_CRIT_BONUS;
+                                    isCrit = true;
+                                } else {
+                                    damage = DAMAGE_BASE + metrics.combo * DAMAGE_COMBO_BONUS;
+                                }
+                                updateScore(damage);
+                                showComboEffect(metrics.combo);
+                            } else {
+                                metrics.combo = 0;
+                                damage = DAMAGE_MISS;
+                                updateScore(DAMAGE_MISS);
+                                speak("おしい");
+                            }
+                            damageEffect(damage, isCrit);
+                            if (els.gmComboVal) els.gmComboVal.innerText = metrics.combo;
+                        }
+                        // Normal Training Logic
+                        else {
+                            if (els.trReps) els.trReps.innerText = metrics.count;
+                            if (els.trSpeed) els.trSpeed.innerText = dur.toFixed(2);
+                            if (metrics.isClean) speak("OK", true);
+                        }
+
+                        let note = "Perfect"; if (warning) note = "Error";
+                        metrics.logs.push({
+                            id: appState.patientID,
+                            time: getNowStr(),
+                            rep: metrics.count,
+                            depth: Math.floor(metrics.minAngle),
+                            duration: parseFloat(dur.toFixed(2)),
+                            note: note
+                        });
+                    }
+                    metrics.isMoving = false;
+                }
+            }
+        }
+
+        // Status Lamp
+        if (metrics.isDeep) {
+            if (els.statusLamp) { els.statusLamp.innerText = "OK!"; els.statusLamp.className = "status-lamp lamp-ready"; }
+        } else {
+            if (els.statusLamp) { els.statusLamp.innerText = "しゃがむ"; els.statusLamp.className = "status-lamp lamp-squat"; }
+        }
+    }
+}
+
 
 // onResults は MediaPipe Pose のコールバックで呼ばれる
 function onResults(results) {
@@ -590,67 +726,7 @@ function onResults(results) {
             if (lms[11].visibility > 0.5 && lms[23].visibility > 0.5) checkBanzai(lms[11], lms[13], lms[12], lms[14], lms[23], lms[24]);
         } else {
             // squat logic
-            let side = "RIGHT", sIdx = 12, hIdx = 24, kIdx = 26, aIdx = 28;
-            if (lms[11].visibility > lms[12].visibility) { side = "LEFT"; sIdx = 11; hIdx = 23; kIdx = 25; aIdx = 27; }
-            if (lms[sIdx].visibility > 0.5 && lms[hIdx].visibility > 0.5) {
-                const kneeAngle = calculateAngle(lms[hIdx], lms[kIdx], lms[aIdx]);
-                const hipAngle = calculateAngle(lms[sIdx], lms[hIdx], lms[kIdx]);
-
-                const minAng = 180, maxAng = 70;
-                let p = (minAng - kneeAngle) / (minAng - maxAng) * 100; if (p < 0) p = 0; if (p > 100) p = 100;
-                if (els.depthBar) els.depthBar.style.height = p + "%";
-                let tp = (minAng - DEPTH_THRESHOLD) / (minAng - maxAng) * 100;
-                if (els.targetLine) els.targetLine.style.top = tp + "%";
-                if (els.targetLabel) els.targetLabel.style.top = tp + "%";
-                if (appState.subMode === 'self' || appState.subMode === 'game') if (els.pacerGhost) els.pacerGhost.style.top = p + "%";
-
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(lms[sIdx].x * canvasElement.width, lms[sIdx].y * canvasElement.height);
-                canvasCtx.lineTo(lms[hIdx].x * canvasElement.width, lms[hIdx].y * canvasElement.height);
-                canvasCtx.lineTo(lms[kIdx].x * canvasElement.width, lms[kIdx].y * canvasElement.height);
-                canvasCtx.strokeStyle = "yellow"; canvasCtx.lineWidth = 5; canvasCtx.stroke();
-
-                let warning = "", isKneeIn = false;
-                if (side === "RIGHT" && lms[kIdx].x > lms[aIdx].x + KNEE_IN_THRESHOLD) isKneeIn = true;
-                if (side === "LEFT" && lms[kIdx].x < lms[aIdx].x - KNEE_IN_THRESHOLD) isKneeIn = true;
-                if (isKneeIn && kneeAngle < 160) { if (metrics.isMoving && metrics.isClean) { warning = "ひざを開いて！"; metrics.isClean = false; speak("ひざ"); playSound('ng'); } }
-                if (hipAngle < BAD_POSTURE_ANGLE && kneeAngle < 160) { if (metrics.isMoving && metrics.isClean) { warning = "胸を張って！"; metrics.isClean = false; speak("むね"); playSound('ng'); } }
-                if (warning) { if (els.warningMsg) { els.warningMsg.innerText = warning; els.warningMsg.style.display = 'block'; } } else { if (els.warningMsg) els.warningMsg.style.display = 'none'; }
-
-                if (appState.isRunning) {
-                    if (kneeAngle < 165 && !metrics.isMoving) { metrics.isMoving = true; appState.repStart = Date.now(); metrics.minAngle = 180; metrics.isDeep = false; metrics.isClean = true; }
-                    if (metrics.isMoving) {
-                        if (kneeAngle < metrics.minAngle) metrics.minAngle = kneeAngle;
-                        if (kneeAngle < DEPTH_THRESHOLD) metrics.isDeep = true;
-                        if (kneeAngle > RESET_ANGLE) {
-                            if (metrics.isDeep) {
-                                metrics.count++;
-                                const dur = (Date.now() - appState.repStart) / 1000;
-                                if (appState.subMode === 'game') {
-                                    let damage = 0, isCrit = false;
-                                    if (metrics.isClean) {
-                                        metrics.combo++; if (metrics.combo > metrics.maxCombo) metrics.maxCombo = metrics.combo;
-                                        if (metrics.minAngle < 100) { damage = 150 + metrics.combo * 10; isCrit = true; } else { damage = 100 + metrics.combo * 5; }
-                                        updateScore(damage); showComboEffect(metrics.combo);
-                                    } else {
-                                        metrics.combo = 0; damage = 10; updateScore(10); speak("おしい");
-                                    }
-                                    damageEffect(damage, isCrit);
-                                    if (els.gmComboVal) els.gmComboVal.innerText = metrics.combo;
-                                } else {
-                                    if (els.trReps) els.trReps.innerText = metrics.count;
-                                    if (els.trSpeed) els.trSpeed.innerText = dur.toFixed(2);
-                                    if (metrics.isClean) speak("OK", true);
-                                }
-                                let note = "Perfect"; if (warning) note = "Error";
-                                metrics.logs.push({ id: appState.patientID, time: getNowStr(), rep: metrics.count, depth: Math.floor(metrics.minAngle), duration: parseFloat(dur.toFixed(2)), note: note });
-                            }
-                            metrics.isMoving = false;
-                        }
-                    }
-                }
-                if (metrics.isDeep) { if (els.statusLamp) { els.statusLamp.innerText = "OK!"; els.statusLamp.className = "status-lamp lamp-ready"; } } else { if (els.statusLamp) { els.statusLamp.innerText = "しゃがむ"; els.statusLamp.className = "status-lamp lamp-squat"; } }
-            }
+            processSquatLogic(lms);
         }
     }
 
@@ -950,6 +1026,7 @@ window.downloadCSV = function (event) {
 function bindUIActions() {
     const startBtns = document.querySelectorAll('.start-btn');
     startBtns.forEach(b => b.addEventListener('click', startApp));
+
     const backBtns = document.querySelectorAll('[onclick^="backToMain"], [onclick*="backToMain("]');
     // backToMain を HTML 側から直接呼ぶことも想定。ただし安全に。
     const backManual = getElSafe('back-to-main-manual');
@@ -1033,13 +1110,14 @@ function submitSurvey() {
 
     if (appState.exercise === 'squat') {
         // --- スクワット系 ---
-        if (blkGameArea) blkGameArea.style.display = 'block';
+        // CSSクラスで制御するため、インラインの display 指定を解除する ('block' -> '')
+        if (blkGameArea) blkGameArea.style.display = '';
         if (blkSimple) blkSimple.style.display = 'none';
-        if (blkScience) blkScience.style.display = 'block';
-        if (btnNext) btnNext.style.display = 'block';
+        if (blkScience) blkScience.style.display = ''; // block -> ''
+        if (btnNext) btnNext.style.display = ''; // block -> ''
         if (simpleBtns) simpleBtns.style.display = 'none';
 
-        if (rowSquatStats) rowSquatStats.style.display = 'flex';
+        if (rowSquatStats) rowSquatStats.style.display = 'flex'; // これは flex 固定でOK
 
         // 回数の更新
         const rReps = getElSafe('res-reps');
@@ -1170,37 +1248,44 @@ function setupEventListeners() {
     console.log("Setting up event listeners...");
 
     // --- カテゴリ・モード選択 ---
-    document.getElementById("btn-cat-squat")?.addEventListener("click", () => selectCategory("squat"));
-    document.getElementById("btn-cat-measure")?.addEventListener("click", () => selectCategory("measure"));
+    document.getElementById("btn-cat-squat")?.addEventListener("click", () => { initAudio(); playSound('ok'); selectCategory("squat"); });
+    document.getElementById("btn-cat-measure")?.addEventListener("click", () => { initAudio(); playSound('ok'); selectCategory("measure"); });
 
     // スクワットサブモード
     ["slow", "self", "game"].forEach(mode => {
-        document.getElementById(`opt-${mode}`)?.addEventListener("click", () => setSquatMode(mode));
+        document.getElementById(`opt-${mode}`)?.addEventListener("click", () => { initAudio(); playSound('ok'); setSquatMode(mode); });
     });
 
     // 測定系モード
-    document.getElementById("opt-cs30")?.addEventListener("click", () => setMode("squat", "cs30"));
-    document.getElementById("opt-balance")?.addEventListener("click", () => setMode("balance", "normal"));
-    document.getElementById("opt-banzai")?.addEventListener("click", () => setMode("banzai", "normal"));
+    document.getElementById("opt-cs30")?.addEventListener("click", () => { initAudio(); playSound('ok'); setMode("squat", "cs30"); });
+    document.getElementById("opt-balance")?.addEventListener("click", () => { initAudio(); playSound('ok'); setMode("balance", "normal"); });
+    document.getElementById("opt-banzai")?.addEventListener("click", () => { initAudio(); playSound('ok'); setMode("banzai", "normal"); });
 
     // --- アプリ制御系 ---
     document.querySelectorAll(".start-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+            initAudio(); playSound('ok');
             console.log("Start button clicked");
             startApp();
         });
     });
 
-    document.getElementById("btn-finish")?.addEventListener("click", finishSession);
+    document.getElementById("btn-finish")?.addEventListener("click", () => { initAudio(); playSound('ok'); finishSession(); });
 
     // 戻る/ホーム
     ["btn-back-main-1", "btn-back-main-2"].forEach(id => {
-        document.getElementById(id)?.addEventListener("click", backToMain);
+        document.getElementById(id)?.addEventListener("click", () => { initAudio(); playSound('ok'); backToMain(); });
     });
 
     // 閉じるボタン（リロード）
     document.querySelectorAll(".close-btn, [onclick*='location.reload']").forEach(btn => {
-        btn.addEventListener("click", () => location.reload());
+        btn.addEventListener("click", () => {
+            initAudio();
+            playSound('ok');
+            setTimeout(() => {
+                location.reload();
+            }, 100); //効果音を鳴らしおわるまでタイムラグ
+        });
     });
 
     // --- BGM・アンケート ---
@@ -1240,7 +1325,7 @@ function setupEventListeners() {
 
     painButtons.forEach(btn => {
         btn.addEventListener("click", () => {
-
+            initAudio(); playSound('ok');
             const v = btn.dataset.pain;
             const allBtns = document.querySelectorAll(".pain-btn");
 
@@ -1288,6 +1373,7 @@ function setupEventListeners() {
     const submitBtn = document.getElementById("btn-submit-survey");
     if (submitBtn) {
         submitBtn.addEventListener("click", () => {
+            initAudio(); playSound('ok');
             submitSurvey();
 
             // safety: リロード後トップに戻す（念のため）
@@ -1306,15 +1392,15 @@ function setupEventListeners() {
 
     // --- データ保存 ---
     document.querySelectorAll('.dl-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => downloadCSV(e));
+        btn.addEventListener('click', (e) => { initAudio(); playSound('ok'); downloadCSV(e); });
     });
     document.querySelectorAll('.cloud-btn').forEach(btn => {
-        btn.addEventListener('click', () => sendToGoogleSheets());
+        btn.addEventListener('click', () => { initAudio(); playSound('ok'); sendToGoogleSheets(); });
     });
 
     // リザルト画面のページ切り替え
-    document.getElementById('btn-res-next')?.addEventListener('click', showResultPage2);
-    document.getElementById('btn-res-prev')?.addEventListener('click', showResultPage1);
+    document.getElementById('btn-res-next')?.addEventListener('click', () => { initAudio(); playSound('ok'); showResultPage2(); });
+    document.getElementById('btn-res-prev')?.addEventListener('click', () => { initAudio(); playSound('ok'); showResultPage1(); });
 }
 
 /**
