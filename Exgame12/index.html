@@ -25,37 +25,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
-    <style>
-        .screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
-            display: none;
-        }
-
-        .container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
-            display: none;
-        }
-
-        video#input_video,
-        canvas#output_canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-    </style>
 </head>
 
 <body>
@@ -90,17 +61,20 @@
                     <div class="timer-box" id="tr-timer">30</div>
                     <div class="pacer-counter" id="tr-pacer-box">
                         <div style="font-size:15px; color:#ccc;">ペース</div>
-                        <div style="font-size:30px; font-weight:bold;" id="tr-pacer-val">0</div>
+                        <div style="font-size:30px; font-weight:bold; font-family: 'Arial Black', sans-serif;"
+                            id="tr-pacer-val">0</div>
                     </div>
                 </div>
 
                 <div id="game-info">
                     <div class="game-header-L">
                         <div style="font-size:15px; color:#ccc;">LEVEL</div>
-                        <div style="font-size:30px; font-weight:bold;" id="gm-lvl-val">1</div>
+                        <div style="font-size:30px; font-weight:bold; font-family: 'Arial Black', sans-serif;"
+                            id="gm-lvl-val">1</div>
                         <div style="height:5px;"></div>
                         <div style="font-size:15px; color:#ccc;">COMBO</div>
-                        <div style="font-size:30px; font-weight:bold; color:#ffeb3b;" id="gm-combo-val">0</div>
+                        <div style="font-size:30px; font-weight:bold; color:#ffeb3b; font-family: 'Arial Black', sans-serif;"
+                            id="gm-combo-val">0</div>
                     </div>
                     <div class="game-header-R">
                         <div class="score-label">SCORE</div>
@@ -119,7 +93,8 @@
             </div>
 
             <div id="balance-ui">
-                <div class="balance-timer-main" id="bal-timer">0.00</div>
+                <div class="balance-timer-main" id="bal-timer" style="font-family: 'Arial Black', sans-serif;">0.00
+                </div>
                 <div class="balance-timer-main" style="font-size:20px; top:35%;" id="bal-status">両足着地中...</div>
                 <div class="info-panel" style="top:auto; bottom:150px;">
                     <div class="info-label">ベスト記録</div>
@@ -132,32 +107,17 @@
                 <div class="banzai-gauge" id="banzai-gauge-L">
                     <div class="banzai-bar" id="banzai-bar-L"></div>
                 </div>
-                <div class="banzai-text" id="bz-angle-l">0°</div>
+                <div class="banzai-text" id="bz-angle-l" style="font-family: 'Arial Black', sans-serif;">0°</div>
                 <div class="banzai-gauge" id="banzai-gauge-R">
                     <div class="banzai-bar" id="banzai-bar-R"></div>
                 </div>
-                <div class="banzai-text" id="bz-angle-r">0°</div>
+                <div class="banzai-text" id="bz-angle-r" style="font-family: 'Arial Black', sans-serif;">0°</div>
             </div>
 
             <div class="warning-text" id="warning-msg"></div>
             <div class="status-lamp lamp-squat" id="status-lamp">待機</div>
 
-            <div id="bgm-control-ui" style="
-                position: absolute; 
-                bottom: 25px; 
-                left: 45px; 
-                transform: translateX(-50%); 
-                background: rgba(0,0,0,0.6); 
-                padding: 10px 12px; 
-                border-radius: 15px; 
-                color: white; 
-                display: flex; 
-                flex-direction: column; /* 縦並びに設定 */
-                align-items: center; 
-                gap: 5px; 
-                z-index: 100; 
-                backdrop-filter: blur(5px);
-                min-width: 60px;">
+            <div id="bgm-control-ui">
 
                 <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">BGM</span>
 
@@ -187,12 +147,14 @@
         <div style="display: flex; justify-content: center; gap: 15px; width: 85%; margin: 0 auto 20px auto;">
             <div style="display: flex; flex-direction: column; align-items: center; width: 50%;">
                 <label style="color: white; margin-bottom: 5px;">身長(cm)</label>
-                <input type="number" id="user-height" class="input-area" style="width: 100%;" value="170">
+                <input type="number" id="user-height" class="input-area"
+                    style="width: 100%; font-family: 'Arial Black', sans-serif;" value="170">
             </div>
 
             <div style="display: flex; flex-direction: column; align-items: center; width: 50%;">
                 <label style="color: white; margin-bottom: 5px;">体重(kg)</label>
-                <input type="number" id="user-weight" class="input-area" style="width: 100%;" step="0.1" value="65">
+                <input type="number" id="user-weight" class="input-area"
+                    style="width: 100%; font-family: 'Arial Black', sans-serif;" step="0.1" value="65">
             </div>
         </div>
 
@@ -261,17 +223,17 @@
     <!-- ▼ RESULT 画面：2ページ切替 -->
     <div id="result-screen" style="display:none; flex-direction:column;" class="overlay-screen screen">
         <h2 id="res-screen-title"
-            style="color:white; border-bottom:2px solid #00e676; width:100%; max-width:1000px; margin-bottom:10px; text-align: center; margin:0 auto 30px auto;">
+            style="color:white; border-bottom:2px solid #00e676; width:100%; max-width:1000px; margin-bottom:0px; text-align: center;">
             RESULT
         </h2>
 
         <div id="res-page-1" class="result-page">
-            <div id="res-summary-area" style="width: 95%; max-width: 650px; margin: 0 auto;">
+            <div id="res-summary-area">
 
                 <!-- ▼ スクワット / ゲーム用結果 -->
                 <div id="game-result-area">
 
-                    <div id="res-rank-score-box" class="stat-card" style="width:100%; margin-bottom: 20px;">
+                    <div id="res-rank-score-box" class="stat-card">
                         <div id="res-rank" class="stat-val" style="font-size:70px; color:#ffd700;">-</div>
                         <div style="font-size:22px;">SCORE: <span id="res-score-final">0</span></div>
                     </div>
@@ -301,29 +263,30 @@
                 </div>
 
                 <!-- ▼ 推定値（必ず枠を持たせる） -->
-                <div id="science-metrics" class="stat-card" style="margin-top:15px;">
+                <div id="science-metrics" class="stat-card">
                     <div class="stat-label" style="font-size:18px;">🧪 推定値 (Research Grade)</div>
 
                     <div style="display:flex; justify-content:space-around; margin-top:10px;">
                         <div style="text-align:center;">
                             <div style="font-size:15px; color:#aaa;">下肢筋パワー</div>
-                            <div style="font-size:50px; font-weight:bold;">
-                                <span id="val-power">0</span>
-                                <span style="font-size:20px;">W</span>
+                            <div style="font-size:50px; font-weight:bold; font-family: 'Arial Black', sans-serif;">
+                                <span id="val-power" style="font-family: 'Arial Black', sans-serif;">0</span>
+                                <span style="font-size:20px; font-family: 'Arial Black', sans-serif;">W</span>
                             </div>
-                            <div style="font-size:15px; color:#ffffff;" id="val-power-rel">
+                            <div style="font-size:15px; color:#ffffff; font-family: 'Arial Black', sans-serif;"
+                                id="val-power-rel">
                                 ( 0 W/kg )
                             </div>
                         </div>
 
                         <div style="text-align:center;">
                             <div style="font-size:15px; color:#aaa;">推定 VO₂peak</div>
-                            <div style="font-size:50px; font-weight:bold;">
-                                <span id="val-vo2">0</span>
-                                <span style="font-size:20px;">ml/kg</span>
+                            <div style="font-size:50px; font-weight:bold; font-family: 'Arial Black', sans-serif;">
+                                <span id="val-vo2" style="font-family: 'Arial Black', sans-serif;">0</span>
+                                <span style="font-size:20px; font-family: 'Arial Black', sans-serif;">ml/kg</span>
                             </div>
-                            <div style="font-size:15px; color:#ffffff;">
-                                ( METs <span id="val-mets">0</span> )
+                            <div style="font-size:15px; color:#ffffff; font-family: 'Arial Black', sans-serif;">
+                                ( METs <span id="val-mets" style="font-family: 'Arial Black', sans-serif;">0</span> )
                             </div>
                         </div>
                     </div>
@@ -351,22 +314,30 @@
 
         <div id="res-page-2" class="result-page" style="display:none; flex-direction: column; flex-grow: 1;">
             <div class="chart-container" style="margin-bottom: 10px;">
-                <div class="chart-title">スピード推移 (秒/rep)</div>
-                <div class="chart-box">
-                    <canvas id="speedChart"></canvas>
-                </div>
+                <div class="charts-row">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">スピード推移 (秒/rep)</div>
+                        <div class="chart-box">
+                            <canvas id="speedChart"></canvas>
+                        </div>
+                    </div>
 
-                <div class="chart-title">深さ (角度) & エラー</div>
-                <div class="chart-box">
-                    <canvas id="depthChart"></canvas>
+                    <div class="chart-wrapper">
+                        <div class="chart-title">深さ (角度) & エラー</div>
+                        <div class="chart-box">
+                            <canvas id="depthChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="nav-area" style="flex-direction: column; margin-top: 0px;">
-                <button class="cloud-btn">クラウドへ保存</button>
-                <button class="dl-btn">CSVダウンロード</button>
+            <div class="nav-area" style="flex-direction: column; margin-top: 20px;">
+                <div class="res-buttons-row-group">
+                    <button class="cloud-btn">クラウドへ保存</button>
+                    <button class="dl-btn">CSVダウンロード</button>
+                </div>
 
-                <div style="margin-top: 20px; display:flex; gap:10px; justify-content:center; width:100%;">
+                <div style="margin-top: 10px; display:flex; gap:10px; justify-content:center; width:100%;">
                     <button id="btn-res-prev" class="sub-btn">
                         &lt; 前へ
                     </button>
@@ -383,4 +354,3 @@
 </body>
 
 </html>
-
