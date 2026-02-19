@@ -1,15 +1,13 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
 console.log("TEST V152 AWS Migration - Sync Check...");
 
-// 1. グローバル変数として get, post 等を宣言（これでアプリ全体で使えるようになります）
-let get, post, put, del;
+// --- ここを完全にこれに置き換えてください ---
+let get, post, put, del; 
 
 const initializeAmplifyDirectly = () => {
     const lib = window.aws_amplify;
     if (lib && lib.Amplify) {
         console.log("Amplify Library Detected!");
-        
-        // AWS構成の設定
         lib.Amplify.configure({
             API: {
                 REST: {
@@ -20,29 +18,20 @@ const initializeAmplifyDirectly = () => {
                 }
             }
         });
-
-        // 2. 重要：API関数を正しい階層から取り出して紐付ける
-        // CDN版 v5 では lib.Amplify.API の中にメソッドがあります
+        // 以下の4行で、アプリ全体の「get」や「post」を有効化します
         get  = lib.Amplify.API.get.bind(lib.Amplify.API);
         post = lib.Amplify.API.post.bind(lib.Amplify.API);
         put  = lib.Amplify.API.put.bind(lib.Amplify.API);
         del  = lib.Amplify.API.del.bind(lib.Amplify.API);
-
         return lib;
     }
     return null;
 };
-
-// 3. 実行
-let aws_lib = initializeAmplifyDirectly();
-
-if (!aws_lib) {
-    console.warn("Amplify not found immediately. Waiting for scripts...");
-}
+initializeAmplifyDirectly();
+// ------------------------------------------
 
 const PACING_API_NAME = "pacingAPI";
 const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
-const { get, post, put, del } = (window.aws_amplify && window.aws_amplify.api) || {};
 
 /* ===== 共通状態 / State ===== */
 const STORAGE_KEY_VO2 = "eo_vo2_records_v1";
@@ -1651,6 +1640,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
