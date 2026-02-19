@@ -1,9 +1,9 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
 console.log("TEST V152 AWS Migration - Sync Check...");
 
-// --- ここを完全にこれに置き換えてください ---
-window.get = null;
-window.post = null;
+// 1. 関数の器を window オブジェクト（グローバル）に作成
+window.api_get = null;
+window.api_post = null;
 
 const initializeAmplifyDirectly = () => {
     const lib = window.aws_amplify;
@@ -20,14 +20,10 @@ const initializeAmplifyDirectly = () => {
             }
         });
         
-        // 2. ここが重要：API機能を window.get に代入します
-        window.get = lib.Amplify.API.get.bind(lib.Amplify.API);
-        window.post = lib.Amplify.API.post.bind(lib.Amplify.API);
+        // 2. 器の中に実際の Amplify 機能を流し込む
+        window.api_get  = lib.Amplify.API.get.bind(lib.Amplify.API);
+        window.api_post = lib.Amplify.API.post.bind(lib.Amplify.API);
         
-        // ローカル変数としての get にも代入（互換性のため）
-        get = window.get;
-        post = window.post;
-
         return lib;
     }
     return null;
@@ -1645,6 +1641,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
