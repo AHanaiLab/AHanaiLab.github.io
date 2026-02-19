@@ -8,7 +8,7 @@ window.apiPost = null;
 window.apiPut = null;
 window.apiDel = null;
 
-const API_BASE_URL = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+const API_BASE_URL = "https://na4k5gjhg7.execute-api.ap-northeast-1.amazonaws.com/Prod";
 
 /* ===== Native Fetch Wrapper for Amplify Replacement ===== */
 /* This removes the dependency on the external Amplify script which is failing to load via CDN */
