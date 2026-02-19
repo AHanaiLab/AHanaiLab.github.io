@@ -390,7 +390,7 @@ const MoveCare = {
                         path = `/subjects/${uid}`;
                         if (uid === TARGET_LINE_UID) path = `/subjects/1`;
 
-                        const userOp = window.get({
+                        const userOp = window.Amplify.API.get({
                             apiName: PACING_API_NAME,
                             path: path
                         });
@@ -399,7 +399,7 @@ const MoveCare = {
                     }
                 } else {
                     // Manual mode
-                    const userOp = window.get({
+                    const userOp = window.Amplify.API.get({
                         apiName: PACING_API_NAME,
                         path: path
                     });
@@ -1700,6 +1700,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
