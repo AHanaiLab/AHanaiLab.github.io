@@ -1,9 +1,9 @@
 console.log("TEST V152 AWS Migration");
 /* oncology_app/app.js - Refactored for AWS Pacing API Integration */
-import { Amplify } from 'aws-amplify';
-import { get, post, put, del } from 'aws-amplify/api';
+const { Amplify } = window.aws_amplify;
+const { get, post, put, del } = window.aws_amplify.api;
 // Assuming amplify_outputs.json is available in the same directory or served at root
-import outputs from './amplify_outputs.json' with { type: 'json' };
+// import outputs from './amplify_outputs.json' with { type: 'json' };//
 
 const PACING_API_NAME = "pacingAPI";
 const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
@@ -1637,4 +1637,5 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
