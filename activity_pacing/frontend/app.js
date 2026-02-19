@@ -1,26 +1,28 @@
 console.log("TEST V152 AWS Migration");
 /* oncology_app/app.js - Refactored for AWS Pacing API Integration */
-const { Amplify } = window.aws_amplify;
-const { get, post, put, del } = window.aws_amplify.api;
-// Assuming amplify_outputs.json is available in the same directory or served at root
-// import outputs from './amplify_outputs.json' with { type: 'json' };//
+const aws_lib = window.aws_amplify || {};
+const Amplify = aws_lib.Amplify;
+const { get, post, put, del } = (aws_lib.api || {});
+
+console.log("Amplify Library Status:", Amplify ? "Loaded" : "Missing");
 
 const PACING_API_NAME = "pacingAPI";
 const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
 
-// Configure Amplify with the specific API endpoint provided
-const amplifyConfig = {
-    ...outputs,
-    API: {
-        ...outputs.API,
-        REST: {
-            ...outputs.API?.REST,
-            [PACING_API_NAME]: {
-                endpoint: PACING_API_ENDPOINT,
-                region: "ap-northeast-1"
+// Amplify が存在する場合のみ初期化を実行
+if (Amplify) {
+    Amplify.configure({
+        API: {
+            REST: {
+                [PACING_API_NAME]: {
+                    endpoint: PACING_API_ENDPOINT,
+                    region: "ap-northeast-1"
+                }
             }
         }
-    }
+    });
+} else {
+    console.error("Critical: AWS Amplify library is not loaded. Please check index.html script tags.");
 };
 
 Amplify.configure(amplifyConfig);
@@ -1637,5 +1639,6 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
