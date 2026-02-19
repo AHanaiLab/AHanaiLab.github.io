@@ -8,65 +8,107 @@ window.apiPost = null;
 window.apiPut = null;
 window.apiDel = null;
 
-function bootstrapAmplify() {
-    // 候補をすべてチェック
-    const lib = window.Amplify || (window.aws_amplify && window.aws_amplify.Amplify);
+const API_BASE_URL = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
 
-    if (!lib || !lib.configure) return false;
+/* ===== Native Fetch Wrapper for Amplify Replacement ===== */
+/* This removes the dependency on the external Amplify script which is failing to load via CDN */
 
-    // v5 の標準的な設定オブジェクトの構造
-    lib.configure({
-        API: {
-            REST: {
-                "pacingAPI": {
-                    endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
-                    region: "ap-northeast-1"
-                }
+async function fetchWrapper(method, params) {
+    const { path, options } = params;
+    // API_BASEURL + PATH. Ensure path starts with /
+    const urlPath = path.startsWith('/') ? path : `/${path}`;
+    let finalUrl = `${API_BASE_URL}${urlPath}`;
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options && options.headers)
+    };
+
+    const fetchOptions = {
+        method: method,
+        headers: headers,
+        mode: 'cors'
+    };
+
+    if (options && options.body) {
+        fetchOptions.body = JSON.stringify(options.body);
+    }
+
+    // Query Params Handling
+    if (options && options.queryParams) {
+        const urlObj = new URL(finalUrl);
+        Object.keys(options.queryParams).forEach(key =>
+            urlObj.searchParams.append(key, options.queryParams[key])
+        );
+        finalUrl = urlObj.toString();
+    }
+
+    console.log(`[API] ${method} ${finalUrl}`);
+
+    let response;
+    try {
+        response = await fetch(finalUrl, fetchOptions);
+    } catch (netErr) {
+        console.error("Network Error:", netErr);
+        throw { message: "Network Error", originalError: netErr };
+    }
+
+    // Amplify Response Mocking
+    // Amplify returns { response: Promise<{ body: { json: () => ... } }> }
+    // but in our usage: const op = apiGet(...); const res = await op.response; const data = await res.body.json();
+
+    const bodyInterface = {
+        json: async () => {
+            if (!response.ok) {
+                let errData;
+                try { errData = await response.text(); } catch (e) { errData = "No Body"; }
+                console.warn(`API Error ${response.status}:`, errData);
+                throw {
+                    response: {
+                        status: response.status,
+                        statusCode: response.status,
+                        data: errData
+                    },
+                    message: `HTTP ${response.status}`
+                };
             }
+            return response.json();
         }
-    });
+    };
 
-    // メソッドのバインド
-    window.apiGet = lib.API.get.bind(lib.API);
-    window.apiPost = lib.API.post.bind(lib.API);
-    window.apiPut = lib.API.put.bind(lib.API);
-    window.apiDel = lib.API.del.bind(lib.API);
+    return {
+        response: Promise.resolve({
+            body: bodyInterface
+        })
+    };
+}
 
+// Global Bindings
+window.apiGet = (params) => fetchWrapper('GET', params);
+window.apiPost = (params) => fetchWrapper('POST', params);
+window.apiPut = (params) => fetchWrapper('PUT', params);
+window.apiDel = (params) => fetchWrapper('DELETE', params);
+
+function bootstrapAmplify() {
+    console.log("Using native Fetch API. Amplify library dependency removed.");
     return true;
 }
-// 2. ライブラリがロードされるまで待機し、完了後にのみメインロジックを開始
+
+// Immediate resolution
+async function waitForAmplify() {
+    return true;
+}
+
+// 2. Kill the interval if it exists (though usually it runs once)
 const initRetry = setInterval(() => {
     if (bootstrapAmplify()) {
         clearInterval(initRetry);
-        console.log("Amplify Ready. Syncing with Admin Settings...");
-
-        // ライブラリが準備できてから、既存のデータ取得処理を開始させる
+        console.log("API Ready (Native Mode). Syncing with Admin Settings...");
         if (typeof MoveCare !== 'undefined' && AppState.subject) {
-            MoveCare.fetchGlobalData(); // ここで /projects (Admin設定) を取得
+            MoveCare.fetchGlobalData();
         }
     }
 }, 50);
-
-async function waitForAmplify() {
-    if (window.apiGet) return true;
-    console.log("Waiting for Amplify (apiGet)...");
-    let retries = 300; // 300 * 100ms = 30 sec
-    while (!window.apiGet && retries > 0) {
-        await new Promise(r => setTimeout(r, 100));
-        retries--;
-    }
-    if (!window.apiGet) {
-        console.error("Amplify Init Timeout. Globals:", {
-            Amplify: !!window.Amplify,
-            amplify: !!window.amplify,
-            aws_amplify: !!window.aws_amplify,
-            apiGet: !!window.apiGet
-        });
-        alert("通信ライブラリの読み込みに失敗しました。ページを再読み込みしてください。");
-        return false;
-    }
-    return true;
-}
 
 /* ===== 共通状態 / State (ここからは既存のコード) ===== */
 // ------------------------------------------
