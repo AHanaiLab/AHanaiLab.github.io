@@ -9,7 +9,10 @@ window.del = null;
 
 function bootstrapAmplify() {
     // 可能性のあるすべてのグローバル変数名をチェック
-    const lib = window.Amplify || window.amplify || (window.aws_amplify ? window.aws_amplify.Amplify : null);
+    let lib = window.Amplify || window.amplify;
+    if (!lib && window.aws_amplify) {
+        lib = window.aws_amplify.Amplify || window.aws_amplify;
+    }
 
     if (!lib) {
         // まだロードされていない場合は、静かに終了して次のインターバルを待つ
@@ -54,6 +57,22 @@ const initRetry = setInterval(() => {
         }
     }
 }, 50);
+
+async function waitForAmplify() {
+    if (window.get) return true;
+    console.log("Waiting for Amplify...");
+    let retries = 50; // 50 * 100ms = 5 sec
+    while (!window.get && retries > 0) {
+        await new Promise(r => setTimeout(r, 100));
+        retries--;
+    }
+    if (!window.get) {
+        console.error("Amplify Init Timeout");
+        alert("通信ライブラリの読み込みに失敗しました。ページを再読み込みしてください。");
+        return false;
+    }
+    return true;
+}
 
 /* ===== 共通状態 / State (ここからは既存のコード) ===== */
 // ------------------------------------------
@@ -373,6 +392,10 @@ const MoveCare = {
 
     async loginAndFetchProfile(uid, displayName, mode) {
         console.log(`Fetching profile for: ${uid} (AWS) Mode: ${mode}`);
+
+        // Ensure Amplify is ready
+        if (!(await waitForAmplify())) return;
+
         try {
             let finalId = uid;
             const TARGET_LINE_UID = 'Ub8fbc4be1b65aeab49cf3837cd66f8ed';
