@@ -3,6 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
+  <script src="https://unpkg.com/aws-amplify@5/dist/aws-amplify.min.js"></script>
+
+  <script>
+    window.AWS_CONFIG = {
+      apiBase: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com"
+    };
+  </script>
   <title>アクティビティペーシングアプリ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Nuclear Cache Busting -->
@@ -54,15 +61,6 @@
   <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <!-- Firebase SDKs (v11) -->
-  <!-- REST API Config -->
- <script>
-  window.AWS_CONFIG = {
-    apiBase: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com"
-  };
-</script>
-
-<script src="https://unpkg.com/aws-amplify@5/dist/aws-amplify.min.js"></script>
   <!-- LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -1009,5 +1007,6 @@
 </body>
 
 </html>
+
 
 
