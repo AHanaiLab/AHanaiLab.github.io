@@ -1,15 +1,15 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
 console.log("TEST V152 AWS Migration - Sync Check...");
 
-// 1. Amplify初期化用のグローバル関数を定義
-let get, post, put, del; // ここで宣言して全体で使えるようにする
+// 1. グローバル変数として get, post 等を宣言（これでアプリ全体で使えるようになります）
+let get, post, put, del;
 
 const initializeAmplifyDirectly = () => {
     const lib = window.aws_amplify;
     if (lib && lib.Amplify) {
         console.log("Amplify Library Detected!");
         
-        // 設定
+        // AWS構成の設定
         lib.Amplify.configure({
             API: {
                 REST: {
@@ -21,19 +21,19 @@ const initializeAmplifyDirectly = () => {
             }
         });
 
-        // 重要：API関数を正しい階層から取り出す
-        // v5 CDN版は lib.Amplify.API の中にあります
-        get = lib.Amplify.API.get.bind(lib.Amplify.API);
+        // 2. 重要：API関数を正しい階層から取り出して紐付ける
+        // CDN版 v5 では lib.Amplify.API の中にメソッドがあります
+        get  = lib.Amplify.API.get.bind(lib.Amplify.API);
         post = lib.Amplify.API.post.bind(lib.Amplify.API);
-        put = lib.Amplify.API.put.bind(lib.Amplify.API);
-        del = lib.Amplify.API.del.bind(lib.Amplify.API);
+        put  = lib.Amplify.API.put.bind(lib.Amplify.API);
+        del  = lib.Amplify.API.del.bind(lib.Amplify.API);
 
         return lib;
     }
     return null;
 };
 
-// 2. 実行
+// 3. 実行
 let aws_lib = initializeAmplifyDirectly();
 
 if (!aws_lib) {
@@ -1651,6 +1651,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
