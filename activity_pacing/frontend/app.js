@@ -1,36 +1,30 @@
-console.log("TEST V152 AWS Migration");
-/* oncology_app/app.js - Refactored for AWS Pacing API Integration */
-const aws_lib = window.aws_amplify || {};
-const Amplify = aws_lib.Amplify;
-const { get, post, put, del } = (aws_lib.api || {});
+console.log("TEST V152 AWS Migration - Checking Library...");
 
-console.log("Amplify Library Status:", Amplify ? "Loaded" : "Missing");
+// 1. CDNから読み込まれた Amplify を取得
+const { Amplify } = window.aws_amplify || {};
+const { get, post, put, del } = (window.aws_amplify && window.aws_amplify.api) || {};
+
+if (!Amplify) {
+    alert("エラー：AWS Amplifyライブラリが読み込めていません。index.htmlの設定を確認してください。");
+}
 
 const PACING_API_NAME = "pacingAPI";
 const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
 
-// Amplify が存在する場合のみ初期化を実行
-if (Amplify) {
-    Amplify.configure({
-        API: {
-            REST: {
-                [PACING_API_NAME]: {
-                    endpoint: PACING_API_ENDPOINT,
-                    region: "ap-northeast-1"
-                }
+// 2. Amplifyの初期化（outputs.jsonに頼らず直接設定）
+Amplify.configure({
+    API: {
+        REST: {
+            [PACING_API_NAME]: {
+                endpoint: PACING_API_ENDPOINT,
+                region: "ap-northeast-1"
             }
         }
-    });
-} else {
-    console.error("Critical: AWS Amplify library is not loaded. Please check index.html script tags.");
-};
+    }
+});
 
-Amplify.configure(amplifyConfig);
-
-// Remove window.AWS_CONFIG legacy usage
-window.AWS_CONFIG = {
-    apiBase: PACING_API_ENDPOINT
-};
+// Legacy Config support
+window.AWS_CONFIG = { apiBase: PACING_API_ENDPOINT };
 
 /* ===== 共通状態 / State ===== */
 const STORAGE_KEY_VO2 = "eo_vo2_records_v1";
@@ -1639,6 +1633,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
