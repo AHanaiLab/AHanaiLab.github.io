@@ -1023,7 +1023,7 @@ def handle_fitbit_auth(event):
     subject_id = params.get('subjectId', 'unknown')
     
     # Config
-    base_url = "https://i3ar4264ka.execute-api.ap-northeast-1.amazonaws.com/Prod"
+    base_url = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com"
     redirect_uri = f"{base_url}/fitbit/callback"
     client_id = "23TRN8"
     scope = "activity profile heartrate sleep"
@@ -1168,7 +1168,7 @@ def handle_fitbit_callback(event):
     token_url = "https://api.fitbit.com/oauth2/token"
     client_id = "23TRN8"
     client_secret = "bfb588e3b74770322ac226621d0ba409"
-    redirect_uri = "https://i3ar4264ka.execute-api.ap-northeast-1.amazonaws.com/Prod/fitbit/callback"
+    redirect_uri = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com/fitbit/callback"
     
     # Auth Header
     # Basic Authorization: "Basic " + base64encode(client_id + ":" + client_secret)
@@ -1320,3 +1320,4 @@ def link_line_id(subject_id, body):
     except Exception as e:
         print(f"  -> Error linking LINE ID: {e}")
         return create_response(500, {'error': str(e)})
+
