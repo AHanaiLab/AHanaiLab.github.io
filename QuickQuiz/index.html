@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Push Quiz</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for premium feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="app">
+        <!-- Title Screen -->
+        <section id="title-screen" class="screen active">
+            <h1 class="main-title">早押しクイズ<br><span class="subtitle">Quick Push Quiz</span></h1>
+            <p class="instruction">知識を試そう！スピード勝負！</p>
+            <button id="start-btn" class="primary-btn">PLAY</button>
+        </section>
+
+        <!-- Dataset Selection Screen -->
+        <section id="selection-screen" class="screen">
+            <h2>データセットを選択</h2>
+            <div id="dataset-list" class="dataset-container">
+                <!-- Datasets will be injected here -->
+            </div>
+            <button id="back-to-title-btn" class="secondary-btn">戻る</button>
+        </section>
+
+        <!-- Quiz Screen -->
+        <section id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div id="timer-bar-container">
+                    <div id="timer-bar"></div>
+                </div>
+                <div class="quiz-info">
+                    <span id="question-count">Q. 1/5</span>
+                    <span id="score-display">Score: 0</span>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <p id="question-text"></p>
+            </div>
+
+            <div class="interaction-area">
+                <!-- Large Push Button (Visible initially) -->
+                <button id="push-btn" class="push-button">PUSH!</button>
+
+                <!-- Choices (Hidden text initially/disabled, shown after Push or Timeout) -->
+                <div id="choices-container" class="choices-grid hidden">
+                    <button class="choice-btn" data-index="0">Option 1</button>
+                    <button class="choice-btn" data-index="1">Option 2</button>
+                    <button class="choice-btn" data-index="2">Option 3</button>
+                    <button class="choice-btn" data-index="3">Option 4</button>
+                </div>
+            </div>
+
+            <!-- Feedback Overlay (Absolute position) -->
+            <div id="feedback-overlay" class="feedback-overlay hidden">
+                <div class="feedback-content">
+                    <h2 id="feedback-title">正解！</h2>
+                    <p id="feedback-explanation">解説がここに入ります。</p>
+                    <button id="next-question-btn" class="primary-btn">次へ</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Result Screen -->
+        <section id="result-screen" class="screen">
+            <h2>結果発表</h2>
+            <div class="result-card">
+                <div class="score-circle">
+                    <span id="final-score-percent">80%</span>
+                    <span class="label">正答率</span>
+                </div>
+                <div class="result-details">
+                    <p>正解数: <span id="correct-count">4</span></p>
+                    <p>不正解数: <span id="incorrect-count">1</span></p>
+                </div>
+            </div>
+            <button id="home-btn" class="primary-btn">ホームに戻る</button>
+        </section>
+    </div>
+
+    <script src="datasets.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
