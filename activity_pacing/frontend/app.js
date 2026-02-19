@@ -1,24 +1,31 @@
 /* oncology_app/app.js - V152/V177 AWS Migration */
 
 // 1. 関数の器だけ先に定義（二重宣言を避けるため let を使用）
-function bootstrapAmplify() {
-    const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
-    if (!lib || !lib.Amplify) return false;
+// 1. windowオブジェクトに直接紐付ける
+window.get = null;
+window.post = null;
+window.put = null;
+window.del = null;
 
-    lib.Amplify.configure({
+function bootstrapAmplify() {
+    // Amplify本体の取得方法を整理
+    const lib = (typeof Amplify !== 'undefined') ? Amplify : (window.aws_amplify ? window.aws_amplify.Amplify : null);
+    if (!lib) return false;
+
+    lib.configure({
         API: { REST: { "pacingAPI": { 
             endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com", 
             region: "ap-northeast-1" 
         } } }
     });
 
-    // ここで window オブジェクトにも確実に割り当てる
-    window.get = lib.Amplify.API.get.bind(lib.Amplify.API);
-    window.post = lib.Amplify.API.post.bind(lib.Amplify.API);
-    window.put = lib.Amplify.API.put.bind(lib.Amplify.API);
-    window.del = lib.Amplify.API.del.bind(lib.Amplify.API);
+    // window直下にAPIメソッドを配置
+    window.get  = lib.API.get.bind(lib.API);
+    window.post = lib.API.post.bind(lib.API);
+    window.put  = lib.API.put.bind(lib.API);
+    window.del  = lib.API.del.bind(lib.API);
     
-    // グローバルの変数にも代入
+    // 既存のコードとの互換性のためローカル変数にも代入
     get = window.get; post = window.post; put = window.put; del = window.del;
     
     return true;
@@ -1636,6 +1643,26 @@ function renderBottomNav() {
     }).join('');
 }
 
+// 足りない描画関数を定義
+function renderCompletedActivities() {
+    console.log("Rendering completed activities...");
+    // 必要に応じて実装：完了済みリストの表示処理など
+}
+
+function renderBottomNav() {
+    const navInner = document.querySelector('.bottom-nav-inner');
+    if (!navInner) return;
+    navInner.innerHTML = APP_MENUS.map(m => `
+        <button onclick="switchScreen('${m.screen}')" class="flex flex-col items-center">
+            <span class="text-xl">${m.icon}</span>
+            <span class="text-[10px] font-bold">${m.label}</span>
+        </button>
+    `).join('');
+}
+
+// グローバルスコープに登録
+window.renderCompletedActivities = renderCompletedActivities;
+window.renderBottomNav = renderBottomNav;
 // 関連して setActiveNav も必要です
 window.setActiveNav = function(id) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-emerald-600'));
@@ -1673,6 +1700,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
