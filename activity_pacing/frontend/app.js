@@ -8,32 +8,39 @@ window.put = null;
 window.del = null;
 
 function bootstrapAmplify() {
-    // グローバルの Amplify オブジェクトを確実に取得する
-    const lib = window.Amplify; 
+    // 可能性のあるすべてのグローバル変数名をチェック
+    const lib = window.Amplify || window.amplify || (window.aws_amplify ? window.aws_amplify.Amplify : null);
+    
     if (!lib) {
-        console.warn("Amplify library not found on window object.");
-        return false;
+        // まだロードされていない場合は、静かに終了して次のインターバルを待つ
+        return false; 
     }
 
-    lib.configure({
-        API: {
-            endpoints: [ // v5の記法に合わせる
-                {
-                    name: "pacingAPI",
-                    endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
-                    region: "ap-northeast-1"
-                }
-            ]
-        }
-    });
+    try {
+        lib.configure({
+            API: {
+                endpoints: [
+                    {
+                        name: "pacingAPI",
+                        endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
+                        region: "ap-northeast-1"
+                    }
+                ]
+            }
+        });
 
-    // メソッドの紐付け
-    window.get  = lib.API.get.bind(lib.API);
-    window.post = lib.API.post.bind(lib.API);
-    window.put  = lib.API.put.bind(lib.API);
-    window.del  = lib.API.del.bind(lib.API);
-    
-    return true;
+        // グローバルにAPIメソッドを公開
+        window.get  = lib.API.get.bind(lib.API);
+        window.post = lib.API.post.bind(lib.API);
+        window.put  = lib.API.put.bind(lib.API);
+        window.del  = lib.API.del.bind(lib.API);
+        
+        console.log("Amplify Engine configured successfully.");
+        return true;
+    } catch (e) {
+        console.error("Amplify configuration failed:", e);
+        return false;
+    }
 }
 // 2. ライブラリがロードされるまで待機し、完了後にのみメインロジックを開始
 const initRetry = setInterval(() => {
@@ -1705,6 +1712,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
