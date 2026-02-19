@@ -1,42 +1,37 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
 
-// 1. 最初に関数の器だけ作っておく (順序問題を物理的に回避)
-let get = async () => { console.warn("API not ready"); return { response: { body: { json: () => ({}) } } }; };
-let post = get; let put = get; let del = get;
+// 1. 関数の宣言のみ（初期化されるまで未定義にする）
+let get, post, put, del;
 
-const PACING_API_NAME = "pacingAPI";
-const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
-
-// 2. 初期化関数
+// 2. 初期化関数（定数は bootstrapApp 内で一度だけ参照するか、既存の宣言を活かします）
 function bootstrapAmplify() {
     const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
     if (!lib || !lib.Amplify) return false;
 
-    console.log("Amplify Library Found. Configuring...");
+    // ここで直接エンドポイントを指定（定数 PACING_API_NAME は下にある既存のものを流用）
     lib.Amplify.configure({
-        API: {
-            REST: {
-                [PACING_API_NAME]: {
-                    endpoint: PACING_API_ENDPOINT,
-                    region: "ap-northeast-1"
-                }
-            }
-        }
+        API: { REST: { "pacingAPI": { 
+            endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com", 
+            region: "ap-northeast-1" 
+        } } }
     });
 
-    // 器の中身を本物に差し替える
     get  = lib.Amplify.API.get.bind(lib.Amplify.API);
     post = lib.Amplify.API.post.bind(lib.Amplify.API);
     put  = lib.Amplify.API.put.bind(lib.Amplify.API);
     del  = lib.Amplify.API.del.bind(lib.Amplify.API);
     
-    console.log("Amplify API Functions Ready.");
     return true;
 }
 
-// 3. ライブラリが届くまで回す
-const setupInterval = setInterval(() => {
-    if (bootstrapAmplify()) clearInterval(setupInterval);
+// 3. ループで待機。準備ができたら実行
+const initRetry = setInterval(() => {
+    if (bootstrapAmplify()) {
+        clearInterval(initRetry);
+        console.log("Amplify Ready. Original Logic Resumed.");
+        // セッションがある場合は、ここからデータの読み込みを開始
+        if (AppState.subject) MoveCare.fetchGlobalData();
+    }
 }, 50);
 
 /* ===== 共通状態 / State (ここからは既存のコード) ===== */
@@ -1652,6 +1647,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
