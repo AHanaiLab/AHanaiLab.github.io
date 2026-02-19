@@ -10,9 +10,11 @@ window.apiDel = null;
 
 function bootstrapAmplify() {
     // 可能性のあるすべてのアプローチをチェック
-    let lib = window.Amplify || window.amplify;
-    if (!lib && window.aws_amplify) {
-        lib = window.aws_amplify.Amplify || window.aws_amplify;
+    let lib = window.aws_amplify; // jsDelivr usually exposes this
+    if (!lib) lib = window.Amplify || window.amplify; // Fallback
+
+    if (lib && lib.Amplify) {
+        lib = lib.Amplify;
     }
 
     if (!lib) {
@@ -67,7 +69,7 @@ const initRetry = setInterval(() => {
 async function waitForAmplify() {
     if (window.apiGet) return true;
     console.log("Waiting for Amplify (apiGet)...");
-    let retries = 100; // 100 * 100ms = 10 sec
+    let retries = 300; // 300 * 100ms = 30 sec
     while (!window.apiGet && retries > 0) {
         await new Promise(r => setTimeout(r, 100));
         retries--;
