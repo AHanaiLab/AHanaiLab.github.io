@@ -1,14 +1,13 @@
-/* oncology_app/app.js - V152/V177 AWS Migration Final Fix */
+/* oncology_app/app.js - V152/V177 AWS Migration */
 
-// 1. 関数の宣言のみ（初期化されるまで未定義にする）
+// 1. 関数の器だけ先に定義（二重宣言を避けるため let を使用）
 let get, post, put, del;
 
-// 2. 初期化関数（定数は bootstrapApp 内で一度だけ参照するか、既存の宣言を活かします）
 function bootstrapAmplify() {
     const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
     if (!lib || !lib.Amplify) return false;
 
-    // ここで直接エンドポイントを指定（定数 PACING_API_NAME は下にある既存のものを流用）
+    // 定数は既存の宣言（45行目付近）と衝突しないよう、直接文字列で設定
     lib.Amplify.configure({
         API: { REST: { "pacingAPI": { 
             endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com", 
@@ -24,13 +23,16 @@ function bootstrapAmplify() {
     return true;
 }
 
-// 3. ループで待機。準備ができたら実行
+// 2. ライブラリがロードされるまで待機し、完了後にのみメインロジックを開始
 const initRetry = setInterval(() => {
     if (bootstrapAmplify()) {
         clearInterval(initRetry);
-        console.log("Amplify Ready. Original Logic Resumed.");
-        // セッションがある場合は、ここからデータの読み込みを開始
-        if (AppState.subject) MoveCare.fetchGlobalData();
+        console.log("Amplify Ready. Syncing with Admin Settings...");
+        
+        // ライブラリが準備できてから、既存のデータ取得処理を開始させる
+        if (typeof MoveCare !== 'undefined' && AppState.subject) {
+            MoveCare.fetchGlobalData(); // ここで /projects (Admin設定) を取得
+        }
     }
 }, 50);
 
@@ -1647,6 +1649,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
