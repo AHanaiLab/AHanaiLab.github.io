@@ -1,17 +1,21 @@
 /* oncology_app/app.js - V152/V177 AWS Migration Full Integration */
 
-// 1. グローバル変数の宣言（宣言のみ）
+// 1. グローバル変数の定義（実体はまだ入れない）
 let get, post, put, del;
 
-// 2. 初期化を確実に行う関数
+// 2. アプリ全体の初期化と起動を司る関数
 function bootstrapApp() {
-    const lib = window.aws_amplify;
+    // window.aws_amplify または window.Amplify を確認
+    const lib = window.aws_amplify || (typeof Amplify !== 'undefined' ? { Amplify } : null);
+    
     if (!lib || !lib.Amplify) {
-        console.error("Critical: AWS Amplify not found. Retrying...");
-        return false;
+        console.warn("Waiting for AWS Amplify library...");
+        return false; 
     }
 
-    // Amplify構成
+    console.log("Amplify Library Detected! Initializing...");
+
+    // AWS構成の適用
     lib.Amplify.configure({
         API: {
             REST: {
@@ -23,25 +27,23 @@ function bootstrapApp() {
         }
     });
 
-    // 関数の実体を紐付け（ここが本番）
+    // 関数の実体をグローバル変数に紐付け
     get  = lib.Amplify.API.get.bind(lib.Amplify.API);
     post = lib.Amplify.API.post.bind(lib.Amplify.API);
     put  = lib.Amplify.API.put.bind(lib.Amplify.API);
     del  = lib.Amplify.API.del.bind(lib.Amplify.API);
 
-    console.log("Amplify Fully Initialized.");
+    console.log("Amplify Fully Ready. Starting Modules...");
     return true;
 }
 
-// 3. ライブラリ読み込み待機ロジック
-const initInterval = setInterval(() => {
+// 3. ライブラリが届くまで 50ms おきにチェック
+const startTimer = setInterval(() => {
     if (bootstrapApp()) {
-        clearInterval(initInterval);
+        clearInterval(startTimer);
+        // ここで初めてログイン処理などのメインロジックが動けるようになる
     }
 }, 50);
-
-// 即座に実行
-initializeAmplifyDirectly();
 // ------------------------------------------
 
 const PACING_API_NAME = "pacingAPI";
@@ -1654,6 +1656,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
