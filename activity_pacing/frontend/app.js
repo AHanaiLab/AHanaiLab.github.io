@@ -9,49 +9,30 @@ window.apiPut = null;
 window.apiDel = null;
 
 function bootstrapAmplify() {
-    // 可能性のあるすべてのアプローチをチェック
-    let lib = window.aws_amplify; // jsDelivr usually exposes this
-    if (!lib) lib = window.Amplify || window.amplify; // Fallback
+    // 候補をすべてチェック
+    const lib = window.Amplify || (window.aws_amplify && window.aws_amplify.Amplify);
 
-    if (lib && lib.Amplify) {
-        lib = lib.Amplify;
-    }
+    if (!lib || !lib.configure) return false;
 
-    if (!lib) {
-        // まだロードされていない
-        return false;
-    }
-
-    try {
-        console.log("Configuring Amplify...", lib);
-        lib.configure({
-            API: {
-                endpoints: [
-                    {
-                        name: "pacingAPI",
-                        endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
-                        region: "ap-northeast-1"
-                    }
-                ]
+    // v5 の標準的な設定オブジェクトの構造
+    lib.configure({
+        API: {
+            REST: {
+                "pacingAPI": {
+                    endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
+                    region: "ap-northeast-1"
+                }
             }
-        });
-
-        // グローバルにAPIメソッドを公開 (名前衝突回避のため apiPrefix)
-        if (lib.API) {
-            window.apiGet = lib.API.get.bind(lib.API);
-            window.apiPost = lib.API.post.bind(lib.API);
-            window.apiPut = lib.API.put.bind(lib.API);
-            window.apiDel = lib.API.del.bind(lib.API);
-            console.log("Amplify API bound to window.apiGet", !!window.apiGet);
-            return true;
-        } else {
-            console.warn("Amplify loaded but API module missing:", lib);
-            return false;
         }
-    } catch (e) {
-        console.error("Amplify configuration failed:", e);
-        return false;
-    }
+    });
+
+    // メソッドのバインド
+    window.apiGet = lib.API.get.bind(lib.API);
+    window.apiPost = lib.API.post.bind(lib.API);
+    window.apiPut = lib.API.put.bind(lib.API);
+    window.apiDel = lib.API.del.bind(lib.API);
+
+    return true;
 }
 // 2. ライブラリがロードされるまで待機し、完了後にのみメインロジックを開始
 const initRetry = setInterval(() => {
