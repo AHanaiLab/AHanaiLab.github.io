@@ -10,10 +10,10 @@ window.del = null;
 function bootstrapAmplify() {
     // 可能性のあるすべてのグローバル変数名をチェック
     const lib = window.Amplify || window.amplify || (window.aws_amplify ? window.aws_amplify.Amplify : null);
-    
+
     if (!lib) {
         // まだロードされていない場合は、静かに終了して次のインターバルを待つ
-        return false; 
+        return false;
     }
 
     try {
@@ -30,11 +30,11 @@ function bootstrapAmplify() {
         });
 
         // グローバルにAPIメソッドを公開
-        window.get  = lib.API.get.bind(lib.API);
+        window.get = lib.API.get.bind(lib.API);
         window.post = lib.API.post.bind(lib.API);
-        window.put  = lib.API.put.bind(lib.API);
-        window.del  = lib.API.del.bind(lib.API);
-        
+        window.put = lib.API.put.bind(lib.API);
+        window.del = lib.API.del.bind(lib.API);
+
         console.log("Amplify Engine configured successfully.");
         return true;
     } catch (e) {
@@ -47,7 +47,7 @@ const initRetry = setInterval(() => {
     if (bootstrapAmplify()) {
         clearInterval(initRetry);
         console.log("Amplify Ready. Syncing with Admin Settings...");
-        
+
         // ライブラリが準備できてから、既存のデータ取得処理を開始させる
         if (typeof MoveCare !== 'undefined' && AppState.subject) {
             MoveCare.fetchGlobalData(); // ここで /projects (Admin設定) を取得
@@ -402,7 +402,7 @@ const MoveCare = {
                         path = `/subjects/${uid}`;
                         if (uid === TARGET_LINE_UID) path = `/subjects/1`;
 
-                        const userOp = window.Amplify.API.get({
+                        const userOp = get({
                             apiName: PACING_API_NAME,
                             path: path
                         });
@@ -411,7 +411,7 @@ const MoveCare = {
                     }
                 } else {
                     // Manual mode
-                    const userOp = window.Amplify.API.get({
+                    const userOp = get({
                         apiName: PACING_API_NAME,
                         path: path
                     });
@@ -1676,7 +1676,7 @@ function renderBottomNav() {
 window.renderCompletedActivities = renderCompletedActivities;
 window.renderBottomNav = renderBottomNav;
 // 関連して setActiveNav も必要です
-window.setActiveNav = function(id) {
+window.setActiveNav = function (id) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-emerald-600'));
     const activeEl = document.getElementById(id);
     if (activeEl) activeEl.classList.add('active', 'text-emerald-600');
@@ -1712,29 +1712,3 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
