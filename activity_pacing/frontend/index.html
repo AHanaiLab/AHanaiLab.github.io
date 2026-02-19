@@ -3,7 +3,17 @@
 
 <head>
   <meta charset="UTF-8" />
-  <script src="https://unpkg.com/aws-amplify@5.3.14/dist/aws-amplify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.3.11/dist/aws-amplify.min.js"></script>
+  <script>
+    console.log("Loading Amplify from CDN...");
+    window.addEventListener('load', () => {
+      console.log("Global check on load:", {
+        aws_amplify: !!window.aws_amplify,
+        Amplify: !!window.Amplify,
+        amplify: !!window.amplify
+      });
+    });
+  </script>
 
   <script>
     // ライブラリが確実に window.aws_amplify に存在するように宣言
