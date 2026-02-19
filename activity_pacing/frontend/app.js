@@ -2,24 +2,26 @@
 
 // 1. 関数の器だけ先に定義（二重宣言を避けるため let を使用）
 // 1. windowオブジェクトに直接紐付ける
-window.get = null;
-window.post = null;
-window.put = null;
-window.del = null;
+// 1. windowオブジェクトに直接紐付ける
+window.apiGet = null;
+window.apiPost = null;
+window.apiPut = null;
+window.apiDel = null;
 
 function bootstrapAmplify() {
-    // 可能性のあるすべてのグローバル変数名をチェック
+    // 可能性のあるすべてのアプローチをチェック
     let lib = window.Amplify || window.amplify;
     if (!lib && window.aws_amplify) {
         lib = window.aws_amplify.Amplify || window.aws_amplify;
     }
 
     if (!lib) {
-        // まだロードされていない場合は、静かに終了して次のインターバルを待つ
+        // まだロードされていない
         return false;
     }
 
     try {
+        console.log("Configuring Amplify...", lib);
         lib.configure({
             API: {
                 endpoints: [
@@ -32,14 +34,18 @@ function bootstrapAmplify() {
             }
         });
 
-        // グローバルにAPIメソッドを公開
-        window.get = lib.API.get.bind(lib.API);
-        window.post = lib.API.post.bind(lib.API);
-        window.put = lib.API.put.bind(lib.API);
-        window.del = lib.API.del.bind(lib.API);
-
-        console.log("Amplify Engine configured successfully.");
-        return true;
+        // グローバルにAPIメソッドを公開 (名前衝突回避のため apiPrefix)
+        if (lib.API) {
+            window.apiGet = lib.API.get.bind(lib.API);
+            window.apiPost = lib.API.post.bind(lib.API);
+            window.apiPut = lib.API.put.bind(lib.API);
+            window.apiDel = lib.API.del.bind(lib.API);
+            console.log("Amplify API bound to window.apiGet", !!window.apiGet);
+            return true;
+        } else {
+            console.warn("Amplify loaded but API module missing:", lib);
+            return false;
+        }
     } catch (e) {
         console.error("Amplify configuration failed:", e);
         return false;
@@ -59,15 +65,20 @@ const initRetry = setInterval(() => {
 }, 50);
 
 async function waitForAmplify() {
-    if (window.get) return true;
-    console.log("Waiting for Amplify...");
-    let retries = 50; // 50 * 100ms = 5 sec
-    while (!window.get && retries > 0) {
+    if (window.apiGet) return true;
+    console.log("Waiting for Amplify (apiGet)...");
+    let retries = 100; // 100 * 100ms = 10 sec
+    while (!window.apiGet && retries > 0) {
         await new Promise(r => setTimeout(r, 100));
         retries--;
     }
-    if (!window.get) {
-        console.error("Amplify Init Timeout");
+    if (!window.apiGet) {
+        console.error("Amplify Init Timeout. Globals:", {
+            Amplify: !!window.Amplify,
+            amplify: !!window.amplify,
+            aws_amplify: !!window.aws_amplify,
+            apiGet: !!window.apiGet
+        });
         alert("通信ライブラリの読み込みに失敗しました。ページを再読み込みしてください。");
         return false;
     }
@@ -404,15 +415,13 @@ const MoveCare = {
             }
 
             let userData;
-            // Use Amplify API
+            let path = `/subjects/${finalId}`;
+
             try {
-                let path = `/subjects/${finalId}`;
-                // Handle alias lookup for LINE mode if needed - assuming backend supports explicit ID
-                // or we use /auth/line if available. sticking to /subjects/{id} for direct access.
+                // Use Amplify API
                 if (mode === 'line') {
-                    // Try auth/line alias resolution
                     try {
-                        const aliasOp = post({
+                        const aliasOp = apiPost({
                             apiName: PACING_API_NAME,
                             path: '/auth/line',
                             options: { body: { userId: uid } }
@@ -425,7 +434,7 @@ const MoveCare = {
                         path = `/subjects/${uid}`;
                         if (uid === TARGET_LINE_UID) path = `/subjects/1`;
 
-                        const userOp = get({
+                        const userOp = apiGet({
                             apiName: PACING_API_NAME,
                             path: path
                         });
@@ -434,7 +443,7 @@ const MoveCare = {
                     }
                 } else {
                     // Manual mode
-                    const userOp = get({
+                    const userOp = apiGet({
                         apiName: PACING_API_NAME,
                         path: path
                     });
@@ -467,7 +476,7 @@ const MoveCare = {
                         feedforward: "はじめまして！よろしくお願いします。",
                         logs: []
                     };
-                    const createOp = post({
+                    const createOp = apiPost({
                         apiName: PACING_API_NAME,
                         path: `/subjects/${uid}`,
                         options: { body: userData }
@@ -486,7 +495,7 @@ const MoveCare = {
                 try {
                     const profile = await liff.getProfile();
                     console.log("Auto-linking Subject to current LINE account:", profile.userId);
-                    const linkOp = post({
+                    const linkOp = apiPost({
                         apiName: PACING_API_NAME,
                         path: `/subjects/${uid}/link`,
                         options: { body: { userId: profile.userId } }
@@ -546,7 +555,7 @@ const MoveCare = {
             // Fetch Exercises
             // If /exercises logic exists in backend, use it. Otherwise rely on local ACTIVITY_DATABASE fallback if empty.
             try {
-                const exOp = get({ apiName: PACING_API_NAME, path: '/exercises' });
+                const exOp = apiGet({ apiName: PACING_API_NAME, path: '/exercises' });
                 const exRes = await exOp.response;
                 AppState.exercises = await exRes.body.json();
             } catch (e) {
@@ -556,7 +565,7 @@ const MoveCare = {
 
             // Fetch Projects
             try {
-                const projOp = get({ apiName: PACING_API_NAME, path: '/projects' });
+                const projOp = apiGet({ apiName: PACING_API_NAME, path: '/projects' });
                 const projRes = await projOp.response;
                 AppState.projects = await projRes.body.json();
 
@@ -579,7 +588,7 @@ const MoveCare = {
         if (!AppState.subject || !AppState.subject.id) return;
         console.log("Fetching Fitbit step data...");
         try {
-            const op = get({
+            const op = apiGet({
                 apiName: PACING_API_NAME,
                 path: '/fitbit/steps', // Assuming this path exists or mapped
                 options: { queryParams: { subjectId: AppState.subject.id } }
@@ -830,7 +839,7 @@ const MoveCare = {
                 const todayStr = getJSTDateStr();
 
                 // 1. PUT Daily State
-                const stateOp = put({
+                const stateOp = apiPut({
                     apiName: PACING_API_NAME,
                     path: `/planner/daily-state/${todayStr}`,
                     options: { body: context }
@@ -840,7 +849,7 @@ const MoveCare = {
                 console.log("Daily State Saved:", savedState);
 
                 // 2. GET Suggestions
-                const suggOp = get({
+                const suggOp = apiGet({
                     apiName: PACING_API_NAME,
                     path: `/planner/suggestions`,
                     options: { queryParams: { date: todayStr } }
