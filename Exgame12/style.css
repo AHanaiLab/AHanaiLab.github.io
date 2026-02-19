@@ -3,6 +3,7 @@
         *::before,
         *::after {
             box-sizing: border-box;
+            font-family: "Mochiy Pop One", sans-serif;
         }
 
         /* Base */
@@ -10,7 +11,7 @@
             margin: 0;
             padding: 0;
             background-color: #121212;
-            font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+            font-family: "Mochiy Pop One", sans-serif;
             overflow-x: hidden;
             /* 横スクロールは禁止 */
             overflow-y: auto;
@@ -285,6 +286,7 @@
             font-size: 40px;
             font-weight: bold;
             line-height: 1.0;
+            font-family: 'Arial Black', sans-serif;
         }
 
         .timer-box {
@@ -349,6 +351,7 @@
             font-size: 50px;
             font-weight: 900;
             color: #fff;
+            font-family: 'Arial Black', sans-serif;
             text-shadow: 0 0 10px #ffd700, 2px 2px 0 #000;
             font-style: italic;
             line-height: 1.0;
@@ -652,6 +655,7 @@
             font-size: 45px;
             font-weight: bold;
             color: #fff;
+            font-family: 'Arial Black', sans-serif;
         }
 
         .pain-btn {
@@ -733,6 +737,7 @@
         .stat-val {
             font-size: 50px;
             font-weight: bold;
+            font-family: 'Arial Black', sans-serif;
         }
 
         .chart-box {
@@ -1148,4 +1153,367 @@
             border: none;
             border-radius: 30px;
             font-size: 22px;
+        }
+
+        /* =========================================
+   Refactored Styles from index.html
+   ========================================= */
+
+        /* .container in index.html <style> is merged into .screen */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+            /* Ensure it stays on top */
+        }
+
+        /* BGM Control UI (Moved from inline style) */
+        #bgm-control-ui {
+            position: absolute;
+            bottom: 25px;
+            left: 45px;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 12px;
+            border-radius: 15px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            min-width: 60px;
+        }
+
+        #bgm-control-ui span {
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* =========================================
+           Mobile Vertical Adjustments (max-width: 600px OR max-height: 700px)
+           縦方向のはみ出し対策
+           ========================================= */
+        @media (max-width: 425px),
+        (max-height: 700px) {
+
+            /* 1. 身長体重欄の下の余白を詰める */
+            .input-area {
+                margin-bottom: 5px !important;
+                /* 20px -> 5px */
+                padding: 10px !important;
+                font-size: 16px !important;
+            }
+
+            /* その親コンテナのマージンも詰める */
+            #start-screen>div:nth-child(3) {
+                /* 身長体重のラッパー */
+                margin-bottom: 10px !important;
+                /* 20px -> 10px */
+            }
+
+            /* 2. 各メニューボタン (サブボタン) の縮小 */
+            .sub-btn {
+                padding: 10px !important;
+                /* 15px -> 10px */
+                margin: 5px !important;
+                /* 8px -> 5px */
+                font-size: 16px !important;
+                /* 20px -> 16px */
+            }
+
+            .start-btn {
+                margin-top: 10px !important;
+                padding: 10px 15px !important;
+                font-size: 18px !important;
+            }
+
+            #squat-menu h3,
+            #measure-menu h3 {
+                margin: 5px 0 !important;
+                font-size: 16px !important;
+            }
+
+            #btn-back-main-1,
+            #btn-back-main-2 {
+                margin-top: 10px !important;
+                font-size: 16px !important;
+            }
+
+            /* 3. アンケート画面の隙間詰め */
+            .survey-card {
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .survey-label {
+                font-size: 18px !important;
+                margin-bottom: 5px !important;
+            }
+
+            .pain-btn {
+                padding: 8px 12px !important;
+                margin: 2px !important;
+                font-size: 16px !important;
+                min-width: 60px !important;
+            }
+
+            input[type=range] {
+                margin: 10px 0 !important;
+            }
+
+            .rpe-val {
+                font-size: 30px !important;
+                font-family: 'Arial Black', sans-serif;
+            }
+
+            button.survey-done-btn {
+                margin-top: 10px !important;
+                padding: 10px 40px !important;
+                font-size: 18px !important;
+            }
+        }
+
+        /* =========================================
+           Chart & Button Wrappers (for Landscape Structure)
+           縦画面では display: contents を使い、ラッパーが存在しないかのように振る舞わせる
+           ========================================= */
+        .charts-row,
+        .chart-wrapper,
+        .res-buttons-row-group {
+            display: contents;
+        }
+
+        /* =========================================
+           Landscape Mode Layout (横画面対応)
+           Result Page 2: Charts and Buttons side-by-side
+           ========================================= */
+        @media (orientation: landscape) {
+
+            /* #res-page-2 の高さを画面いっぱいにする */
+            #res-page-2 {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                padding-bottom: 20px;
+                /* 少し余白 */
+                align-items: center;
+                /* 全体を中央揃え */
+                gap: 10px;
+                /* 要素間の最低限のギャップ */
+            }
+
+            /* ページ幅の制限を解除 (ここが「壁」の原因) */
+            .result-page {
+                max-width: none !important;
+                width: 100%;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            /* チャートコンテナを最大限に伸ばす */
+            .chart-container {
+                flex: 0 1 auto;
+                /* 重要: 1だったのを0に変更して余計な伸長を防ぐ */
+                min-height: 0;
+                /* Flexboxの縮小バグ回避 */
+                margin-bottom: 0 !important;
+                /* インラインスタイル上書き */
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                /* 追加: 横幅100%で中央揃え */
+                align-items: center;
+            }
+
+            /* ラッパーを有効化して横並びにする */
+            .charts-row {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                /* 中央揃え */
+                gap: 20px;
+                /* 二つのグラフの間隔 */
+                width: 95%;
+                /* 画面幅の95%まで広げる */
+                max-width: 1400px;
+                /* あまり広がりすぎないように上限も設ける */
+                margin: 0 auto;
+                /* 中央寄せを確実にする */
+                align-items: flex-start;
+            }
+
+            /* 各グラフの設定 */
+            .chart-wrapper {
+                display: flex;
+                flex: 1;
+                /* 均等に引き伸ばす */
+                max-width: 48%;
+                /* 隙間があるので48%程度 */
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .chart-box {
+                width: 100%;
+                /* 親要素に合わせる */
+                max-width: none;
+                /* 400px制限解除 */
+
+                /* 画面の縦幅を考慮せず、横幅だけに合わせて高さを決める */
+                height: auto !important;
+                /* 固定高さを解除し、アスペクト比に任せる */
+                aspect-ratio: 2 / 1;
+                /* レイアウトシフト防止（Chart.jsのデフォルト比率に合わせる） */
+
+                margin: 0;
+            }
+
+            .chart-title {
+                width: 100%;
+                text-align: left;
+                margin-left: 0;
+                margin-bottom: 5px;
+            }
+
+            /* ボタン群の調整 */
+            .res-buttons-row-group {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                gap: 20px;
+                width: 100%;
+                margin-top: 5px;
+                /* 適度な隙間 -> 小さく */
+                margin-bottom: 10px;
+            }
+
+            .res-buttons-row-group button {
+                width: 40% !important;
+                /* 画面幅に応じて広げる */
+                max-width: 450px;
+                /* もう少し大きくても良い */
+                min-width: 300px;
+            }
+
+            /* 横画面時のナビゲーションエリア */
+            .nav-area {
+                padding: 10px !important;
+                width: 100%;
+                /* 追加: 横幅100% */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                /* ボタンを中央へ */
+            }
+
+            /* =========================================
+               Result Page 1 Landscape (2カラム化)
+               ========================================= */
+            #res-summary-area {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: stretch;
+                /* 高さ揃え */
+                gap: 20px;
+                width: 95vw;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            /* スクワット・ゲーム結果用の左カラム（高さ100%で伸ばす） */
+            #game-result-area {
+                flex: 1;
+                width: 48%;
+                /* 明示的に幅指定 */
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                /* 親の高さに合わせる */
+            }
+
+            /* バランス・バンザイ結果用の左カラム（高さ自動・中央配置） */
+            #res-simple-area {
+                flex: 1;
+                width: 48%;
+                /* 明示的に幅指定 */
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                /* コンテンツの高さに合わせる */
+                align-self: center;
+                /* 上下に伸びず中央に配置 */
+                margin-bottom: 0 !important;
+            }
+
+            /* 左カラムの下のボックス（回数・疲労度）を伸ばす */
+            #res-squat-stats-row {
+                flex: 1;
+                display: flex;
+                flex-direction: row;
+                /* 横並び維持 */
+                align-items: stretch;
+                /* 中身も高さを揃える */
+                gap: 10px;
+                /* カード間の隙間 */
+                margin-bottom: 0 !important;
+                /* ★重要: 下の余白を消して揃える★ */
+            }
+
+            /* 内部のカードも高さを最大にする */
+            #res-squat-stats-row .stat-card {
+                flex: 1;
+                /* 横幅を均等に */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                /* 内容を中央に */
+                height: auto;
+                /* 親に合わせて伸びる */
+            }
+
+            #science-metrics {
+                flex: 1;
+                width: 48%;
+                /* 明示的に幅指定 */
+                margin-top: 0 !important;
+                /* 上書き */
+                align-self: stretch;
+                /* 高さを揃える */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+
+
+            /* 横画面時はランクボックスの下余白を少し詰める */
+            #res-rank-score-box {
+                margin-bottom: 10px !important;
+            }
+        }
+
+        /* --- Result Page 1 Base Styles (Moved from inline) --- */
+        #res-summary-area {
+            width: 95%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        #res-rank-score-box {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        #science-metrics {
+            margin-top: 15px;
         }
