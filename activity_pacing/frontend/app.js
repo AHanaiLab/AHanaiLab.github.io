@@ -8,25 +8,30 @@ window.put = null;
 window.del = null;
 
 function bootstrapAmplify() {
-    // Amplify本体の取得方法を整理
-    const lib = (typeof Amplify !== 'undefined') ? Amplify : (window.aws_amplify ? window.aws_amplify.Amplify : null);
-    if (!lib) return false;
+    // グローバルの Amplify オブジェクトを確実に取得する
+    const lib = window.Amplify; 
+    if (!lib) {
+        console.warn("Amplify library not found on window object.");
+        return false;
+    }
 
     lib.configure({
-        API: { REST: { "pacingAPI": { 
-            endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com", 
-            region: "ap-northeast-1" 
-        } } }
+        API: {
+            endpoints: [ // v5の記法に合わせる
+                {
+                    name: "pacingAPI",
+                    endpoint: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com",
+                    region: "ap-northeast-1"
+                }
+            ]
+        }
     });
 
-    // window直下にAPIメソッドを配置
+    // メソッドの紐付け
     window.get  = lib.API.get.bind(lib.API);
     window.post = lib.API.post.bind(lib.API);
     window.put  = lib.API.put.bind(lib.API);
     window.del  = lib.API.del.bind(lib.API);
-    
-    // 既存のコードとの互換性のためローカル変数にも代入
-    get = window.get; post = window.post; put = window.put; del = window.del;
     
     return true;
 }
@@ -1700,6 +1705,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
