@@ -1,30 +1,44 @@
-console.log("TEST V152 AWS Migration - Checking Library...");
-
-// 1. CDNから読み込まれた Amplify を取得
-const { Amplify } = window.aws_amplify || {};
-const { get, post, put, del } = (window.aws_amplify && window.aws_amplify.api) || {};
-
-if (!Amplify) {
-    alert("エラー：AWS Amplifyライブラリが読み込めていません。index.htmlの設定を確認してください。");
-}
-
 const PACING_API_NAME = "pacingAPI";
 const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
 
-// 2. Amplifyの初期化（outputs.jsonに頼らず直接設定）
-Amplify.configure({
-    API: {
-        REST: {
-            [PACING_API_NAME]: {
-                endpoint: PACING_API_ENDPOINT,
-                region: "ap-northeast-1"
+// ライブラリの準備ができるまで安全に構成する関数
+function initializeAmplify() {
+    const aws_lib = window.aws_amplify;
+    
+    if (aws_lib && aws_lib.Amplify) {
+        console.log("Amplify Library Status: Loaded!");
+        const { Amplify } = aws_lib;
+        
+        Amplify.configure({
+            API: {
+                REST: {
+                    [PACING_API_NAME]: {
+                        endpoint: PACING_API_ENDPOINT,
+                        region: "ap-northeast-1"
+                    }
+                }
             }
-        }
+        });
+        return true;
     }
-});
+    return false;
+}
 
-// Legacy Config support
-window.AWS_CONFIG = { apiBase: PACING_API_ENDPOINT };
+// 即時実行を試みる
+if (!initializeAmplify()) {
+    console.warn("Amplify not ready yet, retrying in 100ms...");
+    // 準備ができるまで少し待つ（最大10回）
+    let retryCount = 0;
+    const retryInterval = setInterval(() => {
+        retryCount++;
+        if (initializeAmplify() || retryCount > 10) {
+            clearInterval(retryInterval);
+            if (retryCount > 10) console.error("Critical: Amplify library load timeout.");
+        }
+    }, 100);
+}
+
+const { get, post, put, del } = (window.aws_amplify && window.aws_amplify.api) || {};
 
 /* ===== 共通状態 / State ===== */
 const STORAGE_KEY_VO2 = "eo_vo2_records_v1";
@@ -1633,6 +1647,7 @@ window.intensityToRPE = intensityToRPE;
 window.getTriAxisPrescription = getTriAxisPrescription;
 
 console.log("App V152 Loaded (Full UI + Calc).");
+
 
 
 
