@@ -1,7 +1,7 @@
 console.log("TEST V152 AWS Migration");
 /* oncology_app/app.js - Refactored for AWS Pacing API Integration */
 import { Amplify } from 'aws-amplify';
-import { get, post, put, del } from 'aws-amplify/api';
+import { get as amplifyGet, post as amplifyPost, put as amplifyPut, del as amplifyDel } from 'aws-amplify/api';
 import { generateClient } from 'aws-amplify/data';
 
 const PACING_API_NAME = "pacingAPI";
@@ -15,6 +15,140 @@ const AMPLIFY_OUTPUTS_CANDIDATES = [
 let amplifyConfigured = false;
 let amplifyConfigPromise = null;
 let gen2DataClient = null;
+
+function buildApiUrl(path, queryParams) {
+    const normalizedBase = PACING_API_ENDPOINT.replace(/\/$/, '');
+    const normalizedPath = String(path || '').startsWith('/') ? String(path) : `/${path || ''}`;
+    const url = new URL(`${normalizedBase}${normalizedPath}`);
+
+    if (queryParams && typeof queryParams === 'object') {
+        Object.entries(queryParams).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                url.searchParams.set(key, String(value));
+            }
+        });
+    }
+
+    return url.toString();
+}
+
+function createHttpError(fetchResponse, bodyText) {
+    const error = new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
+    error.response = {
+        status: fetchResponse.status,
+        statusCode: fetchResponse.status,
+        body: bodyText
+    };
+    return error;
+}
+
+function createFetchOperation(method, input) {
+    const path = input?.path || '/';
+    const options = input?.options || {};
+    const headers = {
+        ...(options.headers || {}),
+        ...(options.body != null ? { 'Content-Type': 'application/json' } : {})
+    };
+
+    const response = (async () => {
+        const fetchResponse = await fetch(buildApiUrl(path, options.queryParams), {
+            method,
+            headers,
+            body: options.body != null ? JSON.stringify(options.body) : undefined
+        });
+
+        if (!fetchResponse.ok) {
+            const bodyText = await fetchResponse.text();
+            throw createHttpError(fetchResponse, bodyText);
+        }
+
+        return {
+            statusCode: fetchResponse.status,
+            headers: fetchResponse.headers,
+            body: {
+                json: async () => {
+                    const text = await fetchResponse.text();
+                    return text ? JSON.parse(text) : {};
+                }
+            }
+        };
+    })();
+
+    return { response };
+}
+
+function isInvalidApiNameError(error) {
+    return String(error?.message || '').includes('InvalidApiName');
+}
+
+function withFallback(method, amplifyFn, input) {
+    try {
+        const operation = amplifyFn(input);
+        return {
+            ...operation,
+            response: Promise.resolve(operation.response).catch((error) => {
+                if (isInvalidApiNameError(error)) {
+                    console.warn(`[REST Fallback] ${method} ${input?.path || ''}`);
+                    return createFetchOperation(method, input).response;
+                }
+                throw error;
+            })
+        };
+    } catch (error) {
+        if (isInvalidApiNameError(error)) {
+            console.warn(`[REST Fallback] ${method} ${input?.path || ''}`);
+            return createFetchOperation(method, input);
+        }
+        throw error;
+    }
+}
+
+function get(input) {
+    return withFallback('GET', amplifyGet, input);
+}
+
+function post(input) {
+    return withFallback('POST', amplifyPost, input);
+}
+
+function put(input) {
+    return withFallback('PUT', amplifyPut, input);
+}
+
+function del(input) {
+    return withFallback('DELETE', amplifyDel, input);
+}
+
+async function fetchSubjectListFromAdminSource() {
+    const response = await fetch(buildApiUrl('/subjects'), { mode: 'cors' });
+    if (!response.ok) {
+        throw new Error(`subjects list fetch failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+}
+
+function normalizeId(value) {
+    return String(value ?? '').trim();
+}
+
+function idsMatch(inputId, candidateId) {
+    const a = normalizeId(inputId);
+    const b = normalizeId(candidateId);
+    if (!a || !b) return false;
+    if (a === b) return true;
+
+    const aNum = Number(a);
+    const bNum = Number(b);
+    return Number.isFinite(aNum) && Number.isFinite(bNum) && aNum === bNum;
+}
+
+async function resolveExistingSubjectId(inputId) {
+    const subjects = await fetchSubjectListFromAdminSource();
+    const found = subjects.find((subject) => idsMatch(inputId, subject?.id));
+    return found ? normalizeId(found.id) : null;
+}
 
 async function loadAmplifyOutputs() {
     for (const path of AMPLIFY_OUTPUTS_CANDIDATES) {
@@ -403,16 +537,30 @@ const MoveCare = {
         sessionStorage.removeItem("intentional_logout");
 
         const loginBtn = document.getElementById("login-btn");
+        const loginErrorEl = document.getElementById("login-error");
+        if (loginErrorEl) loginErrorEl.classList.add("hidden");
         const originalText = loginBtn.textContent;
         loginBtn.disabled = true;
         loginBtn.textContent = "読み込み中...";
 
         try {
-            await MoveCare.loginAndFetchProfile(inputId, "被験者 " + inputId, "manual");
+            const resolvedId = await resolveExistingSubjectId(inputId);
+            if (!resolvedId) {
+                if (loginErrorEl) {
+                    loginErrorEl.textContent = "IDが見つかりません（被験者管理に登録されたIDを入力してください）。";
+                    loginErrorEl.classList.remove("hidden");
+                }
+                return;
+            }
+
+            await MoveCare.loginAndFetchProfile(resolvedId, "被験者 " + resolvedId, "manual");
             sessionStorage.removeItem("intentional_logout");
         } catch (e) {
             console.error("Manual Login Error:", e);
-            document.getElementById("login-error").classList.remove("hidden");
+            if (loginErrorEl) {
+                loginErrorEl.textContent = "ログインに失敗しました。ネットワークまたはIDを確認してください。";
+                loginErrorEl.classList.remove("hidden");
+            }
         } finally {
             loginBtn.disabled = false;
             loginBtn.textContent = originalText;
@@ -497,22 +645,12 @@ const MoveCare = {
                         }
                         return;
                     }
-                    // Create New User (Manual)
-                    console.log("User not found on AWS. Creating new...");
-                    userData = {
-                        id: uid,
-                        name: displayName || "利用者",
-                        createdAt: new Date().toISOString(),
-                        projectId: "default",
-                        feedforward: "はじめまして！よろしくお願いします。",
-                        logs: []
-                    };
-                    const createOp = post({
-                        apiName: PACING_API_NAME,
-                        path: `/subjects/${uid}`,
-                        options: { body: userData }
-                    });
-                    await createOp.response;
+                    const errorEl = document.getElementById("login-error");
+                    if (errorEl) {
+                        errorEl.textContent = "IDが見つかりません（被験者管理に登録されたIDを入力してください）。";
+                        errorEl.classList.remove("hidden");
+                    }
+                    return;
                 } else {
                     throw err;
                 }

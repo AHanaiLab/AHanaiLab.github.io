@@ -3788,7 +3788,7 @@ function init(converter, defaultAttributes) {
     }
     return document.cookie = name2 + "=" + converter.write(value, name2) + stringifiedAttributes;
   }
-  function get3(name2) {
+  function get4(name2) {
     if (typeof document === "undefined" || arguments.length && !name2) {
       return;
     }
@@ -3811,7 +3811,7 @@ function init(converter, defaultAttributes) {
   return Object.create(
     {
       set,
-      get: get3,
+      get: get4,
       remove: function(name2, attributes) {
         set(
           name2,
@@ -6798,7 +6798,7 @@ var GraphQLError = /* @__PURE__ */ (function(_Error) {
     // $FlowFixMe[unsupported-syntax] Flow doesn't support computed properties yet
   }, {
     key: SYMBOL_TO_STRING_TAG,
-    get: function get3() {
+    get: function get4() {
       return "Object";
     }
   }]);
@@ -7167,7 +7167,7 @@ var Source = /* @__PURE__ */ (function() {
   }
   _createClass2(Source2, [{
     key: SYMBOL_TO_STRING_TAG,
-    get: function get3() {
+    get: function get4() {
       return "Source";
     }
   }]);
@@ -11997,10 +11997,10 @@ function getFactory(client, modelIntrospection, model, operation, getInternals2,
   const getWithContext = (contextSpec, arg, options) => {
     return _get(client, modelIntrospection, model, arg, options, operation, getInternals2, contextSpec, customUserAgentDetails);
   };
-  const get3 = (arg, options) => {
+  const get4 = (arg, options) => {
     return _get(client, modelIntrospection, model, arg, options, operation, getInternals2, void 0, customUserAgentDetails);
   };
-  return useContext ? getWithContext : get3;
+  return useContext ? getWithContext : get4;
 }
 function _get(client, modelIntrospection, model, arg, options, operation, getInternals2, context2, customUserAgentDetails) {
   return selfAwareAsync(async (resultPromise) => {
@@ -12501,8 +12501,8 @@ var createCreateConversationFunction = (client, modelIntrospection, conversation
 
 // node_modules/@aws-amplify/data-schema/dist/esm/runtime/internals/ai/createGetConversationFunction.mjs
 var createGetConversationFunction = (client, modelIntrospection, conversationRouteName, conversationModel, conversationMessageModel, getInternals2) => async ({ id }) => {
-  const get3 = getFactory(client, modelIntrospection, conversationModel, "GET", getInternals2, false, getCustomUserAgentDetails(AiAction2.GetConversation));
-  const { data, errors } = await get3({ id });
+  const get4 = getFactory(client, modelIntrospection, conversationModel, "GET", getInternals2, false, getCustomUserAgentDetails(AiAction2.GetConversation));
+  const { data, errors } = await get4({ id });
   return {
     data: data ? convertItemToConversation(client, modelIntrospection, data.id, data.createdAt, data.updatedAt, conversationRouteName, conversationMessageModel, getInternals2, data?.metadata, data?.name) : data,
     errors
@@ -13090,6 +13090,116 @@ var AMPLIFY_OUTPUTS_CANDIDATES = [
 var amplifyConfigured = false;
 var amplifyConfigPromise = null;
 var gen2DataClient = null;
+function buildApiUrl(path, queryParams) {
+  const normalizedBase = PACING_API_ENDPOINT.replace(/\/$/, "");
+  const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${path || ""}`;
+  const url = new URL(`${normalizedBase}${normalizedPath}`);
+  if (queryParams && typeof queryParams === "object") {
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== void 0 && value !== null) {
+        url.searchParams.set(key, String(value));
+      }
+    });
+  }
+  return url.toString();
+}
+function createHttpError(fetchResponse, bodyText) {
+  const error = new Error(`HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`);
+  error.response = {
+    status: fetchResponse.status,
+    statusCode: fetchResponse.status,
+    body: bodyText
+  };
+  return error;
+}
+function createFetchOperation(method, input) {
+  const path = input?.path || "/";
+  const options = input?.options || {};
+  const headers = {
+    ...options.headers || {},
+    ...options.body != null ? { "Content-Type": "application/json" } : {}
+  };
+  const response = (async () => {
+    const fetchResponse = await fetch(buildApiUrl(path, options.queryParams), {
+      method,
+      headers,
+      body: options.body != null ? JSON.stringify(options.body) : void 0
+    });
+    if (!fetchResponse.ok) {
+      const bodyText = await fetchResponse.text();
+      throw createHttpError(fetchResponse, bodyText);
+    }
+    return {
+      statusCode: fetchResponse.status,
+      headers: fetchResponse.headers,
+      body: {
+        json: async () => {
+          const text = await fetchResponse.text();
+          return text ? JSON.parse(text) : {};
+        }
+      }
+    };
+  })();
+  return { response };
+}
+function isInvalidApiNameError(error) {
+  return String(error?.message || "").includes("InvalidApiName");
+}
+function withFallback(method, amplifyFn, input) {
+  try {
+    const operation = amplifyFn(input);
+    return {
+      ...operation,
+      response: Promise.resolve(operation.response).catch((error) => {
+        if (isInvalidApiNameError(error)) {
+          console.warn(`[REST Fallback] ${method} ${input?.path || ""}`);
+          return createFetchOperation(method, input).response;
+        }
+        throw error;
+      })
+    };
+  } catch (error) {
+    if (isInvalidApiNameError(error)) {
+      console.warn(`[REST Fallback] ${method} ${input?.path || ""}`);
+      return createFetchOperation(method, input);
+    }
+    throw error;
+  }
+}
+function get3(input) {
+  return withFallback("GET", get2, input);
+}
+function post4(input) {
+  return withFallback("POST", post2, input);
+}
+function put3(input) {
+  return withFallback("PUT", put2, input);
+}
+async function fetchSubjectListFromAdminSource() {
+  const response = await fetch(buildApiUrl("/subjects"), { mode: "cors" });
+  if (!response.ok) {
+    throw new Error(`subjects list fetch failed: ${response.status}`);
+  }
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+function normalizeId(value) {
+  return String(value ?? "").trim();
+}
+function idsMatch(inputId, candidateId) {
+  const a = normalizeId(inputId);
+  const b = normalizeId(candidateId);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const aNum = Number(a);
+  const bNum = Number(b);
+  return Number.isFinite(aNum) && Number.isFinite(bNum) && aNum === bNum;
+}
+async function resolveExistingSubjectId(inputId) {
+  const subjects = await fetchSubjectListFromAdminSource();
+  const found = subjects.find((subject) => idsMatch(inputId, subject?.id));
+  return found ? normalizeId(found.id) : null;
+}
 async function loadAmplifyOutputs() {
   for (const path of AMPLIFY_OUTPUTS_CANDIDATES) {
     try {
@@ -13430,15 +13540,28 @@ var MoveCare = {
     localStorage.removeItem("mc-auth-mode");
     sessionStorage.removeItem("intentional_logout");
     const loginBtn = document.getElementById("login-btn");
+    const loginErrorEl = document.getElementById("login-error");
+    if (loginErrorEl) loginErrorEl.classList.add("hidden");
     const originalText = loginBtn.textContent;
     loginBtn.disabled = true;
     loginBtn.textContent = "\u8AAD\u307F\u8FBC\u307F\u4E2D...";
     try {
-      await MoveCare.loginAndFetchProfile(inputId, "\u88AB\u9A13\u8005 " + inputId, "manual");
+      const resolvedId = await resolveExistingSubjectId(inputId);
+      if (!resolvedId) {
+        if (loginErrorEl) {
+          loginErrorEl.textContent = "ID\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF08\u88AB\u9A13\u8005\u7BA1\u7406\u306B\u767B\u9332\u3055\u308C\u305FID\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\uFF09\u3002";
+          loginErrorEl.classList.remove("hidden");
+        }
+        return;
+      }
+      await MoveCare.loginAndFetchProfile(resolvedId, "\u88AB\u9A13\u8005 " + resolvedId, "manual");
       sessionStorage.removeItem("intentional_logout");
     } catch (e) {
       console.error("Manual Login Error:", e);
-      document.getElementById("login-error").classList.remove("hidden");
+      if (loginErrorEl) {
+        loginErrorEl.textContent = "\u30ED\u30B0\u30A4\u30F3\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u307E\u305F\u306FID\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002";
+        loginErrorEl.classList.remove("hidden");
+      }
     } finally {
       loginBtn.disabled = false;
       loginBtn.textContent = originalText;
@@ -13469,7 +13592,7 @@ var MoveCare = {
         let path = `/subjects/${finalId}`;
         if (mode === "line") {
           try {
-            const aliasOp = post2({
+            const aliasOp = post4({
               apiName: PACING_API_NAME,
               path: "/auth/line",
               options: { body: { userId: uid } }
@@ -13480,7 +13603,7 @@ var MoveCare = {
             console.log("Alias lookup failed, trying direct subjects/uid");
             path = `/subjects/${uid}`;
             if (uid === TARGET_LINE_UID) path = `/subjects/1`;
-            const userOp = get2({
+            const userOp = get3({
               apiName: PACING_API_NAME,
               path
             });
@@ -13488,7 +13611,7 @@ var MoveCare = {
             userData = await userRes.body.json();
           }
         } else {
-          const userOp = get2({
+          const userOp = get3({
             apiName: PACING_API_NAME,
             path
           });
@@ -13501,28 +13624,19 @@ var MoveCare = {
           if (mode === "line") {
             console.log(">>> [UNLINKED] This LINE account has no subject linked. <<<");
             MoveCare.showLoginScreen();
-            const errorEl = document.getElementById("login-error");
-            if (errorEl) {
-              errorEl.textContent = "LINE\u9023\u643A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u88AB\u9A13\u8005ID\u3067\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002";
-              errorEl.classList.remove("hidden");
+            const errorEl2 = document.getElementById("login-error");
+            if (errorEl2) {
+              errorEl2.textContent = "LINE\u9023\u643A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u88AB\u9A13\u8005ID\u3067\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002";
+              errorEl2.classList.remove("hidden");
             }
             return;
           }
-          console.log("User not found on AWS. Creating new...");
-          userData = {
-            id: uid,
-            name: displayName || "\u5229\u7528\u8005",
-            createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-            projectId: "default",
-            feedforward: "\u306F\u3058\u3081\u307E\u3057\u3066\uFF01\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3057\u307E\u3059\u3002",
-            logs: []
-          };
-          const createOp = post2({
-            apiName: PACING_API_NAME,
-            path: `/subjects/${uid}`,
-            options: { body: userData }
-          });
-          await createOp.response;
+          const errorEl = document.getElementById("login-error");
+          if (errorEl) {
+            errorEl.textContent = "ID\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF08\u88AB\u9A13\u8005\u7BA1\u7406\u306B\u767B\u9332\u3055\u308C\u305FID\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044\uFF09\u3002";
+            errorEl.classList.remove("hidden");
+          }
+          return;
         } else {
           throw err;
         }
@@ -13532,7 +13646,7 @@ var MoveCare = {
         try {
           const profile = await liff.getProfile();
           console.log("Auto-linking Subject to current LINE account:", profile.userId);
-          const linkOp = post2({
+          const linkOp = post4({
             apiName: PACING_API_NAME,
             path: `/subjects/${uid}/link`,
             options: { body: { userId: profile.userId } }
@@ -13582,14 +13696,14 @@ var MoveCare = {
   async fetchGlobalData() {
     try {
       try {
-        const exOp = get2({ apiName: PACING_API_NAME, path: "/exercises" });
+        const exOp = get3({ apiName: PACING_API_NAME, path: "/exercises" });
         const exRes = await exOp.response;
         AppState.exercises = await exRes.body.json();
       } catch (e) {
         console.warn("/exercises fetch failed, using fallback or empty:", e);
       }
       try {
-        const projOp = get2({ apiName: PACING_API_NAME, path: "/projects" });
+        const projOp = get3({ apiName: PACING_API_NAME, path: "/projects" });
         const projRes = await projOp.response;
         AppState.projects = await projRes.body.json();
         if (AppState.subject && AppState.subject.projectId) {
@@ -13613,7 +13727,7 @@ var MoveCare = {
     if (!AppState.subject || !AppState.subject.id) return;
     console.log("Fetching Fitbit step data...");
     try {
-      const op = get2({
+      const op = get3({
         apiName: PACING_API_NAME,
         path: "/fitbit/steps",
         // Assuming this path exists or mapped
@@ -13835,7 +13949,7 @@ var MoveCare = {
       let result = null;
       try {
         const todayStr = getJSTDateStr();
-        const stateOp = put2({
+        const stateOp = put3({
           apiName: PACING_API_NAME,
           path: `/planner/daily-state/${todayStr}`,
           options: { body: context2 }
@@ -13843,7 +13957,7 @@ var MoveCare = {
         const stateRes = await stateOp.response;
         const savedState = await stateRes.body.json();
         console.log("Daily State Saved:", savedState);
-        const suggOp = get2({
+        const suggOp = get3({
           apiName: PACING_API_NAME,
           path: `/planner/suggestions`,
           options: { queryParams: { date: todayStr } }
@@ -14041,7 +14155,7 @@ var MoveCare = {
         planned_mets: parseFloat(logData.mets),
         auto_rest: true
       };
-      const taskOp = post2({
+      const taskOp = post4({
         apiName: PACING_API_NAME,
         path: "/planner/tasks",
         options: { body: taskPayload }
@@ -14058,7 +14172,7 @@ var MoveCare = {
           perceived_difficulty: 0,
           carryover_to_nextday: false
         };
-        const compOp = post2({
+        const compOp = post4({
           apiName: PACING_API_NAME,
           path: `/planner/tasks/${createdTask.id}/complete`,
           options: { body: completePayload }
@@ -14112,7 +14226,7 @@ var MoveCare = {
         pain_0_10: pain,
         sleep_quality: 1
       };
-      const op = put2({
+      const op = put3({
         apiName: PACING_API_NAME,
         path: `/planner/daily-state/${todayStr}`,
         options: { body: statePayload }
@@ -14201,7 +14315,7 @@ MoveCare.fetchDailyPlan = async function() {
   try {
     const todayStr = getJSTDateStr();
     console.log("Fetching Daily Plan for:", todayStr);
-    const op = get2({
+    const op = get3({
       apiName: PACING_API_NAME,
       path: "/planner/day",
       options: { queryParams: { date: todayStr } }
