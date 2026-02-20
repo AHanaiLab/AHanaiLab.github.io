@@ -165,6 +165,20 @@ def lambda_handler(event, context):
         elif parts[0] == 'export':
             return handle_export()
 
+        # 5.5 Planner APIs
+        elif parts[0] == 'planner':
+            if len(parts) == 3 and parts[1] == 'daily-state' and method in ['PUT', 'POST']:
+                return put_daily_state(event, parts[2])
+            elif len(parts) == 2 and parts[1] == 'suggestions' and method == 'GET':
+                return get_planner_suggestions(event)
+            elif len(parts) == 2 and parts[1] == 'day' and method == 'GET':
+                return get_planner_day(event)
+            elif len(parts) == 2 and parts[1] == 'tasks' and method == 'POST':
+                return create_planner_task(event)
+            elif len(parts) == 4 and parts[1] == 'tasks' and parts[3] == 'complete' and method == 'POST':
+                return complete_planner_task(event, parts[2])
+            return create_response(404, {'error': 'Planner route not found'})
+
         # 6. 基本リソース (subjects, exercises, projects)
         elif parts[0] in VALID_RESOURCES:
             resource_type = parts[0]
@@ -390,6 +404,192 @@ def get_item(resource_type, item_id):
             return create_response(404, {'error': 'Not found'})
         
         return create_response(200, item.get('data', item))
+    except Exception as e:
+        return create_response(500, {'error': str(e)})
+
+
+def _safe_int(v, default=0):
+    try:
+        return int(v)
+    except Exception:
+        return default
+
+
+def _resolve_subject_id(event, body=None):
+    query = event.get('queryStringParameters') or {}
+    subject_id = query.get('subjectId')
+    if not subject_id and isinstance(body, dict):
+        subject_id = body.get('subjectId')
+    if not subject_id:
+        subject_id = '1'
+    return str(subject_id)
+
+
+def _planner_task_key(subject_id, date_str, task_id):
+    return f"TASK#{subject_id}#{date_str}#{task_id}"
+
+
+def put_daily_state(event, date_str):
+    try:
+        body = json.loads(event.get('body', '{}'))
+        body = convert_floats_to_decimals(body)
+    except json.JSONDecodeError:
+        return create_response(400, {'error': 'Invalid JSON body'})
+
+    subject_id = _resolve_subject_id(event, body)
+
+    fatigue = _safe_int(body.get('fatigue_0_10', 5), 5)
+    pain = _safe_int(body.get('pain_0_10', 0), 0)
+    energy = _safe_int(body.get('energy_budget_0_100', 60), 60)
+    sleep = _safe_int(body.get('sleep_quality', 1), 1)
+
+    good_day_score = max(0, min(100, 60 + (energy - 60) - fatigue * 4 - pain * 12 + sleep * 6))
+
+    state_item = {
+        'subjectId': subject_id,
+        'date': date_str,
+        'energy_budget_0_100': energy,
+        'fatigue_0_10': fatigue,
+        'pain_0_10': pain,
+        'sleep_quality': sleep,
+        'good_day_score_0_100': good_day_score,
+        'updatedAt': datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
+    try:
+        table_main.put_item(Item={
+            'param': f'DAILY_STATE#{subject_id}#{date_str}',
+            'data': convert_floats_to_decimals(state_item)
+        })
+        return create_response(200, state_item)
+    except Exception as e:
+        return create_response(500, {'error': str(e)})
+
+
+def _load_daily_state(subject_id, date_str):
+    try:
+        resp = table_main.get_item(Key={'param': f'DAILY_STATE#{subject_id}#{date_str}'})
+        return resp.get('Item', {}).get('data', {})
+    except Exception:
+        return {}
+
+
+def get_planner_suggestions(event):
+    query = event.get('queryStringParameters') or {}
+    date_str = query.get('date') or datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+    subject_id = _resolve_subject_id(event)
+    state = _load_daily_state(subject_id, date_str)
+
+    score = _safe_int(state.get('good_day_score_0_100', 60), 60)
+    if score < 40:
+        cards = [
+            {'title': '深呼吸・リラックス', 'mets': 1.2, 'duration_options_min': [10, 15]},
+            {'title': 'ゆっくり散歩', 'mets': 2.0, 'duration_options_min': [10, 20]}
+        ]
+    elif score > 75:
+        cards = [
+            {'title': '速歩き', 'mets': 4.3, 'duration_options_min': [15, 20, 30]},
+            {'title': 'スクワット', 'mets': 5.0, 'duration_options_min': [10, 15]}
+        ]
+    else:
+        cards = [
+            {'title': '軽いストレッチ', 'mets': 2.5, 'duration_options_min': [10, 15, 20]},
+            {'title': '散歩', 'mets': 3.0, 'duration_options_min': [15, 20, 30]}
+        ]
+
+    return create_response(200, {'date': date_str, 'subjectId': subject_id, 'cards': cards})
+
+
+def create_planner_task(event):
+    try:
+        body = json.loads(event.get('body', '{}'))
+        body = convert_floats_to_decimals(body)
+    except json.JSONDecodeError:
+        return create_response(400, {'error': 'Invalid JSON body'})
+
+    subject_id = _resolve_subject_id(event, body)
+    date_str = body.get('date') or datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+    task_id = str(int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000))
+
+    task = {
+        'id': task_id,
+        'subjectId': subject_id,
+        'date': date_str,
+        'time_block': body.get('time_block', 'PM'),
+        'title': body.get('title', '活動'),
+        'category': body.get('category', 'EXERCISE'),
+        'planned_duration_min': _safe_int(body.get('planned_duration_min', 15), 15),
+        'planned_mets': float(body.get('planned_mets', 3.0)) if body.get('planned_mets') is not None else 3.0,
+        'status': 'PENDING',
+        'created_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
+    try:
+        table_main.put_item(Item={
+            'param': _planner_task_key(subject_id, date_str, task_id),
+            'data': convert_floats_to_decimals(task)
+        })
+        return create_response(200, task)
+    except Exception as e:
+        return create_response(500, {'error': str(e)})
+
+
+def complete_planner_task(event, task_id):
+    try:
+        body = json.loads(event.get('body', '{}'))
+        body = convert_floats_to_decimals(body)
+    except json.JSONDecodeError:
+        return create_response(400, {'error': 'Invalid JSON body'})
+
+    subject_id = _resolve_subject_id(event, body)
+    date_str = body.get('date') or datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+    key = _planner_task_key(subject_id, date_str, task_id)
+
+    try:
+        existing = table_main.get_item(Key={'param': key}).get('Item', {})
+        data = existing.get('data', {}) if existing else {}
+        if not data:
+            return create_response(404, {'error': 'Task not found'})
+
+        data['status'] = body.get('status', 'DONE')
+        data['actual_duration_min'] = _safe_int(body.get('actual_duration_min', data.get('planned_duration_min', 0)), 0)
+        data['actual_mets'] = float(body.get('actual_mets', data.get('planned_mets', 0)))
+        data['post_fatigue_0_10'] = _safe_int(body.get('post_fatigue_0_10', 0), 0)
+        data['perceived_difficulty'] = _safe_int(body.get('perceived_difficulty', 0), 0)
+        data['carryover_to_nextday'] = bool(body.get('carryover_to_nextday', False))
+        data['completed_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        table_main.put_item(Item={'param': key, 'data': convert_floats_to_decimals(data)})
+        return create_response(200, data)
+    except Exception as e:
+        return create_response(500, {'error': str(e)})
+
+
+def get_planner_day(event):
+    query = event.get('queryStringParameters') or {}
+    date_str = query.get('date') or datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+    subject_id = _resolve_subject_id(event)
+
+    from boto3.dynamodb.conditions import Attr
+
+    try:
+        response = table_main.scan(
+            FilterExpression=Attr('param').begins_with(f'TASK#{subject_id}#{date_str}#')
+        )
+        items = response.get('Items', [])
+
+        tasks = []
+        for item in items:
+            task = item.get('data', {})
+            if task:
+                tasks.append(task)
+
+        try:
+            tasks.sort(key=lambda x: str(x.get('created_at', '')))
+        except Exception:
+            pass
+
+        return create_response(200, {'subjectId': subject_id, 'date': date_str, 'tasks': tasks})
     except Exception as e:
         return create_response(500, {'error': str(e)})
 

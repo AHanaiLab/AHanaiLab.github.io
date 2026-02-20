@@ -1019,7 +1019,7 @@ const MoveCare = {
                 const stateOp = put({
                     apiName: PACING_API_NAME,
                     path: `/planner/daily-state/${todayStr}`,
-                    options: { body: context }
+                    options: { body: { ...context, subjectId: AppState.subject?.id } }
                 });
                 const stateRes = await stateOp.response;
                 const savedState = await stateRes.body.json();
@@ -1029,7 +1029,7 @@ const MoveCare = {
                 const suggOp = get({
                     apiName: PACING_API_NAME,
                     path: `/planner/suggestions`,
-                    options: { queryParams: { date: todayStr } }
+                    options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
                 });
                 const suggRes = await suggOp.response;
                 const suggestionData = await suggRes.body.json();
@@ -1253,6 +1253,7 @@ const MoveCare = {
             const timeBlock = now.getHours() < 12 ? "AM" : (now.getHours() < 18 ? "PM" : "EVENING");
 
             const taskPayload = {
+                subjectId: AppState.subject?.id,
                 date: todayStr,
                 time_block: timeBlock,
                 title: logData.name,
@@ -1274,6 +1275,8 @@ const MoveCare = {
             if (createdTask.id) {
                 // Complete it
                 const completePayload = {
+                    subjectId: AppState.subject?.id,
+                    date: todayStr,
                     status: "DONE",
                     actual_duration_min: duration,
                     actual_mets: parseFloat(logData.mets),
@@ -1337,6 +1340,7 @@ const MoveCare = {
             if (mood === 'low') energy = 30;
 
             const statePayload = {
+                subjectId: AppState.subject?.id,
                 energy_budget_0_100: energy,
                 fatigue_0_10: fatigue,
                 pain_0_10: pain,
@@ -1476,7 +1480,7 @@ MoveCare.fetchDailyPlan = async function () {
         const op = get({
             apiName: PACING_API_NAME,
             path: '/planner/day',
-            options: { queryParams: { date: todayStr } }
+            options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
         });
         const res = await op.response;
         const data = await res.body.json();

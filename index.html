@@ -15,7 +15,7 @@
   <script>
     // Aggressive Version Check & Cache Clearing
     (function () {
-      const CURRENT_VERSION = "20260220_V181";
+      const CURRENT_VERSION = "20260220_V182";
       if (localStorage.getItem("app_version") !== CURRENT_VERSION) {
         console.log("New version detected! Clearing caches...");
         localStorage.setItem("app_version", CURRENT_VERSION);
@@ -35,7 +35,7 @@
     })();
   </script>
   <script>
-    console.log("VERSION: 2026-02-20 V181 LOADED");
+    console.log("VERSION: 2026-02-20 V182 LOADED");
     tailwind.config = {
       theme: {
         extend: {},
@@ -984,7 +984,7 @@
   </div>
 
   <!-- Main App Script (ES Module for Amplify) -->
-  <script type="module" src="frontend/app.bundle.js?v=20260220_V181"></script>
+  <script type="module" src="frontend/app.bundle.js?v=20260220_V182"></script>
   <script>
     // Aggressive Cache Busting for Service Workers
     try {

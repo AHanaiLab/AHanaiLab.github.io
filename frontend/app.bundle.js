@@ -13959,7 +13959,7 @@ var MoveCare = {
         const stateOp = put3({
           apiName: PACING_API_NAME,
           path: `/planner/daily-state/${todayStr}`,
-          options: { body: context2 }
+          options: { body: { ...context2, subjectId: AppState.subject?.id } }
         });
         const stateRes = await stateOp.response;
         const savedState = await stateRes.body.json();
@@ -13967,7 +13967,7 @@ var MoveCare = {
         const suggOp = get3({
           apiName: PACING_API_NAME,
           path: `/planner/suggestions`,
-          options: { queryParams: { date: todayStr } }
+          options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
         });
         const suggRes = await suggOp.response;
         const suggestionData = await suggRes.body.json();
@@ -14154,6 +14154,7 @@ var MoveCare = {
       const now2 = /* @__PURE__ */ new Date();
       const timeBlock = now2.getHours() < 12 ? "AM" : now2.getHours() < 18 ? "PM" : "EVENING";
       const taskPayload = {
+        subjectId: AppState.subject?.id,
         date: todayStr,
         time_block: timeBlock,
         title: logData.name,
@@ -14172,6 +14173,8 @@ var MoveCare = {
       console.log("Task Created:", createdTask);
       if (createdTask.id) {
         const completePayload = {
+          subjectId: AppState.subject?.id,
+          date: todayStr,
           status: "DONE",
           actual_duration_min: duration,
           actual_mets: parseFloat(logData.mets),
@@ -14228,6 +14231,7 @@ var MoveCare = {
       if (mood === "high") energy = 90;
       if (mood === "low") energy = 30;
       const statePayload = {
+        subjectId: AppState.subject?.id,
         energy_budget_0_100: energy,
         fatigue_0_10: fatigue,
         pain_0_10: pain,
@@ -14345,7 +14349,7 @@ MoveCare.fetchDailyPlan = async function() {
     const op = get3({
       apiName: PACING_API_NAME,
       path: "/planner/day",
-      options: { queryParams: { date: todayStr } }
+      options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
     });
     const res = await op.response;
     const data = await res.body.json();
