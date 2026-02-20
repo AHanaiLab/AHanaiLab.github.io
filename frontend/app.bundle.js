@@ -13201,9 +13201,13 @@ async function resolveExistingSubjectId(inputId) {
   return found ? normalizeId(found.id) : null;
 }
 async function loadAmplifyOutputs() {
+  const tried = /* @__PURE__ */ new Set();
   for (const path of AMPLIFY_OUTPUTS_CANDIDATES) {
     try {
-      const response = await fetch(path, { cache: "no-store" });
+      const resolvedUrl = new URL(path, window.location.href).toString();
+      if (tried.has(resolvedUrl)) continue;
+      tried.add(resolvedUrl);
+      const response = await fetch(resolvedUrl, { cache: "no-store" });
       if (!response.ok) continue;
       const json = await response.json();
       if (json && typeof json === "object") {
@@ -13503,8 +13507,7 @@ var MoveCare = {
         return;
       }
       if (authMode === "manual") {
-        MoveCare.showAppScreen();
-        refreshUI();
+        MoveCare.showLoginScreen();
         return;
       }
       if (sessionStorage.getItem("intentional_logout")) {
@@ -14369,6 +14372,13 @@ MoveCare.fetchDailyPlan = async function() {
       renderPlanTimeline();
     }
   } catch (e) {
+    const status = e?.response?.statusCode || e?.response?.status;
+    if (status === 404) {
+      AppState.dailyPlan = [];
+      console.info("Daily plan endpoint not available yet (/planner/day). Continuing without daily plan.");
+      renderPlanTimeline();
+      return;
+    }
     console.warn("Failed to fetch daily plan:", e);
   }
 };
