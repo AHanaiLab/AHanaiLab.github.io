@@ -13956,22 +13956,46 @@ var MoveCare = {
       let result = null;
       try {
         const todayStr = getJSTDateStr();
-        const stateOp = put3({
-          apiName: PACING_API_NAME,
-          path: `/planner/daily-state/${todayStr}`,
-          options: { body: { ...context2, subjectId: AppState.subject?.id } }
-        });
-        const stateRes = await stateOp.response;
-        const savedState = await stateRes.body.json();
-        console.log("Daily State Saved:", savedState);
-        const suggOp = get3({
-          apiName: PACING_API_NAME,
-          path: `/planner/suggestions`,
-          options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
-        });
-        const suggRes = await suggOp.response;
-        const suggestionData = await suggRes.body.json();
-        console.log("Suggestions:", suggestionData);
+        const fallbackScore = Math.max(0, Math.min(
+          100,
+          60 + (context2.energy_budget_0_100 - 60) - context2.fatigue_0_10 * 4 - context2.pain_0_10 * 12 + context2.sleep_quality * 6
+        ));
+        const fallbackCards = fallbackScore < 40 ? [
+          { title: "\u6DF1\u547C\u5438\u30FB\u30EA\u30E9\u30C3\u30AF\u30B9", mets: 1.2, duration_options_min: [10, 15] },
+          { title: "\u3086\u3063\u304F\u308A\u6563\u6B69", mets: 2, duration_options_min: [10, 20] }
+        ] : fallbackScore > 75 ? [
+          { title: "\u901F\u6B69\u304D", mets: 4.3, duration_options_min: [15, 20, 30] },
+          { title: "\u30B9\u30AF\u30EF\u30C3\u30C8", mets: 5, duration_options_min: [10, 15] }
+        ] : [
+          { title: "\u8EFD\u3044\u30B9\u30C8\u30EC\u30C3\u30C1", mets: 2.5, duration_options_min: [10, 15, 20] },
+          { title: "\u6563\u6B69", mets: 3, duration_options_min: [15, 20, 30] }
+        ];
+        let savedState = { good_day_score_0_100: fallbackScore };
+        try {
+          const stateOp = put3({
+            apiName: PACING_API_NAME,
+            path: `/planner/daily-state/${todayStr}`,
+            options: { body: { ...context2, subjectId: AppState.subject?.id } }
+          });
+          const stateRes = await stateOp.response;
+          savedState = await stateRes.body.json();
+          console.log("Daily State Saved:", savedState);
+        } catch (stateErr) {
+          console.info("Planner daily-state endpoint unavailable. Using local score fallback.", stateErr);
+        }
+        let suggestionData = { cards: fallbackCards };
+        try {
+          const suggOp = get3({
+            apiName: PACING_API_NAME,
+            path: `/planner/suggestions`,
+            options: { queryParams: { date: todayStr, subjectId: AppState.subject?.id } }
+          });
+          const suggRes = await suggOp.response;
+          suggestionData = await suggRes.body.json();
+          console.log("Suggestions:", suggestionData);
+        } catch (suggErr) {
+          console.info("Planner suggestions endpoint unavailable. Using local suggestion fallback.", suggErr);
+        }
         result = {
           message: `\u4ECA\u65E5\u306E\u30B3\u30F3\u30C7\u30A3\u30B7\u30E7\u30F3(Score: ${savedState.good_day_score_0_100})\u306B\u57FA\u3065\u304D\u3001\u30D7\u30E9\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059\u3002`,
           daily_schedule: [],
@@ -14570,6 +14594,90 @@ window.switchScreen = function(id) {
   if (id === "screen-plan") {
     renderPlanTimeline();
   }
+  if (id === "screen-activities" && typeof window.filterMetsTable === "function") {
+    window.filterMetsTable("all");
+  }
+};
+MoveCare.switchScreen = window.switchScreen;
+window.filterMetsTable = function(filter2 = "all", buttonEl = null) {
+  const container = document.getElementById("mets-table-container");
+  if (!container) return;
+  const normalized = String(filter2 || "all").toLowerCase();
+  const filtered = ACTIVITY_DATABASE.filter((item) => {
+    if (normalized === "all") return true;
+    if (normalized === "exercise") return item.category === "EXERCISE";
+    if (normalized === "lifestyle") return item.category !== "EXERCISE";
+    return true;
+  });
+  container.innerHTML = filtered.map((item) => `
+        <button class="w-full text-left p-3 bg-white border border-slate-200 rounded-xl hover:bg-emerald-50 transition-colors"
+                onclick="MoveCare.openQuickPlanModal({name: '${String(item.name).replace(/'/g, "\\'")}', planned_mets: ${item.planned_mets}})">
+            <div class="text-xs font-bold text-slate-700">${item.name}</div>
+            <div class="text-[10px] text-slate-500 mt-1">${item.planned_mets} METs / ${item.category}</div>
+        </button>
+    `).join("");
+  document.querySelectorAll(".activity-filter-chip").forEach((el) => el.classList.remove("selected"));
+  if (buttonEl) buttonEl.classList.add("selected");
+};
+MoveCare.generateFromHabits = function() {
+  const now = /* @__PURE__ */ new Date();
+  const baseMinute = now.getHours() * 60 + Math.max(0, Math.floor(now.getMinutes() / 5) * 5);
+  const habits = [
+    { title: "\u8EFD\u3044\u30B9\u30C8\u30EC\u30C3\u30C1", planned_mets: 2.5, planned_duration_min: 15, category: "EXERCISE" },
+    { title: "\u6563\u6B69", planned_mets: 3, planned_duration_min: 20, category: "EXERCISE" },
+    { title: "\u4F11\u61A9\u30FB\u6DF1\u547C\u5438", planned_mets: 1.2, planned_duration_min: 10, category: "SELFCARE" }
+  ];
+  AppState.dailyPlan = habits.map((h, idx) => ({
+    ...h,
+    startMinute: baseMinute + idx * 30,
+    isAI: true,
+    isDone: false,
+    id: `habit-${Date.now()}-${idx}`
+  }));
+  localStorage.setItem("eo_daily_plan_v1", JSON.stringify(AppState.dailyPlan));
+  renderPlanTimeline();
+  switchScreen("screen-plan");
+  setActiveNav("nav-plan");
+};
+MoveCare.syncPlanModalTimes = function() {
+  const sh = Number(document.getElementById("plan-input-start-h")?.value || 0);
+  const sm = Number(document.getElementById("plan-input-start-m")?.value || 0);
+  const eh = Number(document.getElementById("plan-input-end-h")?.value || sh);
+  const em = Number(document.getElementById("plan-input-end-m")?.value || sm);
+  const start = sh * 60 + sm;
+  let end = eh * 60 + em;
+  if (end <= start) end = start + 15;
+  MoveCare.currentPlanInput = { start, end };
+  const dEl = document.getElementById("plan-input-duration");
+  if (dEl) dEl.textContent = `${end - start}\u5206`;
+};
+MoveCare.savePlanFromModal = function() {
+  const title = document.getElementById("plan-input-title")?.value?.trim() || "\u6D3B\u52D5";
+  const sh = Number(document.getElementById("plan-input-start-h")?.value || 9);
+  const sm = Number(document.getElementById("plan-input-start-m")?.value || 0);
+  const eh = Number(document.getElementById("plan-input-end-h")?.value || sh);
+  const em = Number(document.getElementById("plan-input-end-m")?.value || sm);
+  const startMinute = sh * 60 + sm;
+  let planned_duration_min = eh * 60 + em - startMinute;
+  if (planned_duration_min <= 0) planned_duration_min = 15;
+  const found = ACTIVITY_DATABASE.find((a) => a.name === title);
+  const planned_mets = found ? found.planned_mets : 3;
+  const category = found ? found.category : "EXERCISE";
+  if (!Array.isArray(AppState.dailyPlan)) AppState.dailyPlan = [];
+  AppState.dailyPlan.push({
+    id: `manual-${Date.now()}`,
+    title,
+    category,
+    planned_mets,
+    planned_duration_min,
+    startMinute,
+    isAI: false,
+    isDone: false
+  });
+  AppState.dailyPlan.sort((a, b) => (a.startMinute || 0) - (b.startMinute || 0));
+  localStorage.setItem("eo_daily_plan_v1", JSON.stringify(AppState.dailyPlan));
+  document.getElementById("modal-plan-input")?.classList.add("hidden");
+  renderPlanTimeline();
 };
 window.renderPlanTimeline = function() {
   const c = document.getElementById("plan-body");
