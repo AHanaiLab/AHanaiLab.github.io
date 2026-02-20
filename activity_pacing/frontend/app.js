@@ -10,111 +10,71 @@ window.apiDel = null;
 
 const API_BASE_URL = "https://na4k5gjhg7.execute-api.ap-northeast-1.amazonaws.com/Prod";
 
-/* ===== Native Fetch Wrapper for Amplify Replacement ===== */
-/* This removes the dependency on the external Amplify script which is failing to load via CDN */
+/* ===== Amplify Initialization (v5 CDN) ===== */
 
-async function fetchWrapper(method, params) {
-    const { path, options } = params;
-    // API_BASEURL + PATH. Ensure path starts with /
-    const urlPath = path.startsWith('/') ? path : `/${path}`;
-    let finalUrl = `${API_BASE_URL}${urlPath}`;
-
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options && options.headers)
-    };
-
-    const fetchOptions = {
-        method: method,
-        headers: headers,
-        mode: 'cors'
-    };
-
-    if (options && options.body) {
-        fetchOptions.body = JSON.stringify(options.body);
-    }
-
-    // Query Params Handling
-    if (options && options.queryParams) {
-        const urlObj = new URL(finalUrl);
-        Object.keys(options.queryParams).forEach(key =>
-            urlObj.searchParams.append(key, options.queryParams[key])
-        );
-        finalUrl = urlObj.toString();
-    }
-
-    console.log(`[API] ${method} ${finalUrl}`);
-
-    let response;
-    try {
-        response = await fetch(finalUrl, fetchOptions);
-    } catch (netErr) {
-        console.error("Network Error:", netErr);
-        throw { message: "Network Error", originalError: netErr };
-    }
-
-    // Amplify Response Mocking
-    // Amplify returns { response: Promise<{ body: { json: () => ... } }> }
-    // but in our usage: const op = apiGet(...); const res = await op.response; const data = await res.body.json();
-
-    const bodyInterface = {
-        json: async () => {
-            if (!response.ok) {
-                let errData;
-                try { errData = await response.text(); } catch (e) { errData = "No Body"; }
-                console.warn(`API Error ${response.status}:`, errData);
-                throw {
-                    response: {
-                        status: response.status,
-                        statusCode: response.status,
-                        data: errData
-                    },
-                    message: `HTTP ${response.status}`
-                };
-            }
-            return response.json();
-        }
-    };
-
-    return {
-        response: Promise.resolve({
-            body: bodyInterface
-        })
-    };
-}
-
-// Global Bindings
-window.apiGet = (params) => fetchWrapper('GET', params);
-window.apiPost = (params) => fetchWrapper('POST', params);
-window.apiPut = (params) => fetchWrapper('PUT', params);
-window.apiDel = (params) => fetchWrapper('DELETE', params);
-
+// Verify library availability and configure
 function bootstrapAmplify() {
-    console.log("Using native Fetch API. Amplify library dependency removed.");
-    return true;
+    // Check if library is loaded (window.Amplify is set by index.html guard)
+    const lib = window.Amplify;
+
+    if (!lib || !lib.API) {
+        console.log("Waiting for Amplify library...");
+        return false;
+    }
+
+    try {
+        // Configure Amplify
+        lib.configure({
+            API: {
+                endpoints: [
+                    {
+                        name: "pacingAPI",
+                        endpoint: API_BASE_URL,
+                        region: "ap-northeast-1"
+                    }
+                ]
+            }
+        });
+
+        // Bind API methods to global scope
+        const api = lib.API;
+        window.apiGet = api.get.bind(api);
+        window.apiPost = api.post.bind(api);
+        window.apiPut = api.put.bind(api);
+        window.apiDel = api.del.bind(api);
+
+        console.log("✅ Amplify Bootstrapped & API methods bound");
+        return true;
+    } catch (e) {
+        console.error("Amplify Bootstrap Failed:", e);
+        return false;
+    }
 }
 
-// Immediate resolution
+// Wait for Amplify to be ready (up to 30 sec)
 async function waitForAmplify() {
-    return true;
+    console.log("Waiting for Amplify...");
+    let retries = 0;
+    while (retries < 60) { // 30 seconds
+        if (bootstrapAmplify()) {
+            return true;
+        }
+        await new Promise(r => setTimeout(r, 500));
+        retries++;
+    }
+    console.error("Amplify Init Timeout");
+    alert("Amplifyの読み込みに失敗しました。再読み込みしてください。");
+    return false;
 }
 
 // 2. Kill the interval if it exists (though usually it runs once)
-const initRetry = setInterval(() => {
-    if (bootstrapAmplify()) {
-        clearInterval(initRetry);
-        console.log("API Ready (Native Mode). Syncing with Admin Settings...");
-        if (typeof MoveCare !== 'undefined' && AppState.subject) {
-            MoveCare.fetchGlobalData();
-        }
-    }
-}, 50);
+// initRetry removed for Amplify polling logic
 
 /* ===== 共通状態 / State (ここからは既存のコード) ===== */
 // ------------------------------------------
 
 const PACING_API_NAME = "pacingAPI";
-const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+const PACING_API_ENDPOINT = API_BASE_URL;
 
 /* ===== 共通状態 / State ===== */
 const STORAGE_KEY_VO2 = "eo_vo2_records_v1";
@@ -1404,6 +1364,7 @@ MoveCare.renderPriorityChips = function () {
 
 // Initial Startup
 document.addEventListener("DOMContentLoaded", async () => {
+    await waitForAmplify(); // Ensure Amplify is ready
     const authMode = localStorage.getItem("mc-auth-mode");
     const rawUser = localStorage.getItem("currentUser");
     AppState.version = "V152";
