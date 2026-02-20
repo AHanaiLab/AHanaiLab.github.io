@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医師国家試験 過去問演習</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+
+    <div id="app">
+        <!-- Title Screen -->
+        <section id="title-screen" class="screen active">
+            <h1 class="main-title">医師国家試験<br><span class="subtitle">過去問演習</span></h1>
+            <p class="instruction">知識の定着を確認しよう</p>
+            <div class="title-buttons">
+                <button id="start-btn" class="primary-btn">演習開始</button>
+                <a href="../YakugakuQA_quiz/index.html" class="switch-app-btn yakugaku">薬剤師国家試験は<br>こちら</a>
+            </div>
+        </section>
+
+        <!-- Dataset Selection Screen -->
+        <section id="selection-screen" class="screen">
+            <h2>開催回を選択</h2>
+            <div id="dataset-list" class="dataset-container">
+                <!-- Datasets will be injected here -->
+            </div>
+
+            <div id="question-settings" class="settings-container hidden"
+                style="margin: 20px 0; width: 100%; max-width: 300px;">
+                <label for="question-count-slider" style="display: block; margin-bottom: 10px; font-weight: bold;">
+                    出題数: <span id="question-count-value" style="color: #0056b3; font-size: 1.2rem;">10</span>問
+                </label>
+                <input type="range" id="question-count-slider" min="1" max="10" value="10"
+                    style="width: 100%; cursor: pointer;">
+            </div>
+
+            <p id="loading-indicator" class="hidden" style="color: #666; margin: 10px 0;">問題を読み込み中...</p>
+
+            <button id="description-start-btn" class="primary-btn" disabled
+                style="opacity: 0.5; cursor: not-allowed;">開始</button>
+            <button id="back-to-title-btn" class="secondary-btn">戻る</button>
+        </section>
+
+        <!-- Quiz Screen -->
+        <section id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div class="header-top">
+                    <div id="timer-bar-container">
+                        <div id="timer-bar"></div>
+                    </div>
+                    <button id="pause-btn" class="icon-btn" aria-label="一時停止">
+                        <span class="pause-icon"></span>
+                    </button>
+                </div>
+                <div class="quiz-info">
+                    <span id="question-count">問 1</span>
+                    <span id="score-display">正答数: 0</span>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <div id="context-container" class="context-box hidden"></div>
+                <p id="question-text"></p>
+            </div>
+
+            <div class="interaction-area">
+                <!-- Large Push Button (Visible initially) -->
+                <button id="push-btn" class="push-button">解答する</button>
+
+                <!-- Choices (Hidden text initially/disabled, shown after Push or Timeout) -->
+                <div id="choices-container" class="choices-grid hidden">
+                    <button class="choice-btn" data-index="0">Option 1</button>
+                    <button class="choice-btn" data-index="1">Option 2</button>
+                    <button class="choice-btn" data-index="2">Option 3</button>
+                    <button class="choice-btn" data-index="3">Option 4</button>
+                    <button class="choice-btn" data-index="4">Option 5</button>
+                </div>
+
+                <!-- Free Answer Input (Hidden initially) -->
+                <div id="free-answer-container" class="hidden"
+                    style="width: 100%; max-width: 400px; margin-bottom: 20px;">
+                    <input type="text" id="free-answer-input" class="free-answer-input" placeholder="回答を入力してください">
+                </div>
+
+                <!-- Submit Button (Below choices) -->
+                <button id="submit-answer-btn" class="primary-btn hidden" style="margin-top: 20px;">決定</button>
+            </div>
+
+            <!-- Feedback Overlay (Absolute position) -->
+            <div id="feedback-overlay" class="feedback-overlay hidden">
+                <div class="feedback-content">
+                    <h2 id="feedback-title">正解！</h2>
+                    <p id="feedback-explanation">解説がここに入ります。</p>
+                    <button id="next-question-btn" class="primary-btn">次へ</button>
+                </div>
+            </div>
+
+            <!-- Pause Overlay -->
+            <div id="pause-overlay" class="feedback-overlay hidden">
+                <div class="feedback-content">
+                    <h2>一時停止中</h2>
+                    <div class="pause-buttons">
+                        <button id="resume-btn" class="primary-btn">再開する</button>
+                        <button id="retire-btn" class="secondary-btn danger">リタイアする</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Result Screen -->
+        <section id="result-screen" class="screen">
+            <h2>結果発表</h2>
+            <div class="result-card">
+                <div class="score-circle">
+                    <span id="final-score-percent">80%</span>
+                    <span class="label">正答率</span>
+                </div>
+                <div class="result-details">
+                    <p>正解数: <span id="correct-count">0</span></p>
+                    <p>不正解数: <span id="incorrect-count">0</span></p>
+                    <p id="taboo-result-container" class="taboo-result"
+                        style="color: #d9534f; font-weight: bold; margin-top: 5px;">禁忌肢数: <span
+                            id="taboo-count-display">0</span></p>
+                </div>
+            </div>
+            <button id="home-btn" class="primary-btn">ホームに戻る</button>
+        </section>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
