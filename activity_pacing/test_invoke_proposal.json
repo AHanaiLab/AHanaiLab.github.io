@@ -1,5 +1,0 @@
-{
-    "httpMethod": "POST",
-    "path": "/proposal",
-    "body": "{\"subjectId\": \"1\", \"currentCondition\": {\"fatigue\": 3, \"pain\": 0, \"mood\": \"mid\", \"hrv\": \"normal\", \"sleep\": \"ok\"}}"
-}

@@ -1,5 +1,0 @@
-{
-    "httpMethod": "POST",
-    "path": "/logs",
-    "body": "{\"subjectId\": \"1\", \"log\": {\"type\": \"activity\", \"date\": \"2026-01-21T10:00:00Z\", \"day\": 1, \"name\": \"ウォーキング\", \"mets\": 3.0, \"duration\": 20, \"steps\": 5000, \"mvpa\": 25, \"done\": true}}"
-}

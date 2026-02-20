@@ -1,4 +1,0 @@
-# boto3 is provided by AWS Lambda Runtime
-
-# pandas is provided by AWS Lambda Layer
-

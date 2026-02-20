@@ -1,5 +1,0 @@
-{
-    "httpMethod": "POST",
-    "path": "/logs",
-    "body": "{\"subjectId\": \"1\", \"log\": {\"type\": \"test_log_entry\", \"date\": \"2026-01-01T00:00:00Z\", \"val\": 1.5, \"nested\": {\"v\": 2.2}}}"
-}
