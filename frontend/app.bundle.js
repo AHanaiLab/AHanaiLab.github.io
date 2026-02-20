@@ -13081,7 +13081,7 @@ function generateClient2(options) {
 // frontend/app.js
 console.log("TEST V152 AWS Migration");
 var PACING_API_NAME = "pacingAPI";
-var PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+var PACING_API_ENDPOINT = "https://i3ar4264ka.execute-api.ap-northeast-1.amazonaws.com/Prod";
 var AMPLIFY_OUTPUTS_CANDIDATES = [
   "./amplify_outputs.json",
   "../amplify_outputs.json",

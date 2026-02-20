@@ -5,7 +5,7 @@ import { get as amplifyGet, post as amplifyPost, put as amplifyPut, del as ampli
 import { generateClient } from 'aws-amplify/data';
 
 const PACING_API_NAME = "pacingAPI";
-const PACING_API_ENDPOINT = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
+const PACING_API_ENDPOINT = "https://i3ar4264ka.execute-api.ap-northeast-1.amazonaws.com/Prod";
 const AMPLIFY_OUTPUTS_CANDIDATES = [
     './amplify_outputs.json',
     '../amplify_outputs.json',
