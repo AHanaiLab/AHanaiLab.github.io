@@ -1614,6 +1614,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 // UI Event Handlers (Global)
 window.MoveCare = MoveCare;
 
+window.setActiveNav = function (navId) {
+    document.querySelectorAll('.bottom-nav-item').forEach((btn) => {
+        if (btn.id === navId) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+};
+
+window.renderBottomNav = function () {
+    const container = document.querySelector('.bottom-nav-inner');
+    if (!container) return;
+
+    const visibility = AppState.settings?.visibility || {};
+    const items = APP_MENUS.filter((menu) => visibility[menu.id] !== false);
+
+    container.innerHTML = items.map((menu) => `
+        <button id="${menu.id}" class="bottom-nav-item" onclick="switchScreen('${menu.screen}'); setActiveNav('${menu.id}')">
+            <span class="text-base">${menu.icon}</span>
+            <span class="text-[10px] font-bold">${menu.label}</span>
+        </button>
+    `).join('');
+
+    const activeScreen = document.querySelector('.app-screen.active')?.id;
+    const activeMenu = items.find((menu) => menu.screen === activeScreen) || items[0];
+    if (activeMenu) setActiveNav(activeMenu.id);
+};
+
 /* ===== Navigation & Screen Switching ===== */
 window.switchScreen = function (id) {
     document.querySelectorAll(".app-screen").forEach(el => el.classList.remove("active"));
