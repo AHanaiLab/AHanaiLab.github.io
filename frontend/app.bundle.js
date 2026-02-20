@@ -13761,9 +13761,13 @@ var MoveCare = {
     }
     renderProgramList();
     renderBottomNav();
-    refreshUI();
-    refreshSubjectUI();
-    MoveCare.renderPriorityChips();
+    try {
+      refreshUI();
+      refreshSubjectUI();
+      MoveCare.renderPriorityChips();
+    } catch (e) {
+      console.error("showAppScreen render error:", e);
+    }
     if (AppState.subject && AppState.subject.hasFitbit) {
       MoveCare.fetchFitbitData();
     }
@@ -14246,6 +14250,26 @@ function refreshSubjectUI() {
   MoveCare.checkMuchikoPlan();
   MoveCare.renderRecommendedActivities();
   if (typeof renderFitbitSteps === "function") renderFitbitSteps();
+}
+function renderCompletedActivities() {
+  const container = document.getElementById("completed-activities-list") || document.getElementById("home-completed-list") || document.getElementById("completed-list");
+  if (!container) return;
+  const completed = (AppState.dailyPlan || []).filter((item) => item && item.isDone);
+  if (completed.length === 0) {
+    container.innerHTML = `<div class="text-xs text-slate-400">\u5B8C\u4E86\u3057\u305F\u6D3B\u52D5\u306F\u307E\u3060\u3042\u308A\u307E\u305B\u3093</div>`;
+    return;
+  }
+  const rows = completed.slice(-5).reverse().map((item) => {
+    const duration = Number(item.planned_duration_min || 0);
+    const mets = Number(item.planned_mets || 0);
+    return `
+            <div class="text-xs text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1.5 mb-1">
+                <span class="font-bold">${item.title || "\u6D3B\u52D5"}</span>
+                <span class="text-slate-500"> ${duration}\u5206 / ${mets} METs</span>
+            </div>
+        `;
+  });
+  container.innerHTML = rows.join("");
 }
 MoveCare.checkMuchikoPlan = function() {
   if (!AppState.dailyPlan || AppState.dailyPlan.length === 0) return;
