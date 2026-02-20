@@ -3,29 +3,10 @@
 
 <head>
   <meta charset="UTF-8" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-amplify/5.3.11/aws-amplify.min.js"></script>
-
   <script>
-    // ライブラリがロードされたら確実に window.Amplify に紐付けるためのガード
-    (function () {
-      const check = () => {
-        // v5 CDN版は window.aws_amplify.Amplify に入ることが多いです
-        const lib = window.Amplify || (window.aws_amplify && window.aws_amplify.Amplify);
-        if (lib) {
-          window.Amplify = lib;
-          console.log("✅ Amplify Library Detected!");
-        } else {
-          setTimeout(check, 50);
-        }
-      };
-      check();
-    })();
-  </script>
-
-  <script>
-    // ライブラリが確実に window.aws_amplify に存在するように宣言
+    // Native Fetch Migration - No Amplify dependency required
     window.AWS_CONFIG = {
-      apiBase: "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com"
+      apiBase: "https://na4k5gjhg7.execute-api.ap-northeast-1.amazonaws.com/Prod"
     };
   </script>
   <title>アクティビティペーシングアプリ</title>
