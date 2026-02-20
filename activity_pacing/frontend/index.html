@@ -3,6 +3,24 @@
 
 <head>
   <meta charset="UTF-8" />
+  <!-- Amplify v5 CDN (Required for legacy support) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-amplify/5.3.11/aws-amplify.min.js"
+    crossorigin="anonymous"></script>
+  <script>
+    (function () {
+      const check = () => {
+        // v5 exposes as window.aws_amplify.Amplify mostly
+        const lib = window.Amplify || (window.aws_amplify && window.aws_amplify.Amplify);
+        if (lib) {
+          window.Amplify = lib;
+          console.log("✅ Amplify Ready");
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    })();
+  </script>
   <script>
     // Native Fetch Migration - No Amplify dependency required
     window.AWS_CONFIG = {
@@ -136,12 +154,12 @@
             <div id="mc-view-input">
               <!-- 疲労感 (0-10) -->
               <div class="mb-4">
-                <div class="text-xs font-semibold text-gray-500 mb-1">疲労感（0–10）</div>
+                <label for="fatigue-input" class="text-xs font-semibold text-gray-500 mb-1">疲労感（0–10）</label>
                 <div class="flex items-end justify-between mb-1">
                   <div class="text-3xl font-bold text-gray-800"><span id="mc-val-fatigue">5</span></div>
                   <div class="text-[10px] text-gray-400">元気 ↔ ぐったり</div>
                 </div>
-                <input type="range" min="0" max="10" value="5"
+                <input id="fatigue-input" type="range" min="0" max="10" value="5"
                   class="w-full accent-emerald-500 h-2 bg-gray-200 rounded-lg cursor-pointer"
                   oninput="MoveCare.ui.updateFatigue(this.value)" />
               </div>
@@ -178,10 +196,10 @@
 
               <!-- 体重 -->
               <div class="mb-2 p-2 rounded-xl border border-gray-100 text-[10px]">
-                <label class="flex items-center justify-between text-gray-600">
-                  <span>体重 (kcal計算用)</span>
+                <div class="flex items-center justify-between text-gray-600">
+                  <label for="weight-input">体重 (kcal計算用)</label>
                   <input id="weight-input" type="number" value="60" class="border rounded px-2 w-16 text-right">
-                </label>
+                </div>
               </div>
 
               <!-- 優先活動 (V175: チップ選択式 UI) -->
@@ -195,6 +213,7 @@
                 </div>
 
                 <div class="relative mb-2">
+                  <label for="priority-activity-name" class="sr-only">活動内容</label>
                   <input type="text" id="priority-activity-name" placeholder="または直接入力..."
                     class="w-full text-sm font-bold border-b-2 border-slate-100 py-1 focus:border-emerald-500 outline-none transition-all placeholder:font-normal"
                     onchange="MoveCare.ui.setPriorityName(this.value)">
@@ -439,25 +458,26 @@
             <div id="timer-settings" class="space-y-6">
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="text-[10px] font-bold text-gray-400 block mb-1">運動時間 (秒)</label>
+                  <label for="timer-work-sec" class="text-[10px] font-bold text-gray-400 block mb-1">運動時間 (秒)</label>
                   <input type="number" id="timer-work-sec" value="20"
                     class="w-full border rounded-xl p-3 text-center text-xl font-bold">
                 </div>
                 <div>
-                  <label class="text-[10px] font-bold text-gray-400 block mb-1">休息時間 (秒)</label>
+                  <label for="timer-rest-sec" class="text-[10px] font-bold text-gray-400 block mb-1">休息時間 (秒)</label>
                   <input type="number" id="timer-rest-sec" value="10"
                     class="w-full border rounded-xl p-3 text-center text-xl font-bold">
                 </div>
               </div>
               <div>
-                <label class="text-[10px] font-bold text-gray-400 block mb-1">セット数</label>
+                <label for="timer-sets" class="text-[10px] font-bold text-gray-400 block mb-1">セット数</label>
                 <input type="number" id="timer-sets" value="8"
                   class="w-full border rounded-xl p-3 text-center text-xl font-bold">
               </div>
 
               <!-- BGM Selection -->
               <div class="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
-                <label class="text-[10px] font-bold text-slate-500 block mb-2 text-center">BGMを選択（端末から再生）</label>
+                <label for="timer-bgm-input"
+                  class="text-[10px] font-bold text-slate-500 block mb-2 text-center">BGMを選択（端末から再生）</label>
                 <input type="file" id="timer-bgm-input" accept="audio/*" class="w-full text-[10px]">
                 <audio id="timer-bgm-player" controls class="w-full mt-3 hidden"></audio>
               </div>
@@ -507,34 +527,41 @@
             <div class="app-card-title">VO₂max トラッカー</div>
             <form class="space-y-3" onsubmit="handleVo2Submit(event)">
               <div class="grid grid-cols-2 gap-2">
+                <label for="vo2-source" class="sr-only">ソース</label>
                 <select id="vo2-source" class="border rounded-xl px-2 py-2 text-xs">
                   <option value="CS30">CS-30 推定</option>
                   <option value="direct">直接入力</option>
                 </select>
+                <label for="vo2-date" class="sr-only">日付</label>
                 <input id="vo2-date" type="date" class="border rounded-xl px-2 py-2 text-xs" />
               </div>
               <div id="vo2-cs30-block" class="grid grid-cols-2 gap-2">
+                <label for="vo2-cs30-rep" class="sr-only">回数</label>
                 <input type="number" id="vo2-cs30-rep" placeholder="回数" class="border rounded-xl px-2 py-2 text-xs">
+                <label for="vo2-age" class="sr-only">年齢</label>
                 <input type="number" id="vo2-age" placeholder="年齢" class="border rounded-xl px-2 py-2 text-xs">
               </div>
               <div id="vo2-cs30-extra-block" class="grid grid-cols-2 gap-2">
+                <label for="vo2-sex" class="sr-only">性別</label>
                 <select id="vo2-sex" class="border rounded-xl px-2 py-2 text-xs">
                   <option value="male">男性</option>
                   <option value="female">女性</option>
                 </select>
+                <label for="vo2-weight" class="sr-only">体重</label>
                 <input type="number" id="vo2-weight" placeholder="体重(kg)" class="border rounded-xl px-2 py-2 text-xs">
+                <label for="vo2-height" class="sr-only">身長</label>
                 <input type="number" id="vo2-height" placeholder="身長(cm)" class="border rounded-xl px-2 py-2 text-xs">
               </div>
 
               <!-- ★ 三軸モデル用入力 (移動: 基本情報の直後へ) -->
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="text-[9px] text-gray-400 font-bold block mb-1">安静時心拍数</label>
+                  <label for="mets-hr-rest" class="text-[9px] text-gray-400 font-bold block mb-1">安静時心拍数</label>
                   <input type="number" id="mets-hr-rest" placeholder="bpm" value="70"
                     class="w-full border rounded-xl px-2 py-2 text-xs">
                 </div>
                 <div>
-                  <label class="text-[9px] text-gray-400 font-bold block mb-1">最大心拍数 (任意)</label>
+                  <label for="mets-hr-max" class="text-[9px] text-gray-400 font-bold block mb-1">最大心拍数 (任意)</label>
                   <input type="number" id="mets-hr-max" placeholder="220-年齢"
                     class="w-full border rounded-xl px-2 py-2 text-xs">
                 </div>
@@ -548,6 +575,7 @@
               <button type="submit" class="btn-primary">この内容で記録する</button>
 
               <div id="vo2-direct-block" class="hidden">
+                <label for="vo2-direct" class="sr-only">VO2max 直接入力</label>
                 <input type="number" step="0.1" id="vo2-direct" placeholder="VO₂max"
                   class="w-full border rounded-xl px-2 py-2 text-xs">
               </div>
@@ -567,6 +595,7 @@
                     class="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">40% VO₂max</div>
                 </div>
 
+                <label for="intensity-slider" class="sr-only">運動強度スライダー</label>
                 <input type="range" id="intensity-slider" min="20" max="100" step="5" value="40"
                   class="w-full accent-emerald-500 h-2 bg-gray-200 rounded-lg cursor-pointer mb-6"
                   oninput="renderExtraTools()" />
@@ -727,13 +756,15 @@
           <div class="text-lg font-bold text-slate-800 mb-4 text-center">表示範囲の設定</div>
           <div class="space-y-4">
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">Start
+              <label for="config-start-hour"
+                class="block text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">Start
                 Hour</label>
               <input id="config-start-hour" type="number" min="0" max="23"
                 class="w-full text-2xl font-black border-b-2 border-slate-100 py-1 focus:border-emerald-500 outline-none">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">End Hour</label>
+              <label for="config-end-hour"
+                class="block text-[10px] font-bold text-slate-400 mb-1 tracking-widest uppercase">End Hour</label>
               <input id="config-end-hour" type="number" min="1" max="24"
                 class="w-full text-2xl font-black border-b-2 border-slate-100 py-1 focus:border-emerald-500 outline-none">
             </div>
@@ -764,6 +795,7 @@
               <div id="plan-activity-chips" class="flex flex-wrap gap-2 mb-3">
                 <!-- JSで生成 -->
               </div>
+              <label for="plan-input-title" class="sr-only">活動タイトル</label>
               <input id="plan-input-title" type="text" placeholder="または直接入力..."
                 class="w-full text-lg font-bold border-b-2 border-slate-100 py-1 focus:border-emerald-500 outline-none transition-all">
             </div>
@@ -807,6 +839,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm hidden">
         <div class="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl scale-in">
           <div class="text-center font-bold text-lg mb-4 text-slate-800">何分間行いましたか？</div>
+          <label for="duration-input" class="sr-only">活動時間</label>
           <input id="duration-input" type="number" value="5"
             class="w-full border rounded-xl p-3 text-center text-xl font-bold mb-4" />
           <div class="flex gap-2">
@@ -852,7 +885,7 @@
           <p class="text-sm text-slate-500 mb-8">運動療法サポートアプリ</p>
 
           <div class="text-left mb-6">
-            <label class="block text-xs font-bold text-slate-400 mb-1">被験者ID</label>
+            <label for="login-input-id" class="block text-xs font-bold text-slate-400 mb-1">被験者ID</label>
             <input id="login-input-id" type="text" placeholder="IDを入力 (例: 1)"
               class="w-full text-lg font-bold border-b-2 border-slate-200 py-2 focus:border-emerald-500 outline-none transition-colors">
           </div>
@@ -960,6 +993,8 @@
         <button onclick="window.adjustDuration(-5)"
           class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 active:scale-95 transition-transform">-5</button>
         <div class="relative w-24">
+          <label for="confirm-duration-input"
+            style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);">活動時間</label>
           <input type="number" id="confirm-duration-input"
             class="w-full text-center text-3xl font-black text-slate-800 border-b-2 border-emerald-500 focus:outline-none py-2"
             value="15">
