@@ -8,9 +8,9 @@ window.apiPost = null;
 window.apiPut = null;
 window.apiDel = null;
 
-const API_BASE_URL = "https://na4k5gjhg7.execute-api.ap-northeast-1.amazonaws.com/Prod";
+const API_BASE_URL = "https://sb79ay0ud8.execute-api.ap-northeast-1.amazonaws.com";
 
-/* ===== Amplify Initialization (v5 CDN) ===== */
+/* ===== Amplify Initialization (v5 CDN / REST-only) ===== */
 
 // Verify library availability and configure
 function bootstrapAmplify() {
@@ -23,16 +23,15 @@ function bootstrapAmplify() {
     }
 
     try {
-        // Configure Amplify
+        // Configure Amplify (REST API only configuration)
         lib.configure({
             API: {
-                endpoints: [
-                    {
-                        name: "pacingAPI",
+                REST: {
+                    "pacingAPI": {
                         endpoint: API_BASE_URL,
                         region: "ap-northeast-1"
                     }
-                ]
+                }
             }
         });
 
