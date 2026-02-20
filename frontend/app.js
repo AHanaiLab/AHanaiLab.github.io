@@ -1598,6 +1598,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const authMode = localStorage.getItem("mc-auth-mode");
     const rawUser = localStorage.getItem("currentUser");
+    const allowAutoRestore = localStorage.getItem("mc-auto-login") === "1";
     AppState.version = "V152";
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1611,7 +1612,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    if (rawUser) {
+    if (rawUser && allowAutoRestore) {
         const user = JSON.parse(rawUser);
         // Valid Session Restore
         const daysDiff = (Date.now() - (user.loginDate || 0)) / (1000 * 60 * 60 * 24);
@@ -1639,6 +1640,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             MoveCare.initLIFF();
         }
     } else {
+        if (rawUser && !allowAutoRestore) {
+            console.log("Auto session restore disabled. Showing login screen.");
+        }
         await MoveCare.initLIFF();
     }
 });
