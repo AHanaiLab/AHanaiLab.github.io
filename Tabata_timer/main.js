@@ -135,6 +135,25 @@ voiceSlider.addEventListener("input", () => {
 // BGM
 window.AudioModule.loadBGM('assets/bgm/MOCHIKO_POISON.wav');
 
+const bgmFileInput = document.getElementById("bgm-file-input");
+let customBgmUrl = null;
+
+if (bgmFileInput) {
+    bgmFileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // メモリリーク防止のため、過去に生成したオブジェクトURLを解放
+        if (customBgmUrl) {
+            URL.revokeObjectURL(customBgmUrl);
+        }
+
+        // Blob URLを生成してAudioModuleに渡す
+        customBgmUrl = URL.createObjectURL(file);
+        window.AudioModule.loadBGM(customBgmUrl);
+    });
+}
+
 Object.entries(window.AudioModule.seFiles).forEach(([name, url]) => {
     window.AudioModule.loadSE(name, url);
 });
@@ -260,7 +279,7 @@ function startTimer() {
     if (animationId || current >= sequence.length) return;
     startBtn.style.display = "none";
     pauseBtn.style.display = "none";
-    let countdown = 3;
+    let countdown = 5;
     timerEl.textContent = countdown;
     nameEl.textContent = "まもなく開始...";
     window.AudioModule.playSE("countdown");
