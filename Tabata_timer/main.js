@@ -279,7 +279,7 @@ function startTimer() {
     if (animationId || current >= sequence.length) return;
     startBtn.style.display = "none";
     pauseBtn.style.display = "none";
-    let countdown = 5;
+    let countdown = 3;
     timerEl.textContent = countdown;
     nameEl.textContent = "まもなく開始...";
     window.AudioModule.playSE("countdown");
