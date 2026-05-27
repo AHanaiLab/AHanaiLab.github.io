@@ -236,7 +236,7 @@ function nextStep() {
         requestAnimationFrame(animateProgress);
     } else {
         pauseBtn.style.display = "none";
-        nameEl.textContent = "すべてのストレッチが完了しました！";
+        nameEl.textContent = "今日のトレーニング完了！！！ナイスファイト！！";
         timerEl.textContent = "00";
         vibrate();
         setProgress(0);
