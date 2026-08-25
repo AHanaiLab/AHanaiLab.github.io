@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAQRA research portal - S3+CloudFront frontend, Lambda+HttpApi backend (PubMed/researchmap/AMED proxy + Bedrock ICF translation)
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: apac.anthropic.claude-sonnet-4-20250514-v1:0
+    Description: Bedrock model ID or inference profile ID used for ICF translation
+  AmedSearchUrl:
+    Type: String
+    Default: ""
+    Description: AMEDfind search endpoint URL (leave empty until identified via DevTools)
+  AmedQueryParam:
+    Type: String
+    Default: keyword
+    Description: Query parameter name used by the AMED search endpoint
+
+Globals:
+  HttpApi:
+    CorsConfiguration:
+      AllowOrigins:
+        - "*"
+      AllowMethods:
+        - GET
+        - POST
+        - OPTIONS
+      AllowHeaders:
+        - Content-Type
+        - Authorization
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: app.handler
+      Runtime: python3.12
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          AMED_SEARCH_URL: !Ref AmedSearchUrl
+          AMED_QUERY_PARAM: !Ref AmedQueryParam
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        Api:
+          Type: HttpApi
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${AWS::StackName} frontend"
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: s3origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !Ref OriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: s3origin
+          ViewerProtocolPolicy: redirect-to-https
+          # AWS managed cache policy: CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 60
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API base URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  FrontendBucketName:
+    Description: S3 bucket for the frontend
+    Value: !Ref FrontendBucket
+  DistributionId:
+    Description: CloudFront distribution ID
+    Value: !Ref Distribution
+  FrontendUrl:
+    Description: CloudFront URL
+    Value: !Sub "https://${Distribution.DomainName}"

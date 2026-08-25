@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAQRA 研究検索ポータル</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --ink: #1f2430; --sub: #5b6472;
+    --accent: #2456a6; --accent-2: #e8effa; --border: #dfe3ec; --err: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: var(--accent); color: #fff; padding: 1.1rem 1.5rem; }
+  header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  header p { margin: .25rem 0 0; font-size: .8rem; opacity: .85; }
+  main { max-width: 880px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+  .tabs { display: flex; gap: .4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--border); background: var(--card); color: var(--sub); padding: .5rem 1rem; border-radius: 999px; cursor: pointer; font-size: .9rem; }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .searchbar { display: flex; gap: .5rem; margin-bottom: 1rem; }
+  .searchbar input, textarea { flex: 1; padding: .6rem .8rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--card); }
+  textarea { width: 100%; min-height: 8rem; resize: vertical; font-family: inherit; }
+  .btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: .6rem 1.2rem; font-size: .95rem; cursor: pointer; }
+  .btn:disabled { opacity: .5; cursor: wait; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; margin-bottom: .7rem; }
+  .card h3 { margin: 0 0 .3rem; font-size: 1rem; }
+  .card h3 a { color: var(--accent); text-decoration: none; }
+  .card h3 a:hover { text-decoration: underline; }
+  .meta { font-size: .8rem; color: var(--sub); }
+  .status { font-size: .85rem; color: var(--sub); margin: .5rem 0; }
+  .error { color: var(--err); white-space: pre-wrap; }
+  .icf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .7rem; margin-top: 1rem; }
+  .icf-box h4 { margin: 0 0 .4rem; font-size: .9rem; color: var(--accent); }
+  .icf-box ul { margin: 0; padding-left: 1.1rem; font-size: .85rem; }
+  .icf-box .code { font-family: ui-monospace, monospace; background: var(--accent-2); border-radius: 4px; padding: 0 .3rem; margin-right: .3rem; }
+  pre.raw { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .8rem; overflow-x: auto; font-size: .8rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SAQRA 研究検索ポータル</h1>
+  <p>PubMed・researchmap・AMED 検索 / ICF 分類（Bedrock）</p>
+</header>
+<main>
+  <div class="tabs" id="tabs">
+    <button data-tab="pubmed" class="active">PubMed</button>
+    <button data-tab="rmap">researchmap</button>
+    <button data-tab="amed">AMED</button>
+    <button data-tab="icf">ICF翻訳</button>
+  </div>
+
+  <section class="panel active" id="panel-pubmed">
+    <form class="searchbar" data-api="pubmed">
+      <input type="search" placeholder="例: cancer survivorship" required>
+      <button class="btn" type="submit">検索</button>
+    </form>
+    <div class="status"></div>
+    <div class="results"></div>
+  </section>
+
+  <section class="panel" id="panel-rmap">
+    <form class="searchbar" data-api="rmap">
+      <input type="search" placeholder="研究者名・キーワード" required>
+      <button class="btn" type="submit">検索</button>
+    </form>
+    <div class="status"></div>
+    <div class="results"></div>
+  </section>
+
+  <section class="panel" id="panel-amed">
+    <form class="searchbar" data-api="amed">
+      <input type="search" placeholder="AMED 研究課題キーワード" required>
+      <button class="btn" type="submit">検索</button>
+    </form>
+    <div class="status"></div>
+    <div class="results"></div>
+  </section>
+
+  <section class="panel" id="panel-icf">
+    <textarea id="icf-text" placeholder="症状・生活状況・アブストラクト等のテキストを入力してください"></textarea>
+    <div style="margin-top:.6rem">
+      <button class="btn" id="icf-btn">ICF分類を実行</button>
+    </div>
+    <div class="status" id="icf-status"></div>
+    <div class="icf-grid" id="icf-results"></div>
+  </section>
+</main>
+
+<script>
+// deploy.sh が __API_BASE__ をデプロイ済み API Gateway の URL + /api に置換する
+const API_BASE_RAW = '__API_BASE__';
+const API_BASE = API_BASE_RAW.startsWith('__') ? '/api' : API_BASE_RAW;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// タブ切替
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + btn.dataset.tab));
+});
+
+// 検索フォーム共通処理
+document.querySelectorAll('form[data-api]').forEach(form => {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const api = form.dataset.api;
+    const q = form.querySelector('input').value.trim();
+    const panel = form.closest('.panel');
+    const status = panel.querySelector('.status');
+    const results = panel.querySelector('.results');
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    status.textContent = '検索中…';
+    results.innerHTML = '';
+    try {
+      const r = await fetch(`${API_BASE}/${api}/search?q=${encodeURIComponent(q)}`);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+      renderResults(api, data, status, results);
+    } catch (err) {
+      status.innerHTML = `<span class="error">エラー: ${esc(err.message)}</span>`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+});
+
+function renderResults(api, data, status, results) {
+  if (api === 'pubmed') {
+    status.textContent = `${data.total.toLocaleString()} 件中 ${data.results.length} 件を表示`;
+    results.innerHTML = data.results.map(r => `
+      <div class="card">
+        <h3><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h3>
+        <div class="meta">${esc((r.authors || []).slice(0, 6).join(', '))}${(r.authors || []).length > 6 ? ' ほか' : ''}</div>
+        <div class="meta">${esc(r.source)} (${esc(r.pubdate)})${r.doi ? ' · DOI: ' + esc(r.doi) : ''} · PMID: ${esc(r.pmid)}</div>
+      </div>`).join('') || '<p class="status">結果がありません。</p>';
+    return;
+  }
+  // researchmap / AMED はレスポンス構造が可変のため、代表的なキーを試しつつ JSON を整形表示
+  const items = data.items || data.results || data['@graph'] || null;
+  if (Array.isArray(items) && items.length) {
+    status.textContent = `${items.length} 件を表示`;
+    results.innerHTML = items.map(it => {
+      const name = it['family_name'] && it['given_name']
+        ? `${it['family_name']} ${it['given_name']}` : (it.name || it.title || it['research_title'] || 'タイトル不明');
+      const link = it['@id'] || it.url || it.link || '';
+      const desc = it.affiliation || it.organization || it.description || '';
+      return `<div class="card">
+        <h3>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(typeof name === 'object' ? JSON.stringify(name) : name)}</a>` : esc(typeof name === 'object' ? JSON.stringify(name) : name)}</h3>
+        <div class="meta">${esc(typeof desc === 'object' ? JSON.stringify(desc) : desc)}</div>
+      </div>`;
+    }).join('');
+  } else {
+    status.textContent = '取得結果（未整形）';
+    results.innerHTML = `<pre class="raw">${esc(JSON.stringify(data, null, 2).slice(0, 20000))}</pre>`;
+  }
+}
+
+// ICF 翻訳
+const ICF_SECTIONS = [
+  ['body_functions', '心身機能・身体構造 (b/s)'],
+  ['activities', '活動 (d)'],
+  ['participation', '参加 (d)'],
+  ['environmental_factors', '環境因子 (e)'],
+  ['personal_factors', '個人因子'],
+  ['related_categories', '関連カテゴリ'],
+];
+document.getElementById('icf-btn').addEventListener('click', async () => {
+  const text = document.getElementById('icf-text').value.trim();
+  const status = document.getElementById('icf-status');
+  const grid = document.getElementById('icf-results');
+  const btn = document.getElementById('icf-btn');
+  if (!text) { status.textContent = 'テキストを入力してください。'; return; }
+  btn.disabled = true;
+  status.textContent = 'ICF分類を実行中…（10〜20秒かかることがあります）';
+  grid.innerHTML = '';
+  try {
+    const r = await fetch(`${API_BASE}/icf/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+    status.textContent = '分類が完了しました。';
+    grid.innerHTML = ICF_SECTIONS.map(([key, label]) => {
+      const items = data[key] || [];
+      const lis = items.length
+        ? items.map(it => `<li>${it.code ? `<span class="code">${esc(it.code)}</span>` : ''}${esc(it.label || '')}${it.evidence ? `<br><span class="meta">${esc(it.evidence)}</span>` : ''}</li>`).join('')
+        : '<li class="meta">該当なし</li>';
+      return `<div class="card icf-box"><h4>${label}</h4><ul>${lis}</ul></div>`;
+    }).join('');
+  } catch (err) {
+    status.innerHTML = `<span class="error">エラー: ${esc(err.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
