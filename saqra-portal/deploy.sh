@@ -7,6 +7,28 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# 事前チェック: 必要なコマンドが揃っているか
+MISSING=0
+if ! command -v sam >/dev/null 2>&1; then
+  echo "エラー: SAM CLI (sam) が見つかりません。次のいずれかでインストールしてください:" >&2
+  echo "  brew install aws-sam-cli" >&2
+  echo "  または https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html" >&2
+  MISSING=1
+fi
+if ! command -v aws >/dev/null 2>&1; then
+  echo "エラー: AWS CLI (aws) が見つかりません。次のいずれかでインストールしてください:" >&2
+  echo "  brew install awscli" >&2
+  echo "  または https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+  MISSING=1
+fi
+[ "${MISSING}" -eq 1 ] && exit 1
+
+if ! aws sts get-caller-identity >/dev/null 2>&1; then
+  echo "エラー: AWS 認証情報が未設定または無効です。'aws configure' を実行してください" >&2
+  echo "  (region は ap-northeast-1 を指定)" >&2
+  exit 1
+fi
+
 STACK_NAME="${STACK_NAME:-saqra-portal}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 

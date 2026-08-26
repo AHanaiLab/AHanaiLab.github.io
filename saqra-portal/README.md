@@ -32,9 +32,21 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 ## 前提
 
 ```bash
+# 1. 必要なCLIをインストール（macOS / Homebrew）
+brew install awscli aws-sam-cli
+# Windows: winget install Amazon.AWSCLI Amazon.SAM-CLI
+# Homebrew を使わない場合は公式インストーラ:
+#   https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html
+
+# 2. インストール確認
+aws --version && sam --version
+
+# 3. AWS 認証設定
 aws configure          # Access Key / Secret / region: ap-northeast-1
-brew install aws-sam-cli   # Windows: winget install Amazon.SAM-CLI
 ```
+
+`deploy.sh` は実行前に `aws` / `sam` の有無と認証情報を自動チェックし、不足していれば
+インストール方法を表示して停止します。
 
 - Python 3.12 がローカルにない場合は `sam build --use-container` を使ってください（Docker が必要）。
 - **Bedrock モデルアクセス**: AWSコンソール → Bedrock → Model access で Claude を有効化しておくこと。
