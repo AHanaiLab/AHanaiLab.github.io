@@ -7,6 +7,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Homebrew の python@3.12 は keg-only で PATH に入らないことがあるため、存在すれば先頭に追加
+for _py in /opt/homebrew/opt/python@3.12/bin /usr/local/opt/python@3.12/bin; do
+  [ -d "${_py}" ] && PATH="${_py}:${PATH}"
+done
+export PATH
+
 # 事前チェック: 必要なコマンドが揃っているか
 MISSING=0
 if ! command -v sam >/dev/null 2>&1; then
