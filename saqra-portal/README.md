@@ -48,7 +48,8 @@ aws configure          # Access Key / Secret / region: ap-northeast-1
 `deploy.sh` は実行前に `aws` / `sam` の有無と認証情報を自動チェックし、不足していれば
 インストール方法を表示して停止します。
 
-- Python 3.12 がローカルにない場合は `sam build --use-container` を使ってください（Docker が必要）。
+- **Python 3.12 が必要です**（Lambda ランタイムに合わせてビルドするため）: `brew install python@3.12`
+  Docker がある場合は代わりに `sam build --use-container` でも可。
 - **Bedrock モデルアクセス**: AWSコンソール → Bedrock → Model access で Claude を有効化しておくこと。
   既定モデルは `apac.anthropic.claude-sonnet-4-20250514-v1:0`（APAC クロスリージョン推論プロファイル）。
   変更する場合は `BEDROCK_MODEL_ID=... ./deploy.sh` または `template.yaml` の `BedrockModelId` を編集。

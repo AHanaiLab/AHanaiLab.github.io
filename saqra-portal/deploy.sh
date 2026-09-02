@@ -21,6 +21,12 @@ if ! command -v aws >/dev/null 2>&1; then
   echo "  または https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
   MISSING=1
 fi
+if ! command -v python3.12 >/dev/null 2>&1; then
+  echo "エラー: python3.12 が見つかりません。Lambda ランタイム (python3.12) に合わせたビルドに必要です:" >&2
+  echo "  brew install python@3.12" >&2
+  echo "  (Docker がある場合は 'sam build --use-container' でも代用できます)" >&2
+  MISSING=1
+fi
 [ "${MISSING}" -eq 1 ] && exit 1
 
 if ! aws sts get-caller-identity >/dev/null 2>&1; then
