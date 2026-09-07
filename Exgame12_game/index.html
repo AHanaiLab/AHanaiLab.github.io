@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Squat Battle (ゲームモード)</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script type="module">
+        import {
+            PoseLandmarker,
+            FilesetResolver,
+            DrawingUtils
+        } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
+
+        window.PoseLandmarker = PoseLandmarker;
+        window.FilesetResolver = FilesetResolver;
+        window.DrawingUtils = DrawingUtils;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- ▼ カメラ画面（ゲームモード） -->
+    <div class="container screen" id="camera-screen">
+        <video id="input_video" playsinline></video>
+        <canvas id="output_canvas"></canvas>
+
+        <div id="countdown-overlay">
+            <div class="countdown-text" id="countdown-val">5</div>
+        </div>
+
+        <div class="ui-layer">
+            <div id="squat-ui">
+                <div id="depth-gauge-container">
+                    <div id="depth-bar"></div>
+                    <div id="target-line"></div>
+                </div>
+                <div id="target-label">目標</div>
+
+                <div id="game-info">
+                    <div class="game-header-L">
+                        <div style="font-size:15px; color:#ccc;">LEVEL</div>
+                        <div style="font-size:30px; font-weight:bold; font-family: 'Arial Black', sans-serif;"
+                            id="gm-lvl-val">1</div>
+                        <div style="height:5px;"></div>
+                        <div style="font-size:15px; color:#ccc;">COMBO</div>
+                        <div style="font-size:30px; font-weight:bold; color:#ffeb3b; font-family: 'Arial Black', sans-serif;"
+                            id="gm-combo-val">0</div>
+                    </div>
+                    <div class="game-header-R">
+                        <div class="score-label">SCORE</div>
+                        <div class="score-val" id="gm-score">0</div>
+                    </div>
+                    <div id="battle-stage">
+                        <div id="monster-name">Lv.1 スライム</div><br>
+                        <div id="monster">👾</div>
+                        <div class="hp-container">
+                            <div id="hp-bar"></div>
+                            <div id="hp-text">100/100</div>
+                        </div>
+                    </div>
+                    <div id="combo-display"></div>
+                </div>
+            </div>
+
+            <div class="warning-text" id="warning-msg"></div>
+            <div class="status-lamp lamp-squat" id="status-lamp">待機</div>
+
+            <div id="bgm-control-ui">
+                <span style="font-size: 15px; font-weight: bold; letter-spacing: 1px;">BGM</span>
+                <label class="switch">
+                    <input type="checkbox" id="bgm-switch" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="control-area">
+                <button class="finish-btn" id="btn-finish">終了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ▼ START 画面 -->
+    <div id="start-screen" class="overlay-screen screen">
+        <h1 class="app-title">SQUAT MASTER</h1>
+        <div class="app-subtitle">⚔️ ゲームモード</div>
+
+        <div class="start-card">
+            <div class="start-desc">
+                スクワットでモンスターをたおそう！<br>
+                深くしゃがむとクリティカル！<br>
+                <span class="start-note">※ カメラの前に横向きに立ってね</span>
+            </div>
+            <button class="start-btn" id="btn-start" disabled>読み込み中...</button>
+        </div>
+    </div>
+
+    <!-- ▼ RESULT 画面（回数のみ） -->
+    <div id="result-screen" class="overlay-screen screen">
+        <div class="result-card">
+            <div class="result-message">がんばったね！</div>
+            <div class="result-sub">スクワット</div>
+            <div class="result-count"><span id="res-reps">0</span><span class="result-unit">回</span></div>
+            <button class="start-btn" id="btn-retry">もう一度</button>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
