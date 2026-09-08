@@ -15,19 +15,33 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 
 | パス | 内容 |
 |---|---|
-| `frontend/index.html` | ポータル画面（PubMed / researchmap / AMED / ICF翻訳タブ）。既存のHTMLがあればこのファイルを差し替え可（`__API_BASE__` プレースホルダを含めること） |
+| `frontend/index.html` | ポータル画面（検索 → ICF 50年後翻訳）。1ファイル完結でバイブコーディング向けにコメント付き |
+| `frontend/guide.html` | ハッカソン参加者ガイド（改造手順・プロンプト例・発表フォーマット） |
 | `backend/app.py` | FastAPI + Mangum。4エンドポイントを実装 |
 | `backend/requirements.txt` | fastapi / mangum / httpx / anthropic[bedrock] |
 | `template.yaml` | SAM テンプレート（Lambda, HTTP API, S3, CloudFront OAC） |
 | `deploy.sh` | build → deploy → API_BASE 差し込み → S3 同期 → invalidation を一括実行 |
 | `samconfig.toml` | スタック名 `saqra-portal` / region `ap-northeast-1` のデプロイ設定 |
 
+## 画面の使い方（患者・家族向け）
+
+1. 日本語で知りたいことを入力して「探す」— AIが英語のPubMed検索語に変換します（`query_en` として表示）
+2. 結果カードの「ICF 50年後翻訳」を押す — やさしい要約、ICF各領域の「いま → 50年後」、2076年のある一日の物語、残された課題が表示されます
+3. 論文を探さず「自分の言葉から翻訳する」も可能
+
+ハッカソン参加者向けの改造手順は `frontend/guide.html`（デプロイ後は `<CloudFront URL>/guide.html`）にあります。
+ローカルに保存した `index.html` はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
+
 ## API エンドポイント
 
-- `GET /api/pubmed/search?q=<クエリ>&retmax=20` — PubMed E-utilities（esearch + esummary）
+- `GET /api/pubmed/search?q=<クエリ>&retmax=10` — PubMed（esearch + efetch、抄録付き）。日本語クエリは Bedrock で英訳してから検索
+- `POST /api/icf/future` — **ICF 50年後翻訳**。リクエスト: `{"text": "...", "title": "..."}`。レスポンス: `{plain_summary, who_benefits, domains{body_functions, activities, participation, environmental_factors, personal_factors}[{code,label,now,future}], day_in_2076, open_questions}`
+- `POST /api/icf/translate` — ICF 分類のみ。レスポンス: `{body_functions, activities, participation, environmental_factors, personal_factors, related_categories}`
 - `GET /api/rmap/search?q=<クエリ>` — researchmap API プロキシ（`q` 以外のクエリパラメータはそのまま転送）
 - `GET /api/amed/search?q=<クエリ>` — AMEDfind 取得。**`AmedSearchUrl` パラメータ設定までは 501 を返します**（後述）
-- `POST /api/icf/translate` — Bedrock (Claude) による ICF 分類。リクエスト: `{"text": "..."}`、レスポンス: `{body_functions, activities, participation, environmental_factors, personal_factors, related_categories}`
+
+AIへの指示文（プロンプト）は `backend/app.py` の `ICF_FUTURE_SYSTEM` / `QUERY_TRANSLATE_SYSTEM` にあります。
+HTTP API 全体に 20 req/s（バースト40）のスロットリングを設定しています。
 
 ## 前提
 
@@ -80,6 +94,13 @@ CloudFront の URL をブラウザで開き、PubMed タブで検索結果が出
 ```bash
 AMED_SEARCH_URL="https://..." AMED_QUERY_PARAM="keyword" ./deploy.sh
 ```
+
+## ハッカソン前の推奨設定
+
+- **NCBI API キー**（無料、PubMed のレート上限が 3→10 req/s に上がります。30名同時利用時に有効）:
+  https://www.ncbi.nlm.nih.gov/account/ で取得し `NCBI_API_KEY=... ./deploy.sh`
+- **Bedrock のクォータ確認**: 東京リージョンの Claude Sonnet 4 の「1分あたりリクエスト数」がイベント人数に足りるか Service Quotas で確認
+- 当日は `curl "$API/api/health"` と検索・翻訳を各1回、開始前に実行して疎通確認
 
 レスポンスの構造が特殊な場合は `backend/app.py` の `amed_search` にパース処理を追加してください。
 

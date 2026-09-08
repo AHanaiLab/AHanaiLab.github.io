@@ -48,6 +48,7 @@ PARAM_OVERRIDES=()
 [ -n "${BEDROCK_MODEL_ID:-}" ] && PARAM_OVERRIDES+=("BedrockModelId=${BEDROCK_MODEL_ID}")
 [ -n "${AMED_SEARCH_URL:-}" ] && PARAM_OVERRIDES+=("AmedSearchUrl=${AMED_SEARCH_URL}")
 [ -n "${AMED_QUERY_PARAM:-}" ] && PARAM_OVERRIDES+=("AmedQueryParam=${AMED_QUERY_PARAM}")
+[ -n "${NCBI_API_KEY:-}" ] && PARAM_OVERRIDES+=("NcbiApiKey=${NCBI_API_KEY}")
 
 echo "==> sam build"
 sam build
@@ -73,7 +74,9 @@ echo "==> フロントエンドに API_BASE を差し込み (${API_URL}/api)"
 BUILD_DIR="$(mktemp -d)"
 trap 'rm -rf "${BUILD_DIR}"' EXIT
 cp -r frontend/. "${BUILD_DIR}/"
-sed "s|__API_BASE__|${API_URL}/api|g" frontend/index.html > "${BUILD_DIR}/index.html"
+for f in frontend/*.html; do
+  sed "s|__API_BASE__|${API_URL}/api|g" "$f" > "${BUILD_DIR}/$(basename "$f")"
+done
 
 echo "==> S3 へ同期 (s3://${BUCKET})"
 aws s3 sync "${BUILD_DIR}/" "s3://${BUCKET}/" --delete --region "${REGION}"
@@ -84,6 +87,7 @@ aws cloudfront create-invalidation --distribution-id "${DIST_ID}" --paths "/*" >
 echo ""
 echo "================ デプロイ完了 ================"
 echo "フロントエンド : ${FRONTEND_URL}"
+echo "参加者ガイド   : ${FRONTEND_URL}/guide.html"
 echo "API ベースURL  : ${API_URL}/api"
 echo ""
 echo "動作確認:"

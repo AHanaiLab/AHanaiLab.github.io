@@ -1,14 +1,17 @@
 """SAQRA 研究検索ポータル バックエンド API (FastAPI + Mangum on AWS Lambda)。
 
 エンドポイント:
-  GET  /api/pubmed/search?q=   PubMed E-utilities 検索
+  GET  /api/pubmed/search?q=   PubMed 検索（日本語は Bedrock で英語クエリに変換、抄録付き）
   GET  /api/rmap/search?q=     researchmap プロキシ
   GET  /api/amed/search?q=     AMEDfind 取得 (AMED_SEARCH_URL で設定)
-  POST /api/icf/translate      Bedrock (Claude) による ICF 分類
+  POST /api/icf/future         Bedrock (Claude) による「ICF 50年後翻訳」
+  POST /api/icf/translate      Bedrock (Claude) による ICF 分類（コードのみ）
 """
 
 import json
 import os
+import re
+import xml.etree.ElementTree as ET
 from functools import lru_cache
 
 import httpx
@@ -28,7 +31,12 @@ AMED_QUERY_PARAM = os.environ.get("AMED_QUERY_PARAM", "keyword")
 BEDROCK_MODEL_ID = os.environ.get(
     "BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 )
+NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 
+JAPANESE_RE = re.compile(r"[぀-ヿ㐀-䶿一-鿿]")
+
+
+# ---------------------------------------------------------------- 共通ヘルパー
 
 async def _fetch(client: httpx.AsyncClient, url: str, params: dict, upstream: str) -> httpx.Response:
     """上流APIを呼び出し、通信エラー・4xx/5xxを502に変換して返す。"""
@@ -41,64 +49,156 @@ async def _fetch(client: httpx.AsyncClient, url: str, params: dict, upstream: st
     return r
 
 
+@lru_cache(maxsize=1)
+def _bedrock_client():
+    from anthropic import AnthropicBedrock
+
+    region = os.environ.get("BEDROCK_REGION") or os.environ.get("AWS_REGION", "ap-northeast-1")
+    return AnthropicBedrock(aws_region=region)
+
+
+def _ask_claude(system: str, user: str, max_tokens: int) -> str:
+    """Bedrock 上の Claude に1回問い合わせ、テキストを返す。失敗は502。"""
+    try:
+        response = _bedrock_client().messages.create(
+            model=BEDROCK_MODEL_ID,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+        )
+    except Exception as e:  # Bedrock側のエラーはAPI利用者へ502で返す
+        raise HTTPException(status_code=502, detail=f"Bedrock invocation failed: {e}")
+    return "".join(b.text for b in response.content if b.type == "text")
+
+
+def _extract_json(text: str) -> dict:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.startswith("json"):
+            text = text[4:]
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end == -1:
+        raise ValueError("no JSON object in model output")
+    return json.loads(text[start : end + 1])
+
+
+def _ask_claude_json(system: str, user: str, max_tokens: int) -> dict:
+    raw = _ask_claude(system, user, max_tokens)
+    try:
+        return _extract_json(raw)
+    except (ValueError, json.JSONDecodeError):
+        raise HTTPException(status_code=502, detail=f"model returned non-JSON output: {raw[:500]}")
+
+
+# ---------------------------------------------------------------- ヘルスチェック
+
 @app.get("/")
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "saqra-portal-api"}
+    return {"status": "ok", "service": "saqra-portal-api", "model": BEDROCK_MODEL_ID}
+
+
+# ---------------------------------------------------------------- PubMed
+
+QUERY_TRANSLATE_SYSTEM = """You convert a Japanese search request from a cancer survivor, family member,
+or clinician into a concise English PubMed search query.
+Rules: output ONLY the query string, no explanation. Use plain English terms joined with AND / OR,
+2 to 6 terms, prefer MeSH-like vocabulary (e.g. "cancer survivors", "return to work", "fatigue").
+Do not add quotation marks unless a phrase must stay together."""
+
+
+def _to_english_query(q: str) -> str:
+    return _ask_claude(QUERY_TRANSLATE_SYSTEM, q, max_tokens=80).strip().strip('"')
+
+
+def _parse_efetch(xml_text: str) -> list[dict]:
+    root = ET.fromstring(xml_text)
+    results = []
+    for art in root.findall(".//PubmedArticle"):
+        pmid = (art.findtext("./MedlineCitation/PMID") or "").strip()
+        article = art.find("./MedlineCitation/Article")
+        if article is None:
+            continue
+        title_el = article.find("./ArticleTitle")
+        title = "".join(title_el.itertext()).strip() if title_el is not None else ""
+        abstract_parts = []
+        for ab in article.findall("./Abstract/AbstractText"):
+            label = ab.get("Label")
+            text = "".join(ab.itertext()).strip()
+            if text:
+                abstract_parts.append(f"{label}: {text}" if label else text)
+        authors = []
+        for au in article.findall("./AuthorList/Author"):
+            last, initials, collective = au.findtext("LastName"), au.findtext("Initials"), au.findtext("CollectiveName")
+            if last:
+                authors.append(f"{last} {initials or ''}".strip())
+            elif collective:
+                authors.append(collective)
+        journal = article.findtext("./Journal/Title") or article.findtext("./Journal/ISOAbbreviation") or ""
+        pubdate = article.findtext("./Journal/JournalIssue/PubDate/Year") or article.findtext(
+            "./Journal/JournalIssue/PubDate/MedlineDate"
+        ) or ""
+        doi = None
+        for aid in art.findall("./PubmedData/ArticleIdList/ArticleId"):
+            if aid.get("IdType") == "doi":
+                doi = (aid.text or "").strip()
+        results.append(
+            {
+                "pmid": pmid,
+                "title": title,
+                "abstract": "\n".join(abstract_parts),
+                "authors": authors,
+                "source": journal,
+                "pubdate": pubdate,
+                "doi": doi,
+                "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+            }
+        )
+    return results
 
 
 @app.get("/api/pubmed/search")
 async def pubmed_search(
     q: str = Query(..., min_length=1),
-    retmax: int = Query(20, ge=1, le=100),
+    retmax: int = Query(10, ge=1, le=50),
 ):
-    common = {"db": "pubmed", "retmode": "json", "tool": "saqra-portal"}
-    if os.environ.get("NCBI_API_KEY"):
-        common["api_key"] = os.environ["NCBI_API_KEY"]
+    query_en = _to_english_query(q) if JAPANESE_RE.search(q) else q
+
+    common = {"db": "pubmed", "tool": "saqra-portal"}
+    if NCBI_API_KEY:
+        common["api_key"] = NCBI_API_KEY
 
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         es = await _fetch(
             client,
             f"{PUBMED_EUTILS}/esearch.fcgi",
-            {**common, "term": q, "retmax": retmax, "sort": "relevance"},
+            {**common, "retmode": "json", "term": query_en, "retmax": retmax, "sort": "relevance"},
             "PubMed esearch",
         )
         esearch = es.json().get("esearchresult", {})
         ids = esearch.get("idlist", [])
         total = int(esearch.get("count", 0))
         if not ids:
-            return {"query": q, "total": 0, "results": []}
+            return {"query": q, "query_en": query_en, "total": 0, "results": []}
 
-        sm = await _fetch(
+        ef = await _fetch(
             client,
-            f"{PUBMED_EUTILS}/esummary.fcgi",
-            {**common, "id": ",".join(ids)},
-            "PubMed esummary",
+            f"{PUBMED_EUTILS}/efetch.fcgi",
+            {**common, "retmode": "xml", "id": ",".join(ids)},
+            "PubMed efetch",
         )
-        summaries = sm.json().get("result", {})
 
-    results = []
-    for pmid in ids:
-        item = summaries.get(pmid)
-        if not item:
-            continue
-        doi = next(
-            (a.get("value") for a in item.get("articleids", []) if a.get("idtype") == "doi"),
-            None,
-        )
-        results.append(
-            {
-                "pmid": pmid,
-                "title": item.get("title"),
-                "authors": [a.get("name") for a in item.get("authors", [])],
-                "source": item.get("source"),
-                "pubdate": item.get("pubdate"),
-                "doi": doi,
-                "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
-            }
-        )
-    return {"query": q, "total": total, "results": results}
+    try:
+        results = _parse_efetch(ef.text)
+    except ET.ParseError as e:
+        raise HTTPException(status_code=502, detail=f"PubMed efetch returned invalid XML: {e}")
+    order = {pmid: i for i, pmid in enumerate(ids)}
+    results.sort(key=lambda r: order.get(r["pmid"], 999))
+    return {"query": q, "query_en": query_en, "total": total, "results": results}
 
+
+# ---------------------------------------------------------------- researchmap / AMED
 
 @app.get("/api/rmap/search")
 async def rmap_search(request: Request, q: str = Query(..., min_length=1)):
@@ -130,9 +230,61 @@ async def amed_search(request: Request, q: str = Query(..., min_length=1)):
         return {"raw": r.text}
 
 
+# ---------------------------------------------------------------- ICF 50年後翻訳
+
 class ICFRequest(BaseModel):
     text: str
+    title: str | None = None
 
+
+ICF_FUTURE_SYSTEM = """あなたは、がん研究の成果を「がんを経験した人とその家族の暮らし」の言葉に翻訳する専門家です。
+ICF（国際生活機能分類, WHO 2001）の枠組みを使い、入力された研究（論文の題名・抄録、または自由記述）について、
+「この研究の成果が社会に広まった50年後、暮らしはどう変わるか」を、中学生にも分かる日本語で描いてください。
+
+方針:
+- 専門用語は避け、やさしい日本語で。英語の入力でも出力は日本語。
+- 断定や誇張はしない。「〜かもしれない」「〜が期待される」という書き方。研究にない効果を作らない。
+- 医療上の判断を促す表現（治療の推奨など）はしない。
+- 各ICF領域は最大3項目。該当なしは空配列。
+- 全体で簡潔に（各テキストは1〜2文）。
+
+必ず次のJSONのみを出力（前後の説明・コードフェンス禁止）:
+{
+  "plain_summary": "この研究が何を調べ、何が分かったかを2文で（やさしい日本語）",
+  "who_benefits": "この研究で暮らしが変わりうる人（例: 治療後に仕事に戻る人、家族）",
+  "domains": {
+    "body_functions":       [{"code": "b***", "label": "ICF名称", "now": "いまの困りごと", "future": "50年後の暮らし"}],
+    "activities":           [{"code": "d***", "label": "ICF名称", "now": "…", "future": "…"}],
+    "participation":        [{"code": "d***", "label": "ICF名称", "now": "…", "future": "…"}],
+    "environmental_factors":[{"code": "e***", "label": "ICF名称", "now": "…", "future": "…"}],
+    "personal_factors":     [{"label": "内容", "now": "…", "future": "…"}]
+  },
+  "day_in_2076": "50年後のある一日の情景を、当事者の目線で3〜4文の物語として",
+  "open_questions": ["この未来に近づくために、まだ研究が必要なこと（1〜3個、短く）"]
+}
+codeはICF公式コード（第2レベル以上）。"""
+
+
+@app.post("/api/icf/future")
+def icf_future(req: ICFRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="text is required")
+    user = f"題名: {req.title}\n\n{req.text}" if req.title else req.text
+    parsed = _ask_claude_json(ICF_FUTURE_SYSTEM, user[:12000], max_tokens=2000)
+    domains = parsed.get("domains", {}) or {}
+    return {
+        "plain_summary": parsed.get("plain_summary", ""),
+        "who_benefits": parsed.get("who_benefits", ""),
+        "domains": {
+            k: domains.get(k, [])
+            for k in ["body_functions", "activities", "participation", "environmental_factors", "personal_factors"]
+        },
+        "day_in_2076": parsed.get("day_in_2076", ""),
+        "open_questions": parsed.get("open_questions", []),
+    }
+
+
+# ---------------------------------------------------------------- ICF 分類（コードのみ）
 
 ICF_SYSTEM = """あなたはICF（国際生活機能分類, WHO 2001）の分類専門家です。
 入力された日本語または英語のテキスト（症状・生活状況・研究アブストラクト等）を読み、
@@ -150,46 +302,11 @@ ICF_SYSTEM = """あなたはICF（国際生活機能分類, WHO 2001）の分類
 該当がないカテゴリは空配列にしてください。codeはICF公式コード（第2レベル以上）を使ってください。"""
 
 
-@lru_cache(maxsize=1)
-def _bedrock_client():
-    from anthropic import AnthropicBedrock
-
-    region = os.environ.get("BEDROCK_REGION") or os.environ.get("AWS_REGION", "ap-northeast-1")
-    return AnthropicBedrock(aws_region=region)
-
-
-def _extract_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.strip("`")
-        if text.startswith("json"):
-            text = text[4:]
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1:
-        raise ValueError("no JSON object in model output")
-    return json.loads(text[start : end + 1])
-
-
 @app.post("/api/icf/translate")
 def icf_translate(req: ICFRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="text is required")
-    try:
-        response = _bedrock_client().messages.create(
-            model=BEDROCK_MODEL_ID,
-            max_tokens=2048,
-            system=ICF_SYSTEM,
-            messages=[{"role": "user", "content": req.text}],
-        )
-    except Exception as e:  # Bedrock側のエラーはAPI利用者へ502で返す
-        raise HTTPException(status_code=502, detail=f"Bedrock invocation failed: {e}")
-
-    raw = "".join(b.text for b in response.content if b.type == "text")
-    try:
-        parsed = _extract_json(raw)
-    except (ValueError, json.JSONDecodeError):
-        raise HTTPException(status_code=502, detail=f"model returned non-JSON output: {raw[:500]}")
-
+    parsed = _ask_claude_json(ICF_SYSTEM, req.text[:12000], max_tokens=2048)
     keys = [
         "body_functions",
         "activities",

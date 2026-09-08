@@ -15,6 +15,11 @@ Parameters:
     Type: String
     Default: keyword
     Description: Query parameter name used by the AMED search endpoint
+  NcbiApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional NCBI E-utilities API key (raises PubMed rate limit from 3 to 10 req/s)
 
 Globals:
   HttpApi:
@@ -28,6 +33,10 @@ Globals:
       AllowHeaders:
         - Content-Type
         - Authorization
+    # 公開API。イベント中の同時利用(~30名)を許容しつつ乱用を抑える
+    DefaultRouteSettings:
+      ThrottlingBurstLimit: 40
+      ThrottlingRateLimit: 20
 
 Resources:
   ApiFunction:
@@ -43,6 +52,7 @@ Resources:
           BEDROCK_MODEL_ID: !Ref BedrockModelId
           AMED_SEARCH_URL: !Ref AmedSearchUrl
           AMED_QUERY_PARAM: !Ref AmedQueryParam
+          NCBI_API_KEY: !Ref NcbiApiKey
       Policies:
         - Statement:
             - Effect: Allow
