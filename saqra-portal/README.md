@@ -15,7 +15,8 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 
 | パス | 内容 |
 |---|---|
-| `frontend/index.html` | ポータル画面（ICF 50年後翻訳のチャット + 研究検索）。1ファイル完結でバイブコーディング向けにコメント付き |
+| `frontend/index.html` | メイン: 研究開発マップ＋検索ポータル（1ファイル完結、バイブコーディング向けコメント付き） |
+| `frontend/icf.html` | サブ: ICF翻訳・価値観探し（対話型ICF分類 → 50年後QOL） |
 | `frontend/guide.html` | ハッカソン参加者ガイド（改造手順・プロンプト例・発表フォーマット） |
 | `backend/app.py` | FastAPI + Mangum。対話型ICF分類・50年後QOL変換・PubMed/researchmap/AMED |
 | `backend/requirements.txt` | fastapi / mangum / httpx / anthropic[bedrock] |
@@ -23,20 +24,19 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 | `deploy.sh` | build → deploy → API_BASE 差し込み → S3 同期 → invalidation を一括実行 |
 | `samconfig.toml` | スタック名 `saqra-portal` / region `ap-northeast-1` のデプロイ設定 |
 
-## 画面の使い方（患者・家族向け）
+## 画面構成
 
-**ICF 50年後翻訳（ICF-QOL Translator, 対話型）** — 「対話型ICF分類 設計 v0.3」に準拠
+| ページ | 役割 |
+|---|---|
+| `index.html`（メイン） | **全がん連 × J-SUPPORT × SaQRA 研究開発マップ＋検索ポータル**。困りごと30カテゴリ（全がん連調査順）から開発マップ掲載の公的研究費研究（55件）を絞り込み。PubMed と researchmap はページ内で検索（日本語→AIが英語検索語に変換）、AMED・厚労科研・UMIN は公式サイトへ。PubMed結果の「ICFで読む」で研究を生活機能に整理し、関連カテゴリへ戻れる |
+| `icf.html`（サブ） | **ICF翻訳・価値観探し**。対話型ICF分類（ICF-QOL Translator, 設計v0.3準拠）→ 50年後QOL。結果から研究開発マップのカテゴリ（`index.html?cat=N`）とPubMed検索（`index.html?src=pubmed&q=...`）へつながる。「価値観探し」タブは準備中 |
+| `guide.html` | ハッカソン参加者ガイド |
 
-1. 生活の状況や困りごとを自分のことばで入力（例文あり）
-2. AIがICF（健康状態／心身機能b／身体構造s／活動・参加d／環境因子e／個人因子）に仮分類し、右の「ICF充足度」メーターが更新される
-3. 足りないカテゴリについてAIが質問（2〜4ターン、最大5）。答えるたびにマージされる
-4. 揃ったら「確定して50年後QOLへ」→ 50年後（2076年）のQOLを、いま／2076年の対比・物語・必要な研究として表示
-5. 「関連する研究を探す」で、その未来に関わる論文検索へ
+URLで初期状態を指定できます: `index.html?cat=8`（痛みカテゴリ）、`index.html?src=pubmed&q=fatigue`。
 
-**研究を探す** — 日本語で入力するとAIが英語の検索語に変換してPubMedを検索。結果の「ICFで読む」で研究が生活機能のどこに関わるかを整理。
+**ICF 50年後翻訳の流れ**（icf.html）: 生活の状況を入力 → AIがICF（健康状態／心身機能b／身体構造s／活動・参加d／環境因子e／個人因子）に仮分類、充足度メーター更新 → 足りないカテゴリを質問（2〜4ターン、最大5） → 「確定して50年後QOLへ」 → 2076年のQOL（いま／2076年の対比・一日の物語・必要な研究）→ 関連カテゴリ・論文へ。
 
-ハッカソン参加者向けの改造手順は `frontend/guide.html`（デプロイ後は `<CloudFront URL>/guide.html`）にあります。
-ローカルに保存した `index.html` はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
+ローカルに保存した HTML はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
 
 ## API エンドポイント
 
@@ -93,7 +93,7 @@ chmod +x deploy.sh
 curl "https://<api-id>.execute-api.ap-northeast-1.amazonaws.com/api/pubmed/search?q=cancer+survivorship"
 ```
 
-CloudFront の URL をブラウザで開き、例文を送ってAIの質問が返り、「研究を探す」で検索結果が出れば成功です。
+CloudFront の URL を開き、カテゴリ「8. 痛み」で研究が4件出ること、PubMedタブで日本語検索できること、`icf.html` で例文を送ってAIの質問が返ることを確認してください。
 
 ## AMEDfind エンドポイントの設定
 

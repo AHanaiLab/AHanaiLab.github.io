@@ -3,265 +3,192 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SaQRA ICF-QOL Translator</title>
-<meta name="description" content="生活の状況をことばにすると、AIがICFに整理し、50年後のQOLを描きます。がんサバイバーシップ研究の検索も。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<title>SaQRA 研究開発マップ＋検索ポータル</title>
+<meta name="description" content="全がん連 × J-SUPPORT × SaQRA 研究開発マップ。がんサバイバーシップの困りごと30カテゴリから公的研究費研究を探し、PubMed・researchmap を日本語で検索できます。">
 <!--
   ============================================================================
-  SaQRA ICF-QOL Translator — 1ファイル完結のフロントエンド
+  SaQRA 研究開発マップ＋検索ポータル（メインページ） — 1ファイル完結
   ----------------------------------------------------------------------------
   ハッカソン参加者のみなさんへ（バイブコーディングのヒント）:
-    * 色・角丸・余白は <style> 冒頭の :root の変数（--accent, --future, --cat-* など）で全体が変わります
-    * 画面は2つ: 「50年後翻訳」タブ（チャット）と「研究を探す」タブ（検索）
-    * チャットの吹き出しは addMessage() / renderAssistant()、ICF充足度メーターは renderMeter()、
-      50年後QOLの結果カードは renderFuture()、検索結果は renderResults() が作っています
-    * API の呼び出し先は API_BASE。ローカルで開いたコピーでもそのまま動きます
-    * このファイルをまるごと AI に貼って「〇〇を変えて」と頼むのが一番早い方法です
+    * 配色は <style> 冒頭の :root（--navy / --cream / --orange / --teal）
+    * 30カテゴリは CATS、マップ掲載研究は DATA、研究未実施カテゴリは GAPS
+    * 検索タブ: マップ掲載研究（このページ内）/ PubMed・researchmap（API経由でその場に表示）/ AMED・厚労科研・UMIN（公式サイトへ）
+    * 研究カードは renderStudy()、PubMedカードは renderPubmed() が作っています
+    * URLで初期状態を指定できます: index.html?cat=8  index.html?src=pubmed&q=fatigue
+    * サブページ「ICF翻訳・価値観探し」は icf.html
   ============================================================================
 -->
 <style>
   :root {
-    --bg: #F3F6F5; --surface: #FFFFFF; --surface-2: #E9F0EE; --ink: #1B2A2F; --ink-2: #56666B; --line: #D3DDDA;
-    --accent: #0E7C7B; --accent-ink: #FFFFFF; --accent-soft: #DCEFEE;
-    --future: #C97D00; --future-bg: #FFF4E0; --future-ink: #6B4300;
-    --user-bubble: #DCEFEE; --user-ink: #0B3B3A; --danger: #B3261E;
-    /* ICFカテゴリの色（モックアップ準拠） */
-    --cat-health: #E24B4A; --cat-health-bg: #FCEBEB; --cat-health-ink: #791F1F;
-    --cat-b: #7F77DD; --cat-b-bg: #EEEDFE; --cat-b-ink: #3C3489;
-    --cat-s: #ED93B1; --cat-s-bg: #FDEAF0; --cat-s-ink: #7A2545;
-    --cat-d: #5DCAA5; --cat-d-bg: #E1F5EE; --cat-d-ink: #085041;
-    --cat-e: #85B7EB; --cat-e-bg: #E6F1FB; --cat-e-ink: #0C447C;
-    --cat-p: #EF9F27; --cat-p-bg: #FAEEDA; --cat-p-ink: #633806;
-    --radius: 14px; --shadow: 0 1px 2px rgba(27,42,47,.06), 0 8px 24px -12px rgba(27,42,47,.18); color-scheme: light;
+    --navy: #2F3E55; --navy-fill: #2F3E55; --cream: #FAF6EF; --orange: #E8833A; --teal: #3AA6A0;
+    --line: #E6DDCF; --card: #FFFFFF; --muted: #8A8171; --orange-bg: #FDEEDD; --orange-ink: #B05C14; --teal-bg: #DDF1EF;
+    --danger: #B3261E; color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8; --line: #2C3D44;
-    --accent: #4CC3C0; --accent-ink: #062A2A; --accent-soft: #1B3A3C; --future: #F2B33D; --future-bg: #2E2410; --future-ink: #FFE1A6;
-    --user-bubble: #1B3A3C; --user-ink: #CFEFEE;
-    --cat-health-bg: #3B1C1C; --cat-health-ink: #F3B4B3; --cat-b-bg: #26244A; --cat-b-ink: #C9C4F7; --cat-s-bg: #3B1F2B; --cat-s-ink: #F6BED0;
-    --cat-d-bg: #143A2F; --cat-d-ink: #A9E8D0; --cat-e-bg: #142C44; --cat-e-ink: #B7D6F5; --cat-p-bg: #3A2A10; --cat-p-ink: #F7D39A;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark; } }
+    --navy: #DFE4EA; --navy-fill: #4D6187; --cream: #1A1E25; --orange: #F0975A; --teal: #5CC4BC;
+    --line: #333A45; --card: #232830; --muted: #9AA2AF; --orange-bg: #3A2514; --orange-ink: #FFD3B0; --teal-bg: #1E3A38; color-scheme: dark; } }
   :root[data-theme="dark"] {
-    --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8; --line: #2C3D44;
-    --accent: #4CC3C0; --accent-ink: #062A2A; --accent-soft: #1B3A3C; --future: #F2B33D; --future-bg: #2E2410; --future-ink: #FFE1A6;
-    --user-bubble: #1B3A3C; --user-ink: #CFEFEE;
-    --cat-health-bg: #3B1C1C; --cat-health-ink: #F3B4B3; --cat-b-bg: #26244A; --cat-b-ink: #C9C4F7; --cat-s-bg: #3B1F2B; --cat-s-ink: #F6BED0;
-    --cat-d-bg: #143A2F; --cat-d-ink: #A9E8D0; --cat-e-bg: #142C44; --cat-e-ink: #B7D6F5; --cat-p-bg: #3A2A10; --cat-p-ink: #F7D39A;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark; }
+    --navy: #DFE4EA; --navy-fill: #4D6187; --cream: #1A1E25; --orange: #F0975A; --teal: #5CC4BC;
+    --line: #333A45; --card: #232830; --muted: #9AA2AF; --orange-bg: #3A2514; --orange-ink: #FFD3B0; --teal-bg: #1E3A38; color-scheme: dark; }
 
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif; font-size: 16px; line-height: 1.7; }
-  h1, h2, h3, h4 { font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; text-wrap: balance; }
-  a { color: var(--accent); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: var(--cream); color: var(--navy); line-height: 1.7; }
+  a { color: var(--teal); }
   button { font-family: inherit; }
-  :focus-visible { outline: 3px solid var(--future); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
   [hidden] { display: none !important; }
 
-  /* ---- 上部・タブ ---- */
-  .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 1.25rem; border-bottom: 1px solid var(--line); background: var(--surface); }
-  .brand { display: flex; align-items: baseline; gap: .6rem; }
-  .brand b { font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: 1.15rem; letter-spacing: .02em; }
-  .brand span { font-size: .8rem; color: var(--ink-2); }
-  .tag { font-size: .72rem; letter-spacing: .08em; padding: .2rem .6rem; border: 1px solid var(--future); color: var(--future-ink); background: var(--future-bg); border-radius: 999px; white-space: nowrap; }
-  .tabs { display: flex; gap: .3rem; max-width: 980px; margin: 1rem auto 0; padding: 0 1rem; }
-  .tabs button { flex: 1; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2); padding: .65rem .8rem; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: "Zen Kaku Gothic New", sans-serif; }
-  .tabs button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .tabs button.active.future-tab { background: var(--future); border-color: var(--future); color: #fff; }
-  main { max-width: 980px; margin: 0 auto; padding: 1rem 1rem 4rem; }
-  .panel { display: none; } .panel.active { display: block; }
-  .intro { color: var(--ink-2); margin: .3rem 0 1rem; max-width: 46em; font-size: .95rem; }
-  .intro b { color: var(--ink); }
+  .header { background: var(--cream); padding: 22px 16px 16px; text-align: center; border-bottom: 3px solid var(--orange); }
+  .header .logos { font-size: .78em; color: var(--muted); letter-spacing: .05em; margin-bottom: 4px; }
+  .header h1 { font-size: 1.35em; font-weight: 700; }
+  .header h1 span { color: var(--orange); }
+  .header .sub { font-size: .85em; color: var(--muted); margin-top: 4px; }
+  .header .update { display: inline-block; margin-top: 8px; font-size: .75em; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 2px 12px; color: var(--muted); }
+  .nav { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .nav a { text-decoration: none; font-size: .85em; font-weight: 700; padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--line); background: var(--card); color: var(--navy); }
+  .nav a.current { background: var(--navy-fill); border-color: var(--navy-fill); color: #fff; }
+  .nav a.icf { border-color: var(--orange); color: var(--orange); }
 
-  /* ---- ボタン ---- */
-  .btn { border: 0; border-radius: 10px; padding: .65rem 1.1rem; font-size: .95rem; font-weight: 700; cursor: pointer; background: var(--accent); color: var(--accent-ink); white-space: nowrap; transition: transform .08s, opacity .15s; }
-  .btn:active { transform: translateY(1px); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin: 16px 0; }
+  .sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .sec-num { background: var(--orange); color: #fff; font-weight: 700; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sec-title { font-size: 1.1em; font-weight: 700; }
+  .sec-note { font-size: .8em; color: var(--muted); margin-bottom: 12px; }
+  .sec-note b { color: var(--orange); }
+
+  .src-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .src-tab { padding: 6px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); color: var(--navy); font-size: .8em; cursor: pointer; }
+  .src-tab.active { background: var(--navy-fill); color: #fff; border-color: var(--navy-fill); }
+  .src-tab .pri { color: var(--orange); font-weight: 700; }
+  .src-tab.active .pri { color: #ffd9b8; }
+  .src-tab .live { font-size: .8em; color: var(--teal); margin-left: 4px; }
+  .src-tab.active .live { color: #bff0ec; }
+
+  .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .search-row input { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; background: var(--card); color: var(--navy); }
+  .search-row input:focus { outline: none; border-color: var(--orange); }
+  .btn { border: none; border-radius: 8px; padding: 11px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
   .btn:disabled { opacity: .55; cursor: progress; }
-  .btn.future { background: var(--future); color: #fff; }
-  .btn.ghost { background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); font-weight: 500; }
-  .btn.small { padding: .45rem .85rem; font-size: .88rem; }
-  .linkish { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: .85rem; padding: .3rem .2rem; }
+  .btn-orange { background: var(--orange); color: #fff; }
+  .btn-orange:active { opacity: .85; }
+  .btn-ghost { background: var(--card); border: 1px solid var(--line); color: var(--navy); }
+  .btn-small { padding: 6px 12px; font-size: 12px; }
 
-  /* ---- チャット（50年後翻訳） ---- */
-  .dialogue { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 1rem; align-items: start; }
-  .chat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; min-height: 520px; }
-  .chat-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .7rem 1rem; border-bottom: 1px solid var(--line); font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 700; }
-  .chat-head small { font-weight: 400; color: var(--ink-2); font-size: .78rem; }
-  .messages { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: .7rem; overflow-y: auto; max-height: 72vh; }
-  .msg { display: flex; }
-  .msg.user { justify-content: flex-end; }
-  .bubble { max-width: 88%; padding: .6rem .9rem; border-radius: 12px; font-size: .95rem; line-height: 1.65; white-space: pre-wrap; }
-  .msg.user .bubble { background: var(--user-bubble); color: var(--user-ink); border-bottom-right-radius: 3px; }
-  .msg.ai .bubble { background: var(--bg); border: 1px solid var(--line); border-bottom-left-radius: 3px; white-space: normal; }
-  .msg.ai .bubble p { margin: 0 0 .5rem; white-space: pre-wrap; } .msg.ai .bubble p:last-child { margin-bottom: 0; }
-  .upd { margin: .2rem 0; font-size: .9rem; }
-  .tg { display: inline-block; font-size: .75rem; padding: .05rem .5rem; border-radius: 999px; margin-right: .35rem; font-weight: 700; vertical-align: middle; }
-  .tg.health_condition { background: var(--cat-health-bg); color: var(--cat-health-ink); }
-  .tg.body_functions { background: var(--cat-b-bg); color: var(--cat-b-ink); }
-  .tg.body_structures { background: var(--cat-s-bg); color: var(--cat-s-ink); }
-  .tg.activities_participation { background: var(--cat-d-bg); color: var(--cat-d-ink); }
-  .tg.environmental_factors { background: var(--cat-e-bg); color: var(--cat-e-ink); }
-  .tg.personal_factors { background: var(--cat-p-bg); color: var(--cat-p-ink); }
-  .code { font-family: "IBM Plex Mono", monospace; font-size: .8em; color: var(--ink-2); }
-  .typing { color: var(--ink-2); font-size: .88rem; }
-  .typing::after { content: "…"; animation: dots 1.2s steps(4) infinite; }
-  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
-  .examples { padding: 0 1rem 1rem; }
-  .examples p { margin: 0 0 .4rem; font-size: .82rem; color: var(--ink-2); }
-  .chips { display: flex; flex-wrap: wrap; gap: .45rem; }
-  .chips button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: .35rem .85rem; font-size: .88rem; cursor: pointer; text-align: left; }
-  .chips button:hover { border-color: var(--accent); color: var(--accent); }
-  .quick { display: flex; flex-wrap: wrap; gap: .45rem; padding: 0 1rem .8rem; }
-  .compose { display: flex; gap: .5rem; padding: .7rem 1rem 1rem; border-top: 1px solid var(--line); }
-  .compose textarea { flex: 1; min-height: 2.9rem; max-height: 9rem; resize: vertical; padding: .6rem .8rem; border: 2px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; font-size: 1rem; line-height: 1.5; }
-  .compose textarea:focus { border-color: var(--accent); outline: none; }
+  .cat-toggle { font-size: .85em; color: var(--teal); cursor: pointer; user-select: none; margin-bottom: 8px; display: inline-block; font-weight: 700; background: none; border: 0; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-bottom: 12px; }
+  .cat-chip { display: flex; align-items: center; gap: 6px; padding: 7px 9px; background: var(--cream); border: 1px solid var(--line); border-radius: 8px; font-size: .78em; cursor: pointer; line-height: 1.3; text-align: left; color: var(--navy); }
+  .cat-chip .n { background: var(--teal); color: #fff; border-radius: 50%; min-width: 20px; height: 20px; font-size: .85em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cat-chip.selected { background: var(--navy-fill); color: #fff; border-color: var(--navy-fill); }
+  .cat-chip.selected .n { background: var(--orange); }
+  .cat-chip.gap { border-style: dashed; }
 
-  /* ---- 充足度メーター ---- */
-  .meter { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1rem; position: sticky; top: 1rem; }
-  .meter h3 { margin: 0 0 .1rem; font-size: .95rem; display: flex; justify-content: space-between; align-items: baseline; }
-  .meter h3 span { font-family: "IBM Plex Mono", monospace; font-size: .85rem; color: var(--ink-2); font-weight: 500; }
-  .meter p { margin: 0 0 .6rem; font-size: .78rem; color: var(--ink-2); }
-  .br { display: grid; grid-template-columns: 6.2rem 1fr 1.4rem; align-items: center; gap: .5rem; margin: .35rem 0; font-size: .8rem; }
-  .bt { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
-  .bf { height: 100%; border-radius: 3px; transition: width .4s; }
-  .bs { text-align: right; font-weight: 700; }
-  .br.health_condition .bf { background: var(--cat-health); } .br.body_functions .bf { background: var(--cat-b); }
-  .br.body_structures .bf { background: var(--cat-s); } .br.activities_participation .bf { background: var(--cat-d); }
-  .br.environmental_factors .bf { background: var(--cat-e); } .br.personal_factors .bf { background: var(--cat-p); }
-  .meter .items { margin-top: .6rem; font-size: .78rem; color: var(--ink-2); border-top: 1px dashed var(--line); padding-top: .5rem; }
-  .meter .items div { margin: .15rem 0; }
-  @media (max-width: 700px) { .dialogue { grid-template-columns: 1fr; } .meter { position: static; order: -1; } .meter .items { display: none; } .messages { max-height: none; } }
+  .result-count { font-size: .9em; font-weight: 700; margin: 12px 0 8px; }
+  .result-count .en { font-family: ui-monospace, Menlo, monospace; font-weight: 400; font-size: .85em; color: var(--muted); background: var(--cream); padding: 1px 6px; border-radius: 4px; }
+  .study-card { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: var(--card); }
+  .study-card .intervention { background: var(--cream); padding: 7px 12px; font-size: .8em; font-weight: 700; color: var(--teal); border-bottom: 1px solid var(--line); }
+  .study-card .intervention span { color: var(--muted); font-weight: 400; }
+  .study-card .title { padding: 10px 12px 6px; font-size: .92em; font-weight: 600; }
+  .study-card .title a { color: var(--navy); text-decoration: none; border-bottom: 1px dashed var(--orange); }
+  .study-card .meta { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 12px 12px; }
+  .study-card .abstract { padding: 0 12px; font-size: .82em; color: var(--muted); max-height: 4.4em; overflow: hidden; position: relative; }
+  .study-card .abstract.open { max-height: none; }
+  .study-card .abstract:not(.open)::after { content: ""; position: absolute; inset: auto 0 0; height: 1.8em; background: linear-gradient(transparent, var(--card)); }
+  .study-card .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 8px 12px 12px; }
+  .linkish { background: none; border: 0; color: var(--teal); cursor: pointer; font-size: .8em; padding: 4px 2px; }
+  .tag { font-size: .72em; padding: 3px 9px; border-radius: 12px; background: var(--cream); border: 1px solid var(--line); color: var(--navy); }
+  .tag.fund { background: var(--orange-bg); border-color: #f3c99e; color: var(--orange-ink); font-weight: 700; }
+  .gap-card { border: 1px dashed var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; font-size: .85em; color: var(--muted); background: var(--card); }
+  .gap-card b { color: var(--orange); }
+  .ext-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .ext-link { display: block; padding: 9px 14px; border-radius: 8px; background: var(--card); border: 1.5px solid var(--teal); color: var(--teal); font-size: .82em; font-weight: 700; text-decoration: none; }
+  .ext-link.primary { border-color: var(--orange); color: var(--orange); }
+  .gl-box { background: var(--cream); border-radius: 8px; padding: 10px 12px; font-size: .78em; margin-top: 4px; color: var(--muted); }
+  .gl-box b { color: var(--navy); }
+  .error { color: var(--danger); font-size: .85em; white-space: pre-wrap; }
+  .loading { text-align: center; padding: 24px; color: var(--muted); font-size: .9em; }
+  .spinner { border: 3px solid var(--line); border-top: 3px solid var(--orange); border-radius: 50%; width: 26px; height: 26px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 
-  /* ---- 50年後QOLの結果カード ---- */
-  .future-card { border: 2px solid var(--future); border-radius: 12px; padding: .9rem 1rem; background: var(--surface); display: grid; gap: .7rem; }
-  .future-card .eyebrow { font-size: .72rem; letter-spacing: .12em; color: var(--future); font-weight: 700; }
-  .future-card h3 { margin: 0; font-size: 1.15rem; font-weight: 900; }
-  .qol { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
-  .qol > div { padding: .55rem .7rem; border-radius: 8px; font-size: .88rem; }
-  .qol .now { background: var(--surface-2); color: var(--ink-2); }
-  .qol .fut { background: var(--future-bg); color: var(--future-ink); }
-  .qol .lbl, .row .lbl { display: block; font-size: .7rem; letter-spacing: .08em; margin-bottom: .1rem; font-weight: 700; }
-  .domain { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-  .domain h4 { margin: 0; padding: .4rem .8rem; font-size: .78rem; letter-spacing: .06em; background: var(--surface-2); color: var(--ink-2); font-weight: 700; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; }
-  .row > div { padding: .55rem .8rem; font-size: .88rem; }
-  .row .now { color: var(--ink-2); }
-  .row .fut { background: var(--future-bg); color: var(--future-ink); }
-  .row .by { grid-column: 1 / -1; font-size: .78rem; color: var(--ink-2); border-top: 1px dashed var(--line); }
-  @media (max-width: 560px) { .row, .qol { grid-template-columns: 1fr; } }
-  .story { background: var(--future-bg); color: var(--future-ink); border-radius: 10px; padding: .8rem 1rem; font-size: .93rem; line-height: 1.8; border-left: 4px solid var(--future); }
-  .story b { display: block; font-family: "Zen Kaku Gothic New", sans-serif; font-size: .78rem; letter-spacing: .1em; margin-bottom: .25rem; }
-  .research { font-size: .88rem; } .research ul { margin: .2rem 0 0; padding-left: 1.2rem; }
-  .caution { font-size: .75rem; color: var(--ink-2); }
-  pre.json { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .7rem; font-family: "IBM Plex Mono", monospace; font-size: .75rem; overflow-x: auto; max-height: 20rem; margin: 0; }
+  /* ICF読み取り結果（PubMedカード内） */
+  .icf-read { padding: 0 12px 12px; font-size: .82em; display: grid; gap: 4px; }
+  .icf-tag { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 9px; border-radius: 14px; background: var(--card); border: 1px solid var(--teal); color: var(--teal); font-size: .9em; font-weight: 700; }
+  .icf-tag.cat { border-color: var(--orange); color: var(--orange); cursor: pointer; }
 
-  /* ---- 研究を探す ---- */
-  .hero h1 { margin: 0 0 .3rem; font-size: clamp(1.35rem, 4vw, 1.8rem); font-weight: 900; line-height: 1.3; }
-  .hero h1 em { font-style: normal; color: var(--accent); }
-  .search { display: flex; gap: .5rem; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: .4rem .4rem .4rem 1rem; box-shadow: var(--shadow); }
-  .search:focus-within { border-color: var(--accent); }
-  .search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font-size: 1.05rem; padding: .5rem 0; }
-  .status { margin: 1rem 0 .6rem; font-size: .9rem; color: var(--ink-2); }
-  .status .en { font-family: "IBM Plex Mono", monospace; font-size: .8rem; background: var(--surface-2); padding: .1rem .4rem; border-radius: 4px; }
-  .error { color: var(--danger); white-space: pre-wrap; }
-  .results { display: grid; gap: .8rem; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; }
-  .card h3 { margin: 0 0 .3rem; font-size: 1rem; line-height: 1.45; font-weight: 700; }
-  .card h3 a { color: inherit; text-decoration: none; } .card h3 a:hover { color: var(--accent); }
-  .meta { font-size: .8rem; color: var(--ink-2); }
-  .abstract { font-size: .88rem; color: var(--ink-2); margin: .5rem 0 0; max-height: 4.6em; overflow: hidden; position: relative; }
-  .abstract.open { max-height: none; }
-  .abstract:not(.open)::after { content: ""; position: absolute; inset: auto 0 0; height: 2em; background: linear-gradient(transparent, var(--surface)); }
-  .actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .7rem; }
-  .icf-read { margin-top: .7rem; border-top: 1px dashed var(--line); padding-top: .6rem; font-size: .9rem; display: grid; gap: .3rem; }
-  details { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
-  summary { cursor: pointer; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 700; font-size: 1rem; }
-  .subsearch { display: flex; gap: .5rem; margin-top: .6rem; }
-  .subsearch input { flex: 1; padding: .55rem .8rem; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1rem; }
-  pre.raw { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .8rem; overflow-x: auto; font-size: .78rem; }
-  footer { max-width: 980px; margin: 0 auto; padding: 0 1rem 2rem; font-size: .8rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+  /* サブページへの導線 */
+  .cta { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; background: linear-gradient(135deg, var(--orange-bg), var(--card)); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 16px 0; }
+  .cta h2 { font-size: 1.05em; margin-bottom: 4px; }
+  .cta h2 span { color: var(--orange); }
+  .cta p { font-size: .85em; color: var(--muted); }
+  .cta a.btn { text-decoration: none; display: inline-block; white-space: nowrap; }
+  @media (max-width: 600px) { .cta { grid-template-columns: 1fr; } .cat-grid { grid-template-columns: repeat(2, 1fr); } .search-row { flex-direction: column; } .search-row .btn { width: 100%; } }
+
+  .footer { text-align: center; padding: 20px; font-size: .72em; color: var(--muted); }
+  .footer a { color: var(--muted); }
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="brand"><b>SaQRA</b><span>がんサバイバーシップ研究翻訳ポータル</span></div>
-  <span class="tag">AIハッカソン 2026.9.12</span>
-</header>
 
-<div class="tabs" role="tablist">
-  <button class="active future-tab" data-tab="dialogue" role="tab">ICF 50年後翻訳</button>
-  <button data-tab="search" role="tab">研究を探す</button>
+<div class="header">
+  <div class="logos">全がん連 × J-SUPPORT × SaQRA</div>
+  <h1>研究開発マップ<span>＋</span>検索ポータル</h1>
+  <div class="sub">がんサバイバーシップのアンメットニーズに応える</div>
+  <div class="update">マップ掲載データ：2024.02.01作成 / 2026.03.01更新</div>
+  <nav class="nav">
+    <a class="current" href="index.html">研究開発マップ＋検索</a>
+    <a class="icf" href="icf.html">ICF翻訳・価値観探し →</a>
+  </nav>
 </div>
 
-<main>
-  <!-- ======================= 50年後翻訳（対話型ICF分類） ======================= -->
-  <section class="panel active" id="panel-dialogue">
-    <p class="intro"><b>生活の状況や困りごとを、あなたのことばで教えてください。</b>AIがICF（生活機能の共通語）に整理しながら2〜4回質問し、揃ったところで「50年後のQOL（生活の質）」を描きます。</p>
-    <div class="dialogue">
-      <div class="chat">
-        <div class="chat-head"><span>ICF-QOL Translator</span><small id="turn-label">対話 0 / 5</small></div>
-        <div class="messages" id="messages" aria-live="polite"></div>
-        <div class="examples" id="examples">
-          <p>例文を押すとそのまま送れます</p>
-          <div class="chips" id="example-chips">
-            <button type="button">52歳の会社員です。大腸がんの手術後、化学療法を受けています。お腹の痛みがあり、長く歩けません。仕事は休職中です。</button>
-            <button type="button">78歳の一人暮らしです。膝が痛くて、買い物に行くのがつらくなりました。娘が週に一度来てくれます。</button>
-            <button type="button">32歳、産後3ヶ月です。夜眠れなくて、日中も気分が落ち込みます。夫は仕事が忙しく、実家は遠方です。</button>
-          </div>
-        </div>
-        <div class="quick" id="quick" hidden>
-          <button class="btn future small" id="btn-confirm" type="button">確定して50年後QOLへ</button>
-          <button class="btn ghost small" id="btn-more" type="button">もう少し追加する</button>
-          <button class="btn ghost small" id="btn-json" type="button">JSONで出力</button>
-          <button class="linkish" id="btn-reset" type="button">最初から</button>
-        </div>
-        <form class="compose" id="compose">
-          <textarea id="msg" rows="1" placeholder="ここに入力…（個人が特定できる情報は書かないでください）"></textarea>
-          <button class="btn" type="submit" id="send">送る</button>
-        </form>
-      </div>
-      <aside class="meter" id="meter"></aside>
-    </div>
-  </section>
+<div class="container">
 
-  <!-- ======================= 研究を探す ======================= -->
-  <section class="panel" id="panel-search">
-    <div class="hero">
-      <h1>気になることを、<em>日本語で</em>探す。</h1>
-      <p class="intro">AIが英語の検索語に直して世界の論文（PubMed）を探します。結果の「ICFで読む」で、その研究が暮らしのどこに関わるかを整理します。</p>
-      <form class="search" id="search-form">
-        <input id="q" type="search" placeholder="例: 治療のあと仕事に戻るときの不安" autocomplete="off" required>
-        <button class="btn" type="submit" id="search-btn">探す</button>
-      </form>
-      <div class="chips" id="search-chips" style="margin-top:.7rem">
-        <button type="button">仕事に戻る</button><button type="button">だるさ・疲れやすさ</button><button type="button">子どもへの伝え方</button>
-        <button type="button">再発の不安</button><button type="button">食事と味覚の変化</button><button type="button">お金と治療費</button>
-      </div>
+  <!-- ①研究実施状況の検索 -->
+  <div class="section">
+    <div class="sec-head">
+      <div class="sec-num">1</div>
+      <div class="sec-title">研究実施状況の検索</div>
     </div>
-    <div class="status" id="status"></div>
-    <section class="results" id="results"></section>
-    <details id="others">
-      <summary>研究者・研究課題を探す（researchmap / AMED）</summary>
-      <form class="subsearch" data-api="rmap"><input type="search" placeholder="研究者名・キーワード（researchmap）" required><button class="btn ghost" type="submit">探す</button></form>
-      <div class="status"></div><div class="results"></div>
-      <form class="subsearch" data-api="amed"><input type="search" placeholder="研究課題キーワード（AMED）" required><button class="btn ghost" type="submit">探す</button></form>
-      <div class="status"></div><div class="results"></div>
-    </details>
-  </section>
-</main>
+    <div class="sec-note">開発マップ掲載の公的研究費研究（実データ）を検索できます。<b>PubMed と researchmap はこのページ内でそのまま検索</b>でき、日本語で入力するとAIが英語の検索語に変換します。最新状況は各データベース（<b>AMED優先</b>）でもご確認ください。</div>
 
-<footer>
-  <span>PubMed / NCBI E-utilities・Amazon Bedrock を利用。入力内容は保存されません。</span>
-  <a href="guide.html">ハッカソン参加者ガイド（このページの改造方法）</a>
-  <a href="index.html" download="index.html">このページのHTMLを保存</a>
-  <button class="linkish" id="api-cfg" type="button">API設定</button>
-</footer>
+    <div class="src-tabs" id="srcTabs">
+      <button class="src-tab active" data-src="map">マップ掲載研究</button>
+      <button class="src-tab" data-src="amed"><span class="pri">①</span> AMED</button>
+      <button class="src-tab" data-src="pubmed"><span class="pri">②</span> PubMed<span class="live">● 日本語OK</span></button>
+      <button class="src-tab" data-src="mhlw">③ 厚労科研</button>
+      <button class="src-tab" data-src="rmap">④ researchmap<span class="live">●</span></button>
+      <button class="src-tab" data-src="umin">⑤ UMIN</button>
+    </div>
+
+    <form class="search-row" id="searchForm">
+      <input type="text" id="kw" placeholder="キーワード（例：せん妄、悪液質、意思決定）" autocomplete="off">
+      <button class="btn btn-orange" type="submit" id="searchBtn">検索</button>
+    </form>
+
+    <button class="cat-toggle" type="button" id="catToggle">▼ カテゴリで絞り込む（全がん連調査 困りごと順）</button>
+    <div class="cat-grid" id="catGrid" hidden></div>
+
+    <div id="searchOut"></div>
+  </div>
+
+  <!-- ②ICF翻訳・価値観探し（サブページへ） -->
+  <div class="cta">
+    <div>
+      <h2><span>2</span>　ICFベースのQoL翻訳・価値観探し</h2>
+      <p>困りごとの語りをAIがICF（国際生活機能分類）に整理し、対話で足りないところを補って、50年後のQOLを描きます。結果から、このページの研究カテゴリへ戻ってこられます。</p>
+    </div>
+    <a class="btn btn-orange" href="icf.html">ICF翻訳・価値観探しを開く →</a>
+  </div>
+
+  <div class="footer">
+    データ出典：全がん連×J-SUPPORT×SaQRA 研究開発マップ（saqra.jp/kaihatsumap）掲載の公的研究費研究情報。<br>
+    本ページは臨床試験参加者募集や治療選択の目安を目的とするものではありません。<br>
+    <a href="guide.html">ハッカソン参加者ガイド</a> ・ <a href="index.html" download="index.html">このページのHTMLを保存</a> ・ <button class="linkish" id="api-cfg" type="button">API設定</button>
+  </div>
+</div>
 
 <script>
-// ---------------------------------------------------------------- API の接続先
-// 優先順: URLの ?api=  >  ブラウザに保存した設定  >  deploy.sh が埋め込んだURL  >  同一オリジンの /api
+/* ============ API の接続先（?api= > 保存設定 > deploy.sh 埋め込み > /api） ============ */
 const API_BASE_BUILD = '__API_BASE__';
 const API_BASE = (() => {
   const fromUrl = new URLSearchParams(location.search).get('api');
@@ -271,237 +198,286 @@ const API_BASE = (() => {
   if (stored) return stored.replace(/\/$/, '');
   return API_BASE_BUILD.startsWith('__') ? '/api' : API_BASE_BUILD;
 })();
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path, opts) {
   const r = await fetch(`${API_BASE}${path}`, opts);
   let data = null; try { data = await r.json(); } catch (_) {}
   if (!r.ok) throw new Error((data && data.detail) || `HTTP ${r.status}`);
   return data;
 }
-const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-// ---------------------------------------------------------------- タブ
-const tabs = document.querySelectorAll('.tabs button');
-function showTab(name) {
-  tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
-}
-tabs.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+/* ============ 30カテゴリ（開発マップ 困りごと順） ============ */
+const CATS = ["気持ちのつらさ","身体活動の維持","倦怠感","コミュニケーション","栄養","情報（相談支援）","医療の意思決定","痛み","再発の早期発見と二次がん予防","お金","ケアコーディネーション","睡眠障害","就学・就労","後遺症・副作用","アピアランス","ホルモン療法に伴う症状","心毒性","家族・遺族のQOL","認知機能障害","情報（医師の説明）","ワクチン接種","遺伝相談、ゲノム情報","口腔ケア","ACP／人生会議","性機能障害の評価、ケア、治療","節酒","禁煙","社会的孤立とピアサポート","社会的偏見","その他"];
+/* カテゴリ → PubMed 英語検索語（PubMedタブでカテゴリを選んだとき） */
+const CAT_EN = ["psychological distress","physical activity","fatigue","communication","nutrition","information needs","shared decision making","pain","recurrence surveillance second cancer","financial toxicity","care coordination","sleep disturbance","return to work OR school","late effects","appearance","endocrine therapy symptoms","cardiotoxicity","family caregivers quality of life","cognitive impairment","physician communication","vaccination","genetic counseling","oral care","advance care planning","sexual dysfunction","alcohol","smoking cessation","social isolation peer support","stigma","survivorship"];
 
-// ================================================================ 50年後翻訳（対話）
-const CATS = [
-  ['health_condition', '健康状態'], ['body_functions', '心身機能 (b)'], ['body_structures', '身体構造 (s)'],
-  ['activities_participation', '活動・参加 (d)'], ['environmental_factors', '環境因子 (e)'], ['personal_factors', '個人因子'],
+/* ============ 開発マップ実掲載データ（2026.03.01更新版より） ============ */
+const JS_C = "https://www.j-support.org/study/completed/individual.html?entry_id=";
+const JS_R = "https://www.j-support.org/study/recruiting/individual.html?entry_id=";
+const DATA = [
+{c:[1],i:"自殺数の調査",t:"全国がん登録を用いたがん患者の自殺に関する記述疫学的研究",u:JS_C+"213",cn:"すべて",g:"全世代",b:"診断後、6か月",rt:"観察",f:"厚労科研"},
+{c:[1,30],i:"認知行動療法／デジタルヘルス",t:"乳がん患者の再発不安・恐怖に対するスマートフォン問題解決療法および行動活性化療法の有効性：無作為割付比較試験",u:JS_C+"210",cn:"乳がん",g:"20-49歳",b:"術後、1年以降",rt:"介入",f:"AMED"},
+{c:[1,30],i:"認知行動療法／デジタルヘルス",t:"がん患者の抑うつ・不安に対するスマートフォン精神療法の最適化研究：革新的試験システムを用いた多相最適化戦略試験",u:JS_C+"216",cn:"すべて",g:"20歳以上",b:"予後、6か月以上",rt:"介入",f:"AMED"},
+{c:[2],i:"リハビリテーション",t:"外来がんリハビリテーションプログラムの開発に関する研究",cn:"消化器がん・呼吸器がん・頭頸部がん・乳がん",g:"20歳以上",b:"外来",rt:"プログラム開発（単群前後比較）",f:"厚労科研・AMED（2016-2018）"},
+{c:[2],i:"リハビリテーション",t:"食道癌術後患者を対象とした外来がんリハビリテーションプログラムの開発に関する研究",cn:"食道がん",g:"20-80歳",b:"胸部食道癌術後",rt:"介入",f:"AMED（2022-2024）"},
+{c:[2,3,5,30],i:"リハビリテーション／運動療法／栄養",t:"悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）",cn:"肺がん・膵がん",g:"高齢者",b:"外来",rt:"介入",f:"厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"},
+{c:[2],i:"リハビリテーション",t:"高齢者進行非小細胞肺がん/膵がんに対する早期栄養・運動介入とアナモレリン塩酸塩の併用療法の多施設共同ランダム化第二相試験",cn:"肺がん・膵がん",g:"高齢者",b:"外来",rt:"介入",f:"AMED（2021-2023：NEXTAC-III試験）"},
+{c:[2],i:"リハビリテーション",t:"緩和ケア病棟入院中のがん患者に対するリハビリテーションの有効性検証ならびに普及実装に向けた研究",cn:"すべて",g:"20歳以上",b:"入院中",rt:"介入",f:"AMED（2022-2024）"},
+{c:[4],i:"意向調査",t:"今後の見通しについての医師からの望ましい説明に関する研究",u:JS_C+"203",cn:"乳がん",g:"20歳以上",b:"術後、1年以降",rt:"介入",f:"厚労科研"},
+{c:[4,7,24],i:"意思決定支援",t:"膵臓がん患者・家族と医師の協働による価値観を尊重した意思決定を促進するコミュニケーション介入プログラム臨床的有用性を検証する無作為化比較試験",u:JS_C+"211",cn:"膵がん",g:"20歳以上",b:"PS0-1",rt:"介入",f:"AMED"},
+{c:[4,7,11,30],i:"ITやDXを用いた意思決定支援",t:"高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",u:JS_C+"217",cn:"食道・胃・大腸・肝臓・胆道・膵臓がん",g:"70歳以上",b:"局所進行期III期、IV期または再発期 PS0-2",rt:"介入",f:"AMED"},
+{c:[4,7,24],i:"ITやDXを用いた意思決定支援",t:"進行がん患者に対するモバイル端末による質問支援を用いた意思決定支援プログラム開発",u:JS_C+"220",cn:"呼吸器・消化器・肝胆膵・腫瘍内科のがん",g:"20歳以上",b:"PS0-2",rt:"介入",f:"厚労科研"},
+{c:[7],i:"意思決定支援",t:"乳房再建におけるアウトカム指標の確立と科学的根拠に基づいた患者意思決定支援（SAQLA study）",cn:"乳がん",g:"20歳以上",b:"再建術後",rt:"探索",f:"AMED（2017-2021）"},
+{c:[5],i:"がん悪液質改善",t:"ヒトがん悪液質を反映する独自樹立悪液質モデルを用いての悪液質の本態解明、ならびに創薬、診断に有用な「がん悪液質PDXモデル」の確立とその活用",cn:"／",g:"／",b:"／",rt:"基礎",f:"AMED（2022-2024）"},
+{c:[8],i:"神経障害性疼痛",t:"がん患者の難治性神経障害性疼痛へのエビデンスに基づく標準的薬物療法の開発",cn:"すべて",g:"20歳以上",b:"難治性神経障害性疼痛を有する",rt:"介入",f:"AMED（2017-2019）JORTC-PAL08試験"},
+{c:[8],i:"神経障害性疼痛",t:"オピオイド不応の神経障害性疼痛に対するプレガバリンとデュロキセチンの国際共同ランダム化比較試験",cn:"すべて",g:"20歳以上",b:"難治性神経障害性疼痛を有する",rt:"介入",f:"AMED（2020-2022）"},
+{c:[8],i:"神経障害性疼痛",t:"がん患者のオピオイド不応の神経障害性疼痛への標準的薬物療法の開発：国際共同試験ならびに普及実装に向けた研究",cn:"すべて",g:"20歳以上",b:"難治性神経障害性疼痛を有する",rt:"介入",f:"AMED（2023-2025）"},
+{c:[8],i:"骨転移",t:"有痛性骨転移に対する緩和的動脈塞栓術の即時的有効性及び安全性検証試験",u:JS_R+"215",cn:"すべて",g:"20歳以上",b:"疼痛スケール5以上",rt:"介入",f:"AMED"},
+{c:[11,30],i:"ケアの協調や調整／多様性への配慮／健康格差・検診",t:"精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",u:JS_C+"212",cn:"／",g:"40歳以上",b:"統合失調症",rt:"介入",f:"厚労科研"},
+{c:[11],i:"多職種の連携",t:"進行がん患者に対するスクリーニングを組み合わせた看護師主導による治療早期からの専門的緩和ケア介入プログラムの臨床的有用性を検証する無作為化比較試験",u:JS_C+"205",cn:"肺がん",g:"20歳以上",b:"ステージⅣ、初抗がん治療",rt:"介入",f:"AMED"},
+{c:[14],i:"支持療法",t:"頭頸部がん放射線治療患者に発生する放射線皮膚炎に対する通常処置とステロイド外用薬を加えた処置に関するランダム化第3相比較試験",u:JS_C+"204",cn:"頭頚部がん",g:"20-80歳",b:"放射線療法 PS0-1",rt:"介入",f:"国立がん研究センター研究開発費（27-A-3）"},
+{c:[14],i:"支持療法",t:"頭頸部悪性腫瘍切除・遊離組織移植術の手術前ステロイド投与の有効性を検証する多施設共同二重盲検無作為化比較試験",u:JS_C+"214",cn:"頭頚部がん",g:"20歳以上",b:"手術予定 PS0-2",rt:"介入",f:"AMED"},
+{c:[14],i:"支持療法（研究方法開発）",t:"支持/緩和治療領域研究の方法論確立に関する研究",cn:"／",g:"／",b:"／",rt:"研究方法開発",f:"AMED（2017-2018）→（2019-2021）"},
+{c:[14],i:"支持療法",t:"子宮頸癌根治術後再発高リスク患者に対する強度変調放射線治療（IMRT）を用いた低毒性補助療法の確立に向けての研究（JCOG1402）",cn:"子宮頚がん",g:"20-70歳",b:"ステージⅠB1-ⅡB PS0-1",rt:"介入",f:"AMED（2019-2020）"},
+{c:[14,22],i:"支持療法／遺伝相談・ゲノム情報",t:"包括的がんゲノムプロファイリング検査を受ける患者の苦痛緩和支援プログラム開発に向けた観察研究",cn:"すべて",g:"18歳以上",b:"ゲノム検査を予定",rt:"観察",f:"AMED（2022-2024）"},
+{c:[14,30],i:"支持療法／eConsent",t:"マルチステークホルダーを擁する支持療法・緩和治療領域における研究手法の標準化に関する研究",cn:"／",g:"／",b:"／",rt:"研究方法開発",f:"AMED（2022-2024）"},
+{c:[14,18,30],i:"包括的な支持緩和ケアの前向きコホート／小児・AYA",t:"網膜芽細胞腫患者・家族の包括的支持緩和ケアの前向きコホート研究",cn:"網膜芽細胞腫",g:"0-5歳",b:"診断後、1か月以内の患者とその家族",rt:"観察",f:"AMED（2023-2024）"},
+{c:[14],i:"止血",t:"出血を伴う胃がんへの緩和的放射線治療の有用性を調べる他施設前向き観察研究（JROSG 17-3）",cn:"胃がん",g:"20歳以上",b:"原発巣からの出血",rt:"観察",f:"JROSG"},
+{c:[14,19,23],i:"漢方／口腔ケア",t:"がん患者のせん妄発症を予防する抑肝散、および口腔粘膜炎の早期治癒に資する半夏瀉心湯のメタボローム解析によるレスポンダーバイオマーカーの開発ならびに「証」の可視化とその臨床応用",cn:"頭頸部がん",g:"18歳以上",b:"放射線療法を受ける",rt:"1)観察 2)介入",f:"AMED（2021-2023）"},
+{c:[14,30],i:"妊孕性／小児・AYA",t:"小児・AYA世代がん患者のサバイバーシップ向上を志向した妊孕性温存に関する心理支援体制の均てん化に向けた臨床研究",cn:"乳がん",g:"20-39歳",b:"妊孕性温存に関する意思決定",rt:"介入",f:"厚労科研（2017-2019）"},
+{c:[14],i:"妊孕性",t:"生殖機能温存がん治療法の革新的発展にむけた総合的プラットフォームの形成",cn:"すべて",g:"40歳未満",b:"妊孕性温存に関する意思決定",rt:"―",f:"AMED（2016-2018）"},
+{c:[14],i:"悪心、嘔吐",t:"シスプラチンを含む高度催吐性化学療法による化学療法誘発性悪心・嘔吐の予防に対する標準制吐療法＋オランザピン5mgの有効性・安全性を検証する二重盲検プラセボ対照第3相ランダム化比較試験",u:JS_C+"206",cn:"すべて（造血器悪性腫瘍を除く）",g:"20-75歳",b:"シスプラチン化学療法",rt:"介入",f:"AMED"},
+{c:[14],i:"悪心、嘔吐",t:"高度催吐性リスクのがん化学療法におけるDEX（steroid）sparingに関する研究",cn:"すべて",g:"20歳以上",b:"シスプラチン投与予定",rt:"介入",f:"AMED（2019-2021）"},
+{c:[14],i:"悪心、嘔吐",t:"シスプラチンを含む化学療法を施行される子宮がん患者の嘔気・嘔吐に対する六君子湯の効果ープラセボ対照無作為化二重盲検比較検証試験",cn:"子宮頚がん・子宮体がん",g:"20歳以上",b:"シスプラチン投与予定",rt:"介入",f:"AMED（2018→2019-2021）"},
+{c:[14],i:"手足症候群、皮膚障害",t:"マルチキナーゼ阻害薬の手足症候群に対するハイドロコロイドドレッシング使用による予防効果の検討",u:JS_C+"208",cn:"大腸がん・消化管間質腫瘍・肝細胞がん",g:"20歳以上",b:"マルチキナーゼ阻害剤使用 PS0-2",rt:"介入",f:"木村看護教育振興財団"},
+{c:[14],i:"肺臓炎、呼吸苦",t:"進行がん患者の呼吸困難に対する2次治療としてのミダゾラムの有効性を探索する実施可能性プラセボ対照ランダム化比較試験",u:JS_R+"302",cn:"すべて",g:"18歳以上",b:"積極的な抗がん剤治療を受けていない",rt:"介入",f:"科研費"},
+{c:[15],i:"アピアランスケア",t:"分子標的治療薬によるざ瘡様皮膚炎に対する標準的ケア方法の確立に関する研究",cn:"肺がん・大腸がん",g:"20歳以上",b:"EGFR阻害薬治療患者、他",rt:"介入",f:"AMED（2017-2018）"},
+{c:[17],i:"腫瘍循環器医療",t:"オミックス解析に基づく乳がん患者における化学療法による心毒性発症機序の解明と危険因子の探索",cn:"乳がん",g:"20歳以上",b:"薬剤性心筋症発症リスク",rt:"観察",f:"AMED（2019-2020）"},
+{c:[17],i:"腫瘍循環器医療",t:"免疫チェックポイント阻害薬の安全な使用に資するirAE心筋障害スクリーニング手法と危険因子の探索研究",cn:"すべて",g:"／",b:"心筋炎発症した",rt:"観察",f:"AMED（2020-2022）"},
+{c:[18],i:"家族のケア／グリーフケア",t:"がん患者の家族・遺族に対する効果的な精神心理的支援法の開発研究",cn:"／",g:"20歳以上",b:"家族・遺族",rt:"プログラム開発",f:"厚労科研（2019-2021）"},
+{c:[19],i:"認知症、せん妄",t:"がん患者の周手術期精神症状に対する抑肝散の効果に対するランダム化比較試験",u:JS_C+"207",cn:"すべて",g:"20歳以上",b:"6時間以上の手術",rt:"介入",f:"その他"},
+{c:[19],i:"認知症、せん妄",t:"せん妄ハイリスクがん患者の術後せん妄予防におけるラメルテオンの有効性と安全性に関する多施設共同二重盲検化プラセボ対照ランダム化比較試験",u:JS_R+"219",cn:"すべて",g:"65歳以上",b:"全身麻酔手術と5日以上の入院",rt:"介入",f:"AMED"},
+{c:[19],i:"認知症、せん妄",t:"がん治療中のせん妄の発症予防を目指した多職種せん妄プログラムの開発",cn:"／",g:"70歳以上",b:"せん妄ハイリスク",rt:"介入",f:"AMED（2016–2017）"},
+{c:[19],i:"認知症、せん妄",t:"外科的がん切除後のデクスメデトミジンによる鎮静に不応な重症せん妄発症を予測するバイオマーカーの開発",cn:"／",g:"／",b:"／",rt:"観察",f:"AMED（2018-2020）"},
+{c:[19],i:"認知症、せん妄",t:"認知症合併に対応した最適の治療選択と安全性の向上を目指した支援プログラムの開発",cn:"すべて",g:"高齢者",b:"認知機能障害併存",rt:"探索",f:"AMED（2017-2019）"},
+{c:[19],i:"認知症、せん妄",t:"がん患者における術後せん妄予防のプレシジョンメディシンの開発",cn:"すべて",g:"20歳以上",b:"術後、せん妄ハイリスク",rt:"探索",f:"AMED（2022-2024）"},
+{c:[21],i:"コロナワクチン",t:"日本における新型コロナウイルス感染症（COVID-19）問題および社会全般に関する健康格差評価研究",cn:"／",g:"20歳以上",b:"／",rt:"観察",f:"厚労科研・AMED"},
+{c:[23],i:"口腔ケア",t:"がん化学療法に伴う口腔粘膜炎の疼痛緩和・発症制御を目指す新規口腔粘膜保護材の開発",cn:"／",g:"／",b:"／",rt:"基礎",f:"AMED（2020-2021）"},
+{c:[28],i:"孤立・孤独",t:"AYA世代がん患者のアンメットニードに対するスマートフォンを用いた苦痛スクリーニングおよび問題解決療法の有効性：分散型多施設ランダム化比較試験",cn:"すべて",g:"AYA世代",b:"外来後",rt:"介入",f:"JST"},
+{c:[30],i:"Patient-reported Outcome（PRO）",t:"がん患者における患者報告アウトカム尺度開発に関する研究",cn:"すべて",g:"20歳以上",b:"／",rt:"尺度開発",f:"AMED（2019-2021）"},
+{c:[30],i:"職域介入",t:"中小事業所における事業主および健康管理担当者による喫煙対策を支援する介入の有効性評価：クラスターランダム化比較試験",u:JS_C+"218",cn:"／",g:"20歳以上",b:"30～300人の中小企業",rt:"介入",f:"科研費"},
+{c:[30],i:"医療の質評価",t:"医療ビッグデータを用いた緩和医療の質評価および臨床課題の疫学調査方法の開発と測定",cn:"すべて",g:"すべて",b:"がん死亡者",rt:"観察",f:"AMED（2016-2018）"},
+{c:[30],i:"老年医学、高齢者のがん治療",t:"高齢肺がん患者に対する機能評価表を用いた多施設共同臨床試験",cn:"肺がん",g:"高齢者",b:"切除不能",rt:"介入",f:"AMED（2022-2024）"},
+{c:[30],i:"老年医学、高齢者のがん治療",t:"病理学的StageII/IIIで“vulnerable”な80歳以上の高齢者胃癌に対する開始量を減量したS-1術後補助化学療法に関するランダム化比較第III相試験",cn:"胃がん",g:"高齢者",b:"StageII/III",rt:"介入",f:"AMED（2020-2022）"}
 ];
-const state = { icf: null, turn: 0, phase: 'collecting', assessment: null, busy: false };
-const messagesEl = document.getElementById('messages');
-const msgInput = document.getElementById('msg');
-const quickEl = document.getElementById('quick');
-const examplesEl = document.getElementById('examples');
+/* マップ上で「ー」＝研究未実施（今後の研究が望まれる領域） */
+const GAPS = [6,9,10,12,13,16,20,25,26,27,29];
 
-function addMessage(role, html) {
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = `<div class="bubble">${html}</div>`;
-  messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-  return div;
-}
-const fmtItem = it => `${esc(it.label)}${it.code ? `<span class="code">(${esc(it.code)})</span>` : ''}${it.qualifier !== undefined && it.qualifier !== '' ? `<span class="code"> ${String(it.qualifier).startsWith('+') || String(it.qualifier).startsWith('-') ? esc(it.qualifier) : 'q.' + esc(it.qualifier)}</span>` : ''}`;
+/* ============ 外部DB ============ */
+const EXT = {
+  amed: { name: "AMEDfind（AMED研究開発課題データベース）", url: "https://amedfind.amed.go.jp/amed/", note: "件数が多い場合は、より詳しい条件でAMEDfind本体もご確認ください" },
+  mhlw: { name: "厚生労働科学研究成果データベース", url: "https://mhlw-grants.niph.go.jp/", note: "サイト内検索をご利用ください" },
+  umin: { name: "UMIN臨床試験登録システム（UMIN-CTR）", url: "https://www.umin.ac.jp/ctr/index-j.htm", note: "臨床試験の登録情報を検索できます" },
+  pubmed: { name: "PubMed", url: q => "https://pubmed.ncbi.nlm.nih.gov/?term=" + encodeURIComponent(q || "cancer survivorship") },
+  rmap: { name: "researchmap", url: "https://researchmap.jp/" },
+};
+const KW_PLACEHOLDERS = {
+  map: "キーワード（例：せん妄、悪液質、意思決定）",
+  amed: "キーワード（①のリンク先で入力してください）",
+  pubmed: "日本語でOK（例：治療のあと仕事に戻るときの不安）",
+  mhlw: "キーワード（③のリンク先で入力してください）",
+  rmap: "研究者名・キーワード（例：サバイバーシップ）",
+  umin: "キーワード（⑤のリンク先で入力してください）",
+};
 
-// AIの返答 = 共感の一言 + 分類の更新（タグ） + 次の質問
-function renderAssistant(d) {
-  const [ack, ...rest] = d.reply.split('\n\n');
-  const tail = rest.join('\n\n');
-  const upd = (d.updates || []).map(u => `<div class="upd"><span class="tg ${u.category}">${esc(u.label)}${u.category !== 'health_condition' && u.items.length > 1 ? ` +${u.items.length}件` : ''}</span>${u.items.map(fmtItem).join(' / ')}</div>`).join('');
-  return `${ack && ack !== tail ? `<p>${esc(ack)}</p>` : ''}${upd}${tail ? `<p>${esc(tail)}</p>` : ''}`;
-}
-
-function renderMeter() {
-  const a = state.assessment;
-  const pct = a ? a.completeness_pct : 0;
-  const bars = CATS.map(([k, label]) => {
-    const c = a && a.categories[k];
-    const filled = !!(c && c.filled);
-    const est = k === 'body_structures' && !filled && state.icf;
-    const width = filled ? 100 : est ? 50 : 0;
-    const mark = filled ? '✓' : est ? '?' : '';
-    return `<div class="br ${k}"><span>${label}</span><div class="bt"><div class="bf" style="width:${width}%"></div></div><span class="bs">${mark}</span></div>`;
-  }).join('');
-  const items = state.icf ? CATS.filter(([k]) => k !== 'health_condition').map(([k, label]) => {
-    const list = state.icf[k] || [];
-    return list.length ? `<div><span class="tg ${k}">${esc(label)}</span>${list.map(fmtItem).join(' / ')}</div>` : '';
-  }).join('') : '';
-  const hc = state.icf && state.icf.health_condition && state.icf.health_condition.description;
-  document.getElementById('meter').innerHTML = `
-    <h3>ICF充足度 <span>${pct}%</span></h3>
-    <p>${state.icf ? (a && a.all_filled ? '全カテゴリが揃いました' : `あと: ${(a ? a.missing : []).map(k => a.categories[k].label).join('、') || '—'}`) : '入力すると分類が始まります'}</p>
-    ${bars}
-    ${state.icf ? `<div class="items">${hc ? `<div><span class="tg health_condition">健康状態</span>${esc(hc)}</div>` : ''}${items}</div>` : ''}`;
-  document.getElementById('turn-label').textContent = `対話 ${state.turn} / 5`;
-}
-
-function setBusy(b, label) {
-  state.busy = b;
-  document.getElementById('send').disabled = b;
-  document.getElementById('btn-confirm').disabled = b;
-  const t = messagesEl.querySelector('.typing');
-  if (b) { if (!t) addMessage('ai', `<span class="typing">${esc(label || 'AIが整理しています')}</span>`); }
-  else if (t) t.closest('.msg').remove();
-}
-
-async function sendMessage(text) {
-  text = text.trim(); if (!text || state.busy) return;
-  examplesEl.hidden = true;
-  addMessage('user', esc(text));
-  msgInput.value = '';
-  setBusy(true, state.icf ? 'AIが回答を整理しています' : 'AIがICFに整理しています（10〜20秒）');
-  try {
-    const d = await post('/icf/dialogue', { message: text, icf: state.icf, turn: state.turn });
-    state.icf = d.icf; state.turn = d.turn; state.phase = d.phase; state.assessment = d.assessment;
-    setBusy(false);
-    addMessage('ai', renderAssistant(d));
-    quickEl.hidden = false;
-    renderMeter();
-    if (d.phase === 'confirming') document.getElementById('btn-confirm').focus();
-  } catch (err) {
-    setBusy(false);
-    addMessage('ai', `<span class="error">うまく整理できませんでした: ${esc(err.message)}\nもう一度送ってみてください。</span>`);
-  }
-}
-
-document.getElementById('compose').addEventListener('submit', e => { e.preventDefault(); sendMessage(msgInput.value); });
-msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendMessage(msgInput.value); } });
-document.getElementById('example-chips').addEventListener('click', e => { const b = e.target.closest('button'); if (b) sendMessage(b.textContent); });
-document.getElementById('btn-more').addEventListener('click', () => { msgInput.focus(); msgInput.placeholder = '追加で教えてください（例: 仕事、家族、趣味、困っている場面）'; });
-document.getElementById('btn-json').addEventListener('click', () => {
-  if (!state.icf) return;
-  addMessage('ai', `<p>ICFプロファイル（JSON）</p><pre class="json">${esc(JSON.stringify(state.icf, null, 2))}</pre>`);
+/* ============ UI初期化 ============ */
+let selCats = [], curSrc = "map";
+const grid = document.getElementById('catGrid'), kwEl = document.getElementById('kw'), out = document.getElementById('searchOut');
+CATS.forEach((name, idx) => {
+  const n = idx + 1;
+  const d = document.createElement('button');
+  d.type = 'button'; d.className = 'cat-chip' + (GAPS.includes(n) ? ' gap' : '');
+  d.innerHTML = `<span class="n">${n}</span><span>${esc(name)}</span>`;
+  d.onclick = () => {
+    d.classList.toggle('selected');
+    selCats = selCats.includes(n) ? selCats.filter(x => x !== n) : [...selCats, n];
+    if (curSrc === 'map') doSearch();
+    else if (curSrc === 'pubmed' && !kwEl.value.trim()) doSearch();
+  };
+  grid.appendChild(d);
 });
-document.getElementById('btn-reset').addEventListener('click', () => {
-  state.icf = null; state.turn = 0; state.phase = 'collecting'; state.assessment = null;
-  messagesEl.innerHTML = ''; examplesEl.hidden = false; quickEl.hidden = true; renderMeter();
+function showCats(open) {
+  grid.hidden = !open;
+  document.getElementById('catToggle').textContent = (open ? '▲' : '▼') + ' カテゴリで絞り込む（全がん連調査 困りごと順）';
+}
+document.getElementById('catToggle').onclick = () => showCats(grid.hidden);
+document.querySelectorAll('.src-tab').forEach(t => {
+  t.onclick = () => setSrc(t.dataset.src, true);
 });
+function setSrc(src, run) {
+  document.querySelectorAll('.src-tab').forEach(x => x.classList.toggle('active', x.dataset.src === src));
+  curSrc = src;
+  kwEl.placeholder = KW_PLACEHOLDERS[src] || KW_PLACEHOLDERS.map;
+  if (run) doSearch();
+}
+document.getElementById('searchForm').addEventListener('submit', e => { e.preventDefault(); doSearch(); });
 
-// Stage 3: 50年後QOL
-document.getElementById('btn-confirm').addEventListener('click', async () => {
-  if (!state.icf || state.busy) return;
-  addMessage('user', 'ICFを確定して、50年後のQOLを見せてください。');
-  setBusy(true, 'AIが50年後の暮らしを描いています（15〜25秒）');
-  try {
-    const f = await post('/icf/future', { icf: state.icf });
-    setBusy(false);
-    state.phase = 'done';
-    addMessage('ai', renderFuture(f));
-  } catch (err) {
-    setBusy(false);
-    addMessage('ai', `<span class="error">描けませんでした: ${esc(err.message)}\nもう一度「確定して50年後QOLへ」を押してください。</span>`);
-  }
-});
+/* ============ 検索 ============ */
+function doSearch() {
+  const kw = kwEl.value.trim();
+  if (curSrc === 'map') return searchMap(kw);
+  if (curSrc === 'pubmed') return searchPubmed(kw);
+  if (curSrc === 'rmap') return searchRmap(kw);
+  return searchExternal(curSrc, kw);
+}
 
-function renderFuture(f) {
-  const cats = (f.categories || []).map(c => `
-    <div class="domain"><h4>${esc(c.label)}</h4>
-      <div class="row">
-        <div class="now"><span class="lbl">いま</span>${esc(c.now)}</div>
-        <div class="fut"><span class="lbl">2076年</span>${esc(c.future)}</div>
-        ${c.enabled_by ? `<div class="by">そうなる理由: ${esc(c.enabled_by)}</div>` : ''}
-      </div></div>`).join('');
-  const kw = (f.search_keywords_en || []).join(' AND ');
-  return `<div class="future-card">
-    <div><div class="eyebrow">50年後のQOL — 2076年</div><h3>${esc(f.headline)}</h3></div>
-    <div class="qol"><div class="now"><span class="lbl">いまのQOL</span>${esc(f.qol_now)}</div><div class="fut"><span class="lbl">2076年のQOL</span>${esc(f.qol_2076)}</div></div>
-    ${cats}
-    ${f.day_in_2076 ? `<div class="story"><b>2076年のある一日</b>${esc(f.day_in_2076)}</div>` : ''}
-    ${(f.research_needed || []).length ? `<div class="research"><b>この未来に近づくために必要な研究</b><ul>${f.research_needed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-    <div class="actions">
-      ${kw ? `<button class="btn small" type="button" data-search="${esc(kw)}">関連する研究を探す</button>` : ''}
-      <button class="btn ghost small" type="button" data-json="1">ICFをJSONで出力</button>
+function renderStudy(d) {
+  const cats = d.c.map(n => `${n}.${CATS[n - 1]}`).join('｜');
+  return `<div class="study-card">
+    <div class="intervention">${esc(d.i)}　<span>［${esc(cats)}］</span></div>
+    <div class="title">${d.u ? `<a href="${esc(d.u)}" target="_blank" rel="noopener">${esc(d.t)}</a>` : esc(d.t)}</div>
+    <div class="meta">
+      <span class="tag fund">${esc(d.f)}</span><span class="tag">がん種：${esc(d.cn)}</span><span class="tag">世代：${esc(d.g)}</span>
+      <span class="tag">背景：${esc(d.b)}</span><span class="tag">${esc(d.rt)}</span>
     </div>
-    <div class="caution">AIによる想像を含みます。医療上の判断は主治医にご相談ください。</div>
   </div>`;
 }
-messagesEl.addEventListener('click', e => {
-  const s = e.target.closest('button[data-search]');
-  if (s) { document.getElementById('q').value = s.dataset.search; showTab('search'); document.getElementById('search-form').requestSubmit(); return; }
-  if (e.target.closest('button[data-json]')) document.getElementById('btn-json').click();
-});
-renderMeter();
 
-// ================================================================ 研究を探す
-const form = document.getElementById('search-form'), qInput = document.getElementById('q');
-const statusEl = document.getElementById('status'), resultsEl = document.getElementById('results');
-document.getElementById('search-chips').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; qInput.value = b.textContent; form.requestSubmit(); });
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  const q = qInput.value.trim(); if (!q) return;
-  const btn = document.getElementById('search-btn');
-  btn.disabled = true; resultsEl.innerHTML = '';
-  statusEl.textContent = '論文を探しています…（日本語の場合はAIが英語に直します）';
-  try { renderResults(await api(`/pubmed/search?q=${encodeURIComponent(q)}&retmax=10`)); }
-  catch (err) { statusEl.innerHTML = `<span class="error">探せませんでした: ${esc(err.message)}</span>`; }
-  finally { btn.disabled = false; }
-});
-function renderResults(data) {
-  const en = data.query_en && data.query_en !== data.query ? ` 検索語: <span class="en">${esc(data.query_en)}</span>` : '';
-  statusEl.innerHTML = data.total ? `${data.total.toLocaleString()} 件中、関連の高い ${data.results.length} 件${en}` : `見つかりませんでした。別のことばで試してください${en}`;
-  resultsEl.innerHTML = data.results.map((r, i) => `
-    <article class="card" data-i="${i}">
-      <h3><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h3>
-      <div class="meta">${esc((r.authors || []).slice(0, 4).join(', '))}${(r.authors || []).length > 4 ? ' ほか' : ''} · ${esc(r.source)} (${esc(r.pubdate)})${r.doi ? ` · DOI ${esc(r.doi)}` : ''}</div>
-      ${r.abstract ? `<p class="abstract">${esc(r.abstract)}</p>` : '<p class="abstract open meta">抄録なし（題名から読みます）</p>'}
-      <div class="actions">
-        <button class="btn small" type="button" data-act="icf">ICFで読む</button>
-        ${r.abstract ? '<button class="linkish" type="button" data-act="more">もっと読む</button>' : ''}
-      </div>
-      <div class="icf-slot"></div>
-    </article>`).join('');
-  resultsEl._data = data.results;
+function searchMap(kw) {
+  const res = DATA.filter(d => {
+    const kwOK = !kw || d.t.includes(kw) || d.i.includes(kw) || (d.cn || '').includes(kw) || (d.f || '').includes(kw);
+    const catOK = selCats.length === 0 || d.c.some(c => selCats.includes(c));
+    return kwOK && catOK;
+  });
+  let html = `<div class="result-count">マップ掲載研究：${res.length}件</div>` + res.map(renderStudy).join('');
+  selCats.filter(n => GAPS.includes(n)).forEach(n => {
+    html += `<div class="gap-card"><b>${n}. ${esc(CATS[n - 1])}</b>：マップ作成時点で公的研究費による研究が「ー」（未実施）の項目です。今後の研究が望まれています。
+      <div class="ext-links"><button class="btn btn-ghost btn-small" type="button" onclick="pubmedForCat(${n})">PubMed で世界の研究を見る →</button></div></div>`;
+  });
+  if (res.length === 0 && !selCats.some(n => GAPS.includes(n))) {
+    html += `<div class="gap-card">該当する掲載研究がありません。外部データベース（AMED・PubMed等のタブ）で最新状況をご確認ください。</div>`;
+  }
+  out.innerHTML = html;
 }
-resultsEl.addEventListener('click', async e => {
-  const b = e.target.closest('button[data-act]'); if (!b) return;
-  const card = b.closest('.card'); const r = resultsEl._data[card.dataset.i];
-  if (b.dataset.act === 'more') { const ab = card.querySelector('.abstract'); ab.classList.toggle('open'); b.textContent = ab.classList.contains('open') ? '閉じる' : 'もっと読む'; return; }
-  const slot = card.querySelector('.icf-slot');
-  b.disabled = true; slot.innerHTML = '<div class="status">AIがICFに整理しています…（10秒ほど）</div>';
+function pubmedForCat(n) { selCats = [n]; document.querySelectorAll('.cat-chip').forEach((el, i) => el.classList.toggle('selected', i + 1 === n)); kwEl.value = ''; setSrc('pubmed', true); }
+
+/* PubMed: 当ポータルのAPI経由（日本語→英語検索語はAIが変換）。カテゴリ選択時はカテゴリの英語語を使う */
+async function searchPubmed(kw) {
+  let q = kw;
+  if (!q && selCats.length) q = selCats.map(n => `(${CAT_EN[n - 1]})`).join(' OR ') + ' AND cancer survivors';
+  if (!q) q = 'cancer survivorship';
+  const btn = document.getElementById('searchBtn'); btn.disabled = true;
+  out.innerHTML = `<div class="loading"><div class="spinner"></div>PubMed を検索しています…${/[぀-ヿ一-鿿]/.test(q) ? '（AIが英語の検索語に変換中）' : ''}</div>`;
   try {
-    const d = await post('/icf/translate', { title: r.title, text: r.abstract || r.title });
-    const rows = CATS.filter(([k]) => k !== 'health_condition').map(([k, label]) => (d[k] || []).length ? `<div><span class="tg ${k}">${esc(label)}</span>${d[k].map(fmtItem).join(' / ')}</div>` : '').join('');
-    slot.innerHTML = `<div class="icf-read">${d.summary ? `<div>${esc(d.summary)}</div>` : ''}${rows || '<div class="meta">該当するICFカテゴリが見つかりませんでした。</div>'}</div>`;
-  } catch (err) { slot.innerHTML = `<div class="status error">整理できませんでした: ${esc(err.message)}</div>`; }
+    const data = await api(`/pubmed/search?q=${encodeURIComponent(q)}&retmax=10`);
+    const en = data.query_en && data.query_en !== data.query ? ` <span class="en">${esc(data.query_en)}</span>` : '';
+    let html = `<div class="result-count">PubMed：${Number(data.total).toLocaleString()}件中 関連の高い${data.results.length}件${en}</div>`;
+    html += data.results.map((r, i) => renderPubmed(r, i)).join('');
+    html += `<div class="ext-links"><a class="ext-link primary" href="${EXT.pubmed.url(data.query_en || q)}" target="_blank" rel="noopener">PubMed本体でこの検索を開く →</a></div>`;
+    out.innerHTML = html; out._pubmed = data.results;
+  } catch (err) {
+    out.innerHTML = `<div class="gap-card"><span class="error">PubMed を検索できませんでした: ${esc(err.message)}</span></div>
+      <div class="ext-links"><a class="ext-link primary" href="${EXT.pubmed.url(q)}" target="_blank" rel="noopener">PubMed本体で開く →</a></div>`;
+  } finally { btn.disabled = false; }
+}
+function renderPubmed(r, i) {
+  return `<div class="study-card" data-i="${i}">
+    <div class="intervention">PubMed　<span>${esc(r.source)}（${esc(r.pubdate)}）${r.doi ? ` · DOI ${esc(r.doi)}` : ''}</span></div>
+    <div class="title"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></div>
+    <div class="meta"><span class="tag">${esc((r.authors || []).slice(0, 4).join(', '))}${(r.authors || []).length > 4 ? ' ほか' : ''}</span></div>
+    ${r.abstract ? `<div class="abstract">${esc(r.abstract)}</div>` : ''}
+    <div class="actions">
+      <button class="btn btn-ghost btn-small" type="button" data-act="icf">ICFで読む</button>
+      ${r.abstract ? '<button class="linkish" type="button" data-act="more">抄録をすべて表示</button>' : ''}
+    </div>
+    <div class="icf-slot"></div>
+  </div>`;
+}
+out.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.study-card'); const r = (out._pubmed || [])[card.dataset.i]; if (!r) return;
+  if (b.dataset.act === 'more') { const ab = card.querySelector('.abstract'); ab.classList.toggle('open'); b.textContent = ab.classList.contains('open') ? '閉じる' : '抄録をすべて表示'; return; }
+  const slot = card.querySelector('.icf-slot'); b.disabled = true;
+  slot.innerHTML = '<div class="loading">AIがICFに整理しています…（10秒ほど）</div>';
+  try {
+    const d = await api('/icf/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: r.title, text: r.abstract || r.title }) });
+    const labels = { body_functions: '心身機能', body_structures: '身体構造', activities_participation: '活動・参加', environmental_factors: '環境因子', personal_factors: '個人因子' };
+    const rows = Object.keys(labels).map(k => (d[k] || []).length ? `<div><b>${labels[k]}</b> ${d[k].map(it => `<span class="icf-tag">${esc(it.code || '')} ${esc(it.label)}</span>`).join('')}</div>` : '').join('');
+    const cats = catsFromIcf(d);
+    slot.innerHTML = `<div class="icf-read">${d.summary ? `<div>${esc(d.summary)}</div>` : ''}${rows}
+      ${cats.length ? `<div><b>関連する研究開発マップのカテゴリ</b> ${cats.map(n => `<span class="icf-tag cat" onclick="jumpToCategory(${n})">${n}. ${esc(CATS[n - 1])}</span>`).join('')}</div>` : ''}</div>`;
+  } catch (err) { slot.innerHTML = `<div class="icf-read error">整理できませんでした: ${esc(err.message)}</div>`; }
   finally { b.disabled = false; }
 });
 
-// researchmap / AMED（補助）
-document.querySelectorAll('form[data-api]').forEach(f => {
-  f.addEventListener('submit', async e => {
-    e.preventDefault();
-    const q = f.querySelector('input').value.trim();
-    const status = f.nextElementSibling, box = status.nextElementSibling;
-    status.textContent = '探しています…'; box.innerHTML = '';
-    try {
-      const data = await api(`/${f.dataset.api}/search?q=${encodeURIComponent(q)}`);
-      const items = data.items || data.results || data['@graph'] || null;
-      if (Array.isArray(items) && items.length) {
-        status.textContent = `${items.length} 件`;
-        box.innerHTML = items.map(it => {
-          const name = it.family_name && it.given_name ? `${it.family_name} ${it.given_name}` : (it.name || it.title || it.research_title || '名称不明');
-          const link = it['@id'] || it.url || it.link || ''; const desc = it.affiliation || it.organization || it.description || '';
-          const n = esc(typeof name === 'object' ? JSON.stringify(name) : name);
-          return `<div class="card"><h3>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${n}</a>` : n}</h3><div class="meta">${esc(typeof desc === 'object' ? JSON.stringify(desc) : desc)}</div></div>`;
-        }).join('');
-      } else { status.textContent = '取得結果（未整形）'; box.innerHTML = `<pre class="raw">${esc(JSON.stringify(data, null, 2).slice(0, 20000))}</pre>`; }
-    } catch (err) { status.innerHTML = `<span class="error">${esc(err.message)}</span>`; }
-  });
-});
+/* researchmap: 当ポータルのAPI経由 */
+async function searchRmap(kw) {
+  if (!kw) { out.innerHTML = `<div class="gap-box gl-box">研究者名やキーワードを入力してください。</div><div class="ext-links"><a class="ext-link" href="${EXT.rmap.url}" target="_blank" rel="noopener">researchmap を開く →</a></div>`; return; }
+  const btn = document.getElementById('searchBtn'); btn.disabled = true;
+  out.innerHTML = `<div class="loading"><div class="spinner"></div>researchmap を検索しています…</div>`;
+  try {
+    const data = await api(`/rmap/search?q=${encodeURIComponent(kw)}`);
+    const items = data.items || data.results || data['@graph'] || [];
+    let html = `<div class="result-count">researchmap：${items.length}件</div>`;
+    html += items.map(it => {
+      const name = it.family_name && it.given_name ? `${it.family_name} ${it.given_name}` : (it.name || it.title || '名称不明');
+      const link = it['@id'] || it.url || ''; const desc = it.affiliation || it.organization || it.description || '';
+      const n = typeof name === 'object' ? JSON.stringify(name) : name;
+      return `<div class="study-card"><div class="title">${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(n)}</a>` : esc(n)}</div><div class="meta"><span class="tag">${esc(typeof desc === 'object' ? JSON.stringify(desc) : desc)}</span></div></div>`;
+    }).join('');
+    if (!items.length) html += `<div class="gap-card">該当なし。<a href="${EXT.rmap.url}" target="_blank" rel="noopener">researchmap本体</a>でもお試しください。</div>`;
+    out.innerHTML = html;
+  } catch (err) {
+    out.innerHTML = `<div class="gap-card"><span class="error">researchmap を検索できませんでした: ${esc(err.message)}</span></div><div class="ext-links"><a class="ext-link" href="${EXT.rmap.url}" target="_blank" rel="noopener">researchmap を開く →</a></div>`;
+  } finally { btn.disabled = false; }
+}
 
-// ---------------------------------------------------------------- API設定（ローカルコピー用）
+/* AMED / 厚労科研 / UMIN: 公式サイトへ */
+function searchExternal(src, kw) {
+  const e = EXT[src];
+  out.innerHTML = `<div class="gl-box" style="margin-bottom:10px;"><b>${esc(e.name)}</b>は公式サイトのサイト内検索をご利用ください。</div>
+    <div class="ext-links"><a class="ext-link primary" href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.name)} を開く →</a></div>
+    <div class="gl-box">${esc(e.note || '')}${kw ? `<br>検索窓に「<b>${esc(kw)}</b>」を入力してください。` : ''}</div>`;
+}
+
+/* ============ ICFコード → 研究開発マップのカテゴリ（icf.html と共通） ============ */
+const CODE_TO_CATS = [
+  [/^b1(26|30|52)/, [1]], [/^b455/, [3]], [/^b134/, [12]], [/^b28/, [8]], [/^b2(65|70)/, [14]], [/^b5(10|35)/, [14, 23]],
+  [/^b1(40|44|64)/, [19]], [/^b180/, [15]], [/^b5(30|55)/, [16]], [/^b4(10|15|20)/, [17]], [/^b6/, [25]],
+  [/^d6(30|40)/, [5, 2]], [/^d4/, [2]], [/^d177/, [7]], [/^d770/, [25]], [/^d570/, [9]], [/^d8(2|3|4|5)/, [13]],
+  [/^d760/, [18]], [/^d7(50|20|10)/, [28]], [/^d9/, [28]],
+  [/^e570/, [10]], [/^e580/, [6]], [/^e3(55|60)/, [4, 20]], [/^e4/, [29]], [/^e3(10|15|20)/, [18]], [/^e1/, [14]],
+];
+function catsFromIcf(d) {
+  const set = new Set();
+  ['body_functions', 'activities_participation', 'environmental_factors'].forEach(k => (d[k] || []).forEach(it => {
+    CODE_TO_CATS.forEach(([re, cats]) => { if (re.test(String(it.code || ''))) cats.forEach(c => set.add(c)); });
+  }));
+  return [...set].sort((a, b) => a - b);
+}
+function jumpToCategory(n) {
+  selCats = [n];
+  document.querySelectorAll('.cat-chip').forEach((el, idx) => el.classList.toggle('selected', idx + 1 === n));
+  showCats(true); kwEl.value = ''; setSrc('map', true);
+  document.querySelector('.section').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ============ API設定（ローカルコピー用） ============ */
 document.getElementById('api-cfg').addEventListener('click', () => {
   const v = prompt('APIのベースURL（例: https://xxxx.execute-api.ap-northeast-1.amazonaws.com/api）\n空にすると設定を消します', API_BASE);
   if (v === null) return;
   try { v.trim() ? localStorage.setItem('saqra_api_base', v.trim()) : localStorage.removeItem('saqra_api_base'); } catch (_) {}
   location.reload();
 });
+
+/* ============ 初期表示: URLパラメータ（?cat=8 / ?src=pubmed&q=...）→ なければマップ全件 ============ */
+(() => {
+  const p = new URLSearchParams(location.search);
+  const cat = parseInt(p.get('cat') || '', 10);
+  if (cat >= 1 && cat <= 30) { jumpToCategory(cat); return; }
+  if (p.get('q')) kwEl.value = p.get('q');
+  setSrc(p.get('src') && EXT[p.get('src')] ? p.get('src') : 'map', true);
+})();
 </script>
 </body>
 </html>
