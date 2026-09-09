@@ -4,6 +4,7 @@
 # 使い方:
 #   ./deploy.sh                        # 通常デプロイ
 #   AMED_SEARCH_URL=... ./deploy.sh    # AMEDエンドポイントを指定してデプロイ
+#   BEDROCK_MODEL_ID=jp.anthropic.claude-sonnet-4-6 ./deploy.sh   # モデルを固定（未指定は auto）
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -45,7 +46,8 @@ STACK_NAME="${STACK_NAME:-saqra-portal}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 
 PARAM_OVERRIDES=()
-[ -n "${BEDROCK_MODEL_ID:-}" ] && PARAM_OVERRIDES+=("BedrockModelId=${BEDROCK_MODEL_ID}")
+# 未指定なら "auto"（候補リスト＋自動検出）。前回デプロイの値がスタックに残らないよう常に渡す
+PARAM_OVERRIDES+=("BedrockModelId=${BEDROCK_MODEL_ID:-auto}")
 [ -n "${AMED_SEARCH_URL:-}" ] && PARAM_OVERRIDES+=("AmedSearchUrl=${AMED_SEARCH_URL}")
 [ -n "${AMED_QUERY_PARAM:-}" ] && PARAM_OVERRIDES+=("AmedQueryParam=${AMED_QUERY_PARAM}")
 [ -n "${NCBI_API_KEY:-}" ] && PARAM_OVERRIDES+=("NcbiApiKey=${NCBI_API_KEY}")

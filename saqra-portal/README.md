@@ -74,7 +74,8 @@ aws configure          # Access Key / Secret / region: ap-northeast-1
 - **Bedrock モデル**: Lambda が起動時に「`BEDROCK_MODEL_ID`（カンマ区切り、任意）→ 組み込み候補 → 東京リージョンで検出した
   Anthropic モデル」の順に試し、使えたものを使います（Legacy 指定でアクセス不可になったモデルを自動で避けるため）。
   デプロイ後に `curl "$API/api/models?check=1"` を実行すると、実際に使えるモデル（`resolved`）と検出結果が分かります。
-  特定のモデルに固定したい場合は `BEDROCK_MODEL_ID=<id> ./deploy.sh`。
+  特定のモデルに固定したい場合は `BEDROCK_MODEL_ID=<id> ./deploy.sh`（例: `jp.anthropic.claude-sonnet-4-6` は日本国内推論、
+  `global.anthropic.claude-sonnet-5` は最新世代。未指定は `auto`）。
 
 ## デプロイ
 

@@ -5,8 +5,8 @@ Description: SAQRA research portal - S3+CloudFront frontend, Lambda+HttpApi back
 Parameters:
   BedrockModelId:
     Type: String
-    Default: ""
-    Description: Bedrock model/inference-profile ID(s), comma-separated, tried in order. Empty = built-in candidates + auto-discovery in region
+    Default: auto
+    Description: Bedrock model/inference-profile ID(s), comma-separated, tried in order. "auto" = built-in candidates + auto-discovery in region
   AmedSearchUrl:
     Type: String
     Default: ""

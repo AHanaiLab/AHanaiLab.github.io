@@ -43,13 +43,18 @@ AMED_QUERY_PARAM = os.environ.get("AMED_QUERY_PARAM", "keyword")
 #   3. それでも駄目なら ListInferenceProfiles / ListFoundationModels で当リージョンの
 #      Anthropic モデルを自動検出して試す（Legacy 指定でアクセス不可になったモデルを避けるため）
 #   成功したモデルは Lambda の実行環境が生きている間キャッシュされる
-BEDROCK_MODEL_IDS = [m.strip() for m in os.environ.get("BEDROCK_MODEL_ID", "").split(",") if m.strip()]
+BEDROCK_MODEL_IDS = [
+    m.strip() for m in os.environ.get("BEDROCK_MODEL_ID", "").split(",") if m.strip() and m.strip().lower() != "auto"
+]
+# 2026-09 時点で ap-northeast-1 の ListInferenceProfiles に実在したIDから、国内推論(jp.)と新しさを優先
 DEFAULT_MODEL_CANDIDATES = [
-    "apac.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "jp.anthropic.claude-sonnet-4-6",
+    "global.anthropic.claude-sonnet-5",
+    "global.anthropic.claude-sonnet-4-6",
+    "jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "apac.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "jp.anthropic.claude-haiku-4-5-20251001-v1:0",
     "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "apac.anthropic.claude-sonnet-4-20250514-v1:0",
 ]
 _MODEL_STATE: dict[str, Any] = {"resolved": None, "discovered": None, "attempts": []}
 NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
@@ -84,11 +89,11 @@ def _bedrock_region() -> str:
 
 
 def _model_rank(model_id: str) -> tuple:
-    """新しく・賢く・地域が近いものを先に。(日付降順, sonnet>opus>haiku, apac>global>その他)"""
+    """新しく・賢く・地域が近いものを先に。(日付降順, sonnet>opus>haiku, jp>apac>global>その他)"""
     m = re.search(r"(20\d{6})", model_id)
     date = int(m.group(1)) if m else 0
     family = 0 if "sonnet" in model_id else 1 if "opus" in model_id else 2 if "haiku" in model_id else 3
-    scope = 0 if model_id.startswith("apac.") else 1 if model_id.startswith("global.") else 2
+    scope = 0 if model_id.startswith("jp.") else 1 if model_id.startswith("apac.") else 2 if model_id.startswith("global.") else 3
     return (-date, family, scope)
 
 
@@ -415,6 +420,8 @@ FUTURE_TRANSFORM_SYSTEM = """あなたは、がんサバイバーシップ研究
 - 環境因子は、制度・道具・まわりの人の変化として描く。個人因子は、その人らしさが活きる形で描く（性格を変えない）。
 - research_needed は、この未来に近づくために必要な研究テーマ（研究開発マップへの入力になる）。
 - search_keywords_en は、関連する研究を PubMed で探すための英語キーワード（3〜6語句）。
+- 【長さの上限・厳守】headline 20字以内 / qol_now・qol_2076 各1〜2文（80字以内）/ categories の now・future 各50字以内、
+  enabled_by 40字以内 / day_in_2076 は3文（150字以内）/ research_needed 各20字以内。全体で簡潔に。
 
 出力は次のJSONのみ（前後に説明やコードフェンスを付けない）:
 {
@@ -428,7 +435,7 @@ FUTURE_TRANSFORM_SYSTEM = """あなたは、がんサバイバーシップ研究
     {"key": "environmental_factors", "label": "環境因子", "now": "…", "future": "…", "enabled_by": "…"},
     {"key": "personal_factors", "label": "個人因子", "now": "…", "future": "…", "enabled_by": "…"}
   ],
-  "day_in_2076": "2076年のある一日を、本人の目線で4〜5文の物語として",
+  "day_in_2076": "2076年のある一日を、本人の目線で3文の物語として",
   "research_needed": ["必要な研究テーマ（短く、1〜4個）"],
   "search_keywords_en": ["cancer survivors", "..."]
 }
@@ -444,7 +451,7 @@ def icf_future(req: FutureRequest):
     icf = normalize_icf(req.icf)
     if not any(icf[k] for k in LIST_CATEGORIES) and not icf["health_condition"]["description"]:
         raise HTTPException(status_code=400, detail="icf profile is empty")
-    parsed = _ask_claude_json(FUTURE_TRANSFORM_SYSTEM, json.dumps(icf, ensure_ascii=False), max_tokens=2200)
+    parsed = _ask_claude_json(FUTURE_TRANSFORM_SYSTEM, json.dumps(icf, ensure_ascii=False), max_tokens=1400)
     cats = parsed.get("categories") or []
     return {
         "headline": str(parsed.get("headline", "")),
