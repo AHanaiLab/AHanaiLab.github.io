@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SaQRA 研究翻訳ポータル</title>
+<meta name="description" content="がんサバイバーシップ研究を検索し、AIが ICF の枠組みで「50年後の暮らし」に翻訳します。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<!--
+  ============================================================================
+  SaQRA 研究翻訳ポータル — 1ファイル完結のフロントエンド
+  ----------------------------------------------------------------------------
+  ハッカソン参加者のみなさんへ（バイブコーディングのヒント）:
+    * 色・角丸・余白は <style> 冒頭の :root の変数（--accent など）を変えるだけで全体に効きます
+    * 検索結果のカードは renderResults() が、50年後翻訳の表示は renderFuture() が作っています
+    * API の呼び出し先は API_BASE。ローカルで開いたコピーでもそのまま動きます
+    * このファイルをまるごと AI に貼って「〇〇を変えて」と頼むのが一番早い方法です
+  ============================================================================
+-->
+<style>
+  :root {
+    --bg: #F3F6F5;          /* 紙の色: わずかに青緑寄りの白 */
+    --surface: #FFFFFF;
+    --surface-2: #E9F0EE;
+    --ink: #1B2A2F;
+    --ink-2: #56666B;
+    --line: #D3DDDA;
+    --accent: #0E7C7B;      /* 海の緑: 検索・現在 */
+    --accent-ink: #FFFFFF;
+    --future: #C97D00;      /* 琥珀: 50年後・希望 */
+    --future-bg: #FFF4E0;
+    --future-ink: #6B4300;
+    --danger: #B3261E;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(27,42,47,.06), 0 8px 24px -12px rgba(27,42,47,.18);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8;
+      --line: #2C3D44; --accent: #4CC3C0; --accent-ink: #062A2A; --future: #F2B33D; --future-bg: #2E2410;
+      --future-ink: #FFE1A6; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8;
+    --line: #2C3D44; --accent: #4CC3C0; --accent-ink: #062A2A; --future: #F2B33D; --future-bg: #2E2410;
+    --future-ink: #FFE1A6; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 16px; line-height: 1.7;
+  }
+  h1, h2, h3, .display { font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif; text-wrap: balance; }
+  a { color: var(--accent); }
+  button { font-family: inherit; }
+  :focus-visible { outline: 3px solid var(--future); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---- 上部 ---- */
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: .9rem 1.25rem; border-bottom: 1px solid var(--line); background: var(--surface);
+  }
+  .brand { display: flex; align-items: baseline; gap: .6rem; }
+  .brand b { font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 900; font-size: 1.15rem; letter-spacing: .02em; }
+  .brand span { font-size: .8rem; color: var(--ink-2); }
+  .tag {
+    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .6rem;
+    border: 1px solid var(--future); color: var(--future-ink); background: var(--future-bg); border-radius: 999px; white-space: nowrap;
+  }
+
+  main { max-width: 760px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  /* ---- 検索（このページの主役） ---- */
+  .hero h1 { margin: 0 0 .35rem; font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 900; line-height: 1.3; }
+  .hero h1 em { font-style: normal; color: var(--future); }
+  .hero p { margin: 0 0 1.1rem; color: var(--ink-2); max-width: 36em; }
+  .search {
+    display: flex; gap: .5rem; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius);
+    padding: .4rem .4rem .4rem 1rem; box-shadow: var(--shadow); transition: border-color .15s;
+  }
+  .search:focus-within { border-color: var(--accent); }
+  .search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font-size: 1.1rem; padding: .5rem 0; }
+  .search input::placeholder { color: var(--ink-2); }
+  .btn {
+    border: 0; border-radius: 10px; padding: .7rem 1.2rem; font-size: 1rem; font-weight: 700; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); white-space: nowrap; transition: transform .08s, opacity .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: progress; }
+  .btn.future { background: var(--future); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--line); font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: .45rem; margin: .8rem 0 0; }
+  .chips button {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px;
+    padding: .35rem .85rem; font-size: .9rem; cursor: pointer;
+  }
+  .chips button:hover { border-color: var(--accent); color: var(--accent); }
+  .howto { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin: 1.4rem 0 0; }
+  .howto div { background: var(--surface-2); border-radius: 10px; padding: .7rem .8rem; font-size: .85rem; line-height: 1.5; }
+  .howto b { display: block; font-family: "Zen Kaku Gothic New", sans-serif; color: var(--accent); font-size: .95rem; margin-bottom: .15rem; }
+  .howto div:last-child b { color: var(--future); }
+  @media (max-width: 560px) { .howto { grid-template-columns: 1fr; } .brand span { display: none; } }
+
+  /* ---- 結果 ---- */
+  .status { margin: 1.2rem 0 .6rem; font-size: .9rem; color: var(--ink-2); }
+  .status .en { font-family: "IBM Plex Mono", monospace; font-size: .8rem; background: var(--surface-2); padding: .1rem .4rem; border-radius: 4px; }
+  .error { color: var(--danger); white-space: pre-wrap; }
+  .results { display: grid; gap: .8rem; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; }
+  .card h3 { margin: 0 0 .3rem; font-size: 1.02rem; line-height: 1.45; font-weight: 700; }
+  .card h3 a { color: inherit; text-decoration: none; }
+  .card h3 a:hover { color: var(--accent); }
+  .meta { font-size: .8rem; color: var(--ink-2); }
+  .abstract { font-size: .88rem; color: var(--ink-2); margin: .5rem 0 0; max-height: 4.6em; overflow: hidden; position: relative; }
+  .abstract.open { max-height: none; }
+  .abstract:not(.open)::after { content: ""; position: absolute; inset: auto 0 0; height: 2em; background: linear-gradient(transparent, var(--surface)); }
+  .actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .7rem; }
+  .actions .btn { padding: .55rem 1rem; font-size: .92rem; }
+  .linkish { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: .85rem; padding: .3rem .2rem; }
+
+  /* ---- 50年後翻訳の表示 ---- */
+  .future-panel {
+    margin-top: .9rem; border-top: 2px dashed var(--future); padding-top: .9rem; display: grid; gap: .8rem;
+  }
+  .future-panel .lead { font-size: 1rem; }
+  .future-panel .lead b { font-family: "Zen Kaku Gothic New", sans-serif; }
+  .who { font-size: .88rem; color: var(--ink-2); }
+  .domain { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .domain h4 {
+    margin: 0; padding: .45rem .8rem; font-size: .8rem; letter-spacing: .06em; background: var(--surface-2); color: var(--ink-2);
+    font-weight: 700;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--line); }
+  .row > div { padding: .6rem .8rem; font-size: .9rem; }
+  .row .now { color: var(--ink-2); }
+  .row .fut { background: var(--future-bg); color: var(--future-ink); }
+  .row .lbl { display: block; font-size: .72rem; letter-spacing: .06em; margin-bottom: .15rem; }
+  .row .lbl .code { font-family: "IBM Plex Mono", monospace; margin-right: .35rem; }
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } .row .fut { border-top: 1px dashed var(--future); } }
+  .story {
+    background: var(--future-bg); color: var(--future-ink); border-radius: 10px; padding: .9rem 1rem; font-size: .95rem; line-height: 1.8;
+    border-left: 4px solid var(--future);
+  }
+  .story b { display: block; font-family: "Zen Kaku Gothic New", sans-serif; font-size: .8rem; letter-spacing: .1em; margin-bottom: .3rem; }
+  .questions { margin: 0; padding-left: 1.2rem; font-size: .88rem; color: var(--ink-2); }
+  .caution { font-size: .75rem; color: var(--ink-2); }
+
+  /* ---- 自分の言葉から / その他の検索 ---- */
+  details { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+  summary { cursor: pointer; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 700; font-size: 1.05rem; }
+  textarea { width: 100%; min-height: 7rem; margin-top: .6rem; padding: .7rem .9rem; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
+  .subsearch { display: flex; gap: .5rem; margin-top: .6rem; }
+  .subsearch input { flex: 1; padding: .55rem .8rem; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1rem; }
+  pre.raw { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .8rem; overflow-x: auto; font-size: .78rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 1rem 2rem; font-size: .8rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><b>SaQRA</b><span>がんサバイバーシップ研究翻訳ポータル</span></div>
+  <span class="tag">AIハッカソン 2026.9.12</span>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>研究を、<em>50年後の暮らし</em>のことばに。</h1>
+    <p>知りたいことを日本語で入れてください。世界の論文を探し、AIが ICF（国際生活機能分類）の枠組みで「いま」と「50年後」を描きます。</p>
+    <form class="search" id="search-form">
+      <input id="q" type="search" placeholder="例: 治療のあと仕事に戻るときの不安" autocomplete="off" required>
+      <button class="btn" type="submit" id="search-btn">探す</button>
+    </form>
+    <div class="chips" id="chips">
+      <button type="button">仕事に戻る</button>
+      <button type="button">だるさ・疲れやすさ</button>
+      <button type="button">子どもへの伝え方</button>
+      <button type="button">再発の不安</button>
+      <button type="button">食事と味覚の変化</button>
+      <button type="button">お金と治療費</button>
+    </div>
+    <div class="howto">
+      <div><b>1. 探す</b>日本語でOK。AIが英語の検索語に直してPubMedを探します。</div>
+      <div><b>2. 読む</b>論文の要点を確認。抄録は「もっと読む」で全文。</div>
+      <div><b>3. 50年後へ</b>ボタンひとつで、その研究が実った未来の暮らしを描きます。</div>
+    </div>
+  </section>
+
+  <div class="status" id="status" aria-live="polite"></div>
+  <section class="results" id="results"></section>
+
+  <details id="own">
+    <summary>自分の言葉から翻訳する（論文を探さずに）</summary>
+    <textarea id="own-text" placeholder="例: 抗がん剤のあと手足がしびれて、ボタンをとめるのに時間がかかる。職場に戻れるか心配。"></textarea>
+    <div class="actions">
+      <button class="btn future" id="own-btn" type="button">ICF 50年後翻訳</button>
+      <span class="caution">入力内容はAIの処理にだけ使われ、保存されません。</span>
+    </div>
+    <div id="own-result"></div>
+  </details>
+
+  <details id="others">
+    <summary>研究者・研究課題を探す（researchmap / AMED）</summary>
+    <form class="subsearch" data-api="rmap"><input type="search" placeholder="研究者名・キーワード（researchmap）" required><button class="btn ghost" type="submit">探す</button></form>
+    <div class="status"></div><div class="results"></div>
+    <form class="subsearch" data-api="amed"><input type="search" placeholder="研究課題キーワード（AMED）" required><button class="btn ghost" type="submit">探す</button></form>
+    <div class="status"></div><div class="results"></div>
+  </details>
+</main>
+
+<footer>
+  <span>PubMed / NCBI E-utilities・Amazon Bedrock を利用</span>
+  <a href="guide.html">ハッカソン参加者ガイド（このページの改造方法）</a>
+  <a href="index.html" download="index.html">このページのHTMLを保存</a>
+  <button class="linkish" id="api-cfg" type="button">API設定</button>
+</footer>
+
+<script>
+// ---------------------------------------------------------------- API の接続先
+// 優先順: URLの ?api=  >  ブラウザに保存した設定  >  deploy.sh が埋め込んだURL  >  同一オリジンの /api
+const API_BASE_BUILD = '__API_BASE__';
+const API_BASE = (() => {
+  const fromUrl = new URLSearchParams(location.search).get('api');
+  let stored = null;
+  try { stored = localStorage.getItem('saqra_api_base'); } catch (_) {}
+  if (fromUrl) { try { localStorage.setItem('saqra_api_base', fromUrl); } catch (_) {} return fromUrl.replace(/\/$/, ''); }
+  if (stored) return stored.replace(/\/$/, '');
+  return API_BASE_BUILD.startsWith('__') ? '/api' : API_BASE_BUILD;
+})();
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(path, opts) {
+  const r = await fetch(`${API_BASE}${path}`, opts);
+  let data = null;
+  try { data = await r.json(); } catch (_) {}
+  if (!r.ok) throw new Error((data && data.detail) || `HTTP ${r.status}`);
+  return data;
+}
+
+// ---------------------------------------------------------------- 検索
+const form = document.getElementById('search-form');
+const qInput = document.getElementById('q');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+
+document.getElementById('chips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  qInput.value = b.textContent; form.requestSubmit();
+});
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = qInput.value.trim(); if (!q) return;
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true; resultsEl.innerHTML = '';
+  statusEl.textContent = '論文を探しています…（日本語の場合はAIが英語に直します）';
+  try {
+    const data = await api(`/pubmed/search?q=${encodeURIComponent(q)}&retmax=10`);
+    renderResults(data);
+  } catch (err) {
+    statusEl.innerHTML = `<span class="error">探せませんでした: ${esc(err.message)}</span>`;
+  } finally { btn.disabled = false; }
+});
+
+function renderResults(data) {
+  const en = data.query_en && data.query_en !== data.query ? ` 検索語: <span class="en">${esc(data.query_en)}</span>` : '';
+  statusEl.innerHTML = data.total
+    ? `${data.total.toLocaleString()} 件中、関連の高い ${data.results.length} 件${en}`
+    : `見つかりませんでした。別のことばで試してください${en}`;
+  resultsEl.innerHTML = data.results.map((r, i) => `
+    <article class="card" data-i="${i}">
+      <h3><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h3>
+      <div class="meta">${esc((r.authors || []).slice(0, 4).join(', '))}${(r.authors || []).length > 4 ? ' ほか' : ''} · ${esc(r.source)} (${esc(r.pubdate)})${r.doi ? ` · DOI ${esc(r.doi)}` : ''}</div>
+      ${r.abstract ? `<p class="abstract">${esc(r.abstract)}</p>` : '<p class="abstract open meta">抄録なし（題名から翻訳します）</p>'}
+      <div class="actions">
+        <button class="btn future" type="button" data-act="future">ICF 50年後翻訳</button>
+        ${r.abstract ? '<button class="linkish" type="button" data-act="more">もっと読む</button>' : ''}
+      </div>
+      <div class="future-slot"></div>
+    </article>`).join('');
+  resultsEl._data = data.results;
+}
+
+resultsEl.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.card'); const r = resultsEl._data[card.dataset.i];
+  if (b.dataset.act === 'more') {
+    const ab = card.querySelector('.abstract'); ab.classList.toggle('open');
+    b.textContent = ab.classList.contains('open') ? '閉じる' : 'もっと読む'; return;
+  }
+  await runFuture(b, card.querySelector('.future-slot'), { title: r.title, text: r.abstract || r.title });
+});
+
+// ---------------------------------------------------------------- 50年後翻訳
+async function runFuture(btn, slot, payload) {
+  btn.disabled = true;
+  slot.innerHTML = '<div class="status">AIが50年後の暮らしを考えています…（15〜25秒ほど）</div>';
+  try {
+    const d = await api('/icf/future', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    slot.innerHTML = renderFuture(d);
+  } catch (err) {
+    slot.innerHTML = `<div class="status error">翻訳できませんでした: ${esc(err.message)}</div>`;
+  } finally { btn.disabled = false; }
+}
+
+const DOMAINS = [
+  ['body_functions', '心身機能・身体構造'],
+  ['activities', '活動（できること）'],
+  ['participation', '参加（社会とのつながり）'],
+  ['environmental_factors', '環境因子（まわりの支え・制度・道具）'],
+  ['personal_factors', '個人因子'],
+];
+
+function renderFuture(d) {
+  const domains = DOMAINS.map(([key, label]) => {
+    const items = (d.domains && d.domains[key]) || [];
+    if (!items.length) return '';
+    return `<div class="domain"><h4>${label}</h4>${items.map(it => `
+      <div class="row">
+        <div class="now"><span class="lbl">${it.code ? `<span class="code">${esc(it.code)}</span>` : ''}${esc(it.label || '')} · いま</span>${esc(it.now || '')}</div>
+        <div class="fut"><span class="lbl">50年後</span>${esc(it.future || '')}</div>
+      </div>`).join('')}</div>`;
+  }).join('');
+  const qs = (d.open_questions || []).length
+    ? `<div><div class="meta">この未来に近づくために、まだ分かっていないこと</div><ul class="questions">${d.open_questions.map(q => `<li>${esc(q)}</li>`).join('')}</ul></div>` : '';
+  return `<div class="future-panel">
+    <div class="lead"><b>この研究は…</b> ${esc(d.plain_summary)}</div>
+    ${d.who_benefits ? `<div class="who">暮らしが変わりうる人: ${esc(d.who_benefits)}</div>` : ''}
+    ${domains}
+    ${d.day_in_2076 ? `<div class="story"><b>2076年のある一日</b>${esc(d.day_in_2076)}</div>` : ''}
+    ${qs}
+    <div class="caution">AIによる想像を含む翻訳です。医療上の判断は主治医にご相談ください。</div>
+  </div>`;
+}
+
+document.getElementById('own-btn').addEventListener('click', async () => {
+  const text = document.getElementById('own-text').value.trim();
+  const out = document.getElementById('own-result');
+  if (!text) { out.innerHTML = '<div class="status">テキストを入力してください。</div>'; return; }
+  await runFuture(document.getElementById('own-btn'), out, { text });
+});
+
+// ---------------------------------------------------------------- researchmap / AMED（補助）
+document.querySelectorAll('form[data-api]').forEach(f => {
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = f.querySelector('input').value.trim();
+    const status = f.nextElementSibling, box = status.nextElementSibling;
+    status.textContent = '探しています…'; box.innerHTML = '';
+    try {
+      const data = await api(`/${f.dataset.api}/search?q=${encodeURIComponent(q)}`);
+      const items = data.items || data.results || data['@graph'] || null;
+      if (Array.isArray(items) && items.length) {
+        status.textContent = `${items.length} 件`;
+        box.innerHTML = items.map(it => {
+          const name = it.family_name && it.given_name ? `${it.family_name} ${it.given_name}` : (it.name || it.title || it.research_title || '名称不明');
+          const link = it['@id'] || it.url || it.link || '';
+          const desc = it.affiliation || it.organization || it.description || '';
+          const n = esc(typeof name === 'object' ? JSON.stringify(name) : name);
+          return `<div class="card"><h3>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">${n}</a>` : n}</h3><div class="meta">${esc(typeof desc === 'object' ? JSON.stringify(desc) : desc)}</div></div>`;
+        }).join('');
+      } else {
+        status.textContent = '取得結果（未整形）';
+        box.innerHTML = `<pre class="raw">${esc(JSON.stringify(data, null, 2).slice(0, 20000))}</pre>`;
+      }
+    } catch (err) { status.innerHTML = `<span class="error">${esc(err.message)}</span>`; }
+  });
+});
+
+// ---------------------------------------------------------------- API設定（ローカルコピー用）
+document.getElementById('api-cfg').addEventListener('click', () => {
+  const v = prompt('APIのベースURL（例: https://xxxx.execute-api.ap-northeast-1.amazonaws.com/api）\n空にすると設定を消します', API_BASE);
+  if (v === null) return;
+  try { v.trim() ? localStorage.setItem('saqra_api_base', v.trim()) : localStorage.removeItem('saqra_api_base'); } catch (_) {}
+  location.reload();
+});
+</script>
+</body>
+</html>
