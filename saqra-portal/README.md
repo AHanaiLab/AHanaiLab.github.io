@@ -8,16 +8,16 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
    └─ API Gateway (HTTP API) ─ Lambda（FastAPI/Mangum）
                       ├─ PubMed / researchmap プロキシ
                       ├─ AMED（取得・パース）
-                      └─ Bedrock（ICF翻訳）
+                      └─ Bedrock（対話型ICF分類・50年後QOL変換）
 ```
 
 ## ファイル構成
 
 | パス | 内容 |
 |---|---|
-| `frontend/index.html` | ポータル画面（検索 → ICF 50年後翻訳）。1ファイル完結でバイブコーディング向けにコメント付き |
+| `frontend/index.html` | ポータル画面（ICF 50年後翻訳のチャット + 研究検索）。1ファイル完結でバイブコーディング向けにコメント付き |
 | `frontend/guide.html` | ハッカソン参加者ガイド（改造手順・プロンプト例・発表フォーマット） |
-| `backend/app.py` | FastAPI + Mangum。4エンドポイントを実装 |
+| `backend/app.py` | FastAPI + Mangum。対話型ICF分類・50年後QOL変換・PubMed/researchmap/AMED |
 | `backend/requirements.txt` | fastapi / mangum / httpx / anthropic[bedrock] |
 | `template.yaml` | SAM テンプレート（Lambda, HTTP API, S3, CloudFront OAC） |
 | `deploy.sh` | build → deploy → API_BASE 差し込み → S3 同期 → invalidation を一括実行 |
@@ -25,23 +25,30 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 
 ## 画面の使い方（患者・家族向け）
 
-1. 日本語で知りたいことを入力して「探す」— AIが英語のPubMed検索語に変換します（`query_en` として表示）
-2. 結果カードの「ICF 50年後翻訳」を押す — やさしい要約、ICF各領域の「いま → 50年後」、2076年のある一日の物語、残された課題が表示されます
-3. 論文を探さず「自分の言葉から翻訳する」も可能
+**ICF 50年後翻訳（ICF-QOL Translator, 対話型）** — 「対話型ICF分類 設計 v0.3」に準拠
+
+1. 生活の状況や困りごとを自分のことばで入力（例文あり）
+2. AIがICF（健康状態／心身機能b／身体構造s／活動・参加d／環境因子e／個人因子）に仮分類し、右の「ICF充足度」メーターが更新される
+3. 足りないカテゴリについてAIが質問（2〜4ターン、最大5）。答えるたびにマージされる
+4. 揃ったら「確定して50年後QOLへ」→ 50年後（2076年）のQOLを、いま／2076年の対比・物語・必要な研究として表示
+5. 「関連する研究を探す」で、その未来に関わる論文検索へ
+
+**研究を探す** — 日本語で入力するとAIが英語の検索語に変換してPubMedを検索。結果の「ICFで読む」で研究が生活機能のどこに関わるかを整理。
 
 ハッカソン参加者向けの改造手順は `frontend/guide.html`（デプロイ後は `<CloudFront URL>/guide.html`）にあります。
 ローカルに保存した `index.html` はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
 
 ## API エンドポイント
 
+- `POST /api/icf/dialogue` — 対話型ICF分類。リクエスト: `{"message": "...", "icf": <前回のICF or null>, "turn": <前回のturn>}`。レスポンス: `{icf, assessment{categories, missing, all_filled, completeness_pct}, updates[], turn, phase: "collecting"|"confirming", reply, question}`。Lambdaはステートレスなので ICF と turn はクライアントが保持して毎回送る。1ターン = LLM 1回（分類/マージと次の質問を同時生成、充足判定はPythonのルール）
+- `POST /api/icf/future` — Stage 3: 50年後QOL変換。リクエスト: `{"icf": {...}}`。レスポンス: `{headline, qol_now, qol_2076, categories[{label, now, future, enabled_by}], day_in_2076, research_needed[], search_keywords_en[]}`
+- `POST /api/icf/translate` — テキスト（論文抄録など）のICF分類のみ。レスポンス: `{summary, body_functions, body_structures, activities_participation, environmental_factors, personal_factors}`
 - `GET /api/pubmed/search?q=<クエリ>&retmax=10` — PubMed（esearch + efetch、抄録付き）。日本語クエリは Bedrock で英訳してから検索
-- `POST /api/icf/future` — **ICF 50年後翻訳**。リクエスト: `{"text": "...", "title": "..."}`。レスポンス: `{plain_summary, who_benefits, domains{body_functions, activities, participation, environmental_factors, personal_factors}[{code,label,now,future}], day_in_2076, open_questions}`
-- `POST /api/icf/translate` — ICF 分類のみ。レスポンス: `{body_functions, activities, participation, environmental_factors, personal_factors, related_categories}`
-- `GET /api/rmap/search?q=<クエリ>` — researchmap API プロキシ（`q` 以外のクエリパラメータはそのまま転送）
+- `GET /api/rmap/search?q=<クエリ>` — researchmap API プロキシ
 - `GET /api/amed/search?q=<クエリ>` — AMEDfind 取得。**`AmedSearchUrl` パラメータ設定までは 501 を返します**（後述）
 
-AIへの指示文（プロンプト）は `backend/app.py` の `ICF_FUTURE_SYSTEM` / `QUERY_TRANSLATE_SYSTEM` にあります。
-HTTP API 全体に 20 req/s（バースト40）のスロットリングを設定しています。
+AIへの指示文（プロンプト）は `backend/app.py` の `ICF_PARSE_SYSTEM` / `ICF_MERGE_SYSTEM` / `FUTURE_TRANSFORM_SYSTEM` / `QUERY_TRANSLATE_SYSTEM`。
+不足カテゴリのフォールバック質問は `QUESTION_TEMPLATES`。HTTP API 全体に 20 req/s（バースト40）のスロットリングを設定しています。
 
 ## 前提
 
@@ -84,7 +91,7 @@ chmod +x deploy.sh
 curl "https://<api-id>.execute-api.ap-northeast-1.amazonaws.com/api/pubmed/search?q=cancer+survivorship"
 ```
 
-CloudFront の URL をブラウザで開き、PubMed タブで検索結果が出れば成功です。
+CloudFront の URL をブラウザで開き、例文を送ってAIの質問が返り、「研究を探す」で検索結果が出れば成功です。
 
 ## AMEDfind エンドポイントの設定
 
