@@ -71,9 +71,10 @@ aws configure          # Access Key / Secret / region: ap-northeast-1
 
 - **Python 3.12 が必要です**（Lambda ランタイムに合わせてビルドするため）: `brew install python@3.12`
   Docker がある場合は代わりに `sam build --use-container` でも可。
-- **Bedrock モデルアクセス**: AWSコンソール → Bedrock → Model access で Claude を有効化しておくこと。
-  既定モデルは `apac.anthropic.claude-sonnet-4-20250514-v1:0`（APAC クロスリージョン推論プロファイル）。
-  変更する場合は `BEDROCK_MODEL_ID=... ./deploy.sh` または `template.yaml` の `BedrockModelId` を編集。
+- **Bedrock モデル**: Lambda が起動時に「`BEDROCK_MODEL_ID`（カンマ区切り、任意）→ 組み込み候補 → 東京リージョンで検出した
+  Anthropic モデル」の順に試し、使えたものを使います（Legacy 指定でアクセス不可になったモデルを自動で避けるため）。
+  デプロイ後に `curl "$API/api/models?check=1"` を実行すると、実際に使えるモデル（`resolved`）と検出結果が分かります。
+  特定のモデルに固定したい場合は `BEDROCK_MODEL_ID=<id> ./deploy.sh`。
 
 ## デプロイ
 

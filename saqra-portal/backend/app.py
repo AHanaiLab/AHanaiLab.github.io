@@ -37,9 +37,21 @@ RMAP_BASE_URL = os.environ.get("RMAP_BASE_URL", "https://api.researchmap.jp")
 # AMEDfind の実エンドポイントは DevTools の Network タブで確認して環境変数で設定する
 AMED_SEARCH_URL = os.environ.get("AMED_SEARCH_URL", "")
 AMED_QUERY_PARAM = os.environ.get("AMED_QUERY_PARAM", "keyword")
-BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "apac.anthropic.claude-sonnet-4-20250514-v1:0"
-)
+# Bedrock のモデル選択:
+#   1. 環境変数 BEDROCK_MODEL_ID（カンマ区切りで複数可）を優先順に試す
+#   2. 次に DEFAULT_MODEL_CANDIDATES を試す
+#   3. それでも駄目なら ListInferenceProfiles / ListFoundationModels で当リージョンの
+#      Anthropic モデルを自動検出して試す（Legacy 指定でアクセス不可になったモデルを避けるため）
+#   成功したモデルは Lambda の実行環境が生きている間キャッシュされる
+BEDROCK_MODEL_IDS = [m.strip() for m in os.environ.get("BEDROCK_MODEL_ID", "").split(",") if m.strip()]
+DEFAULT_MODEL_CANDIDATES = [
+    "apac.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "apac.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "apac.anthropic.claude-sonnet-4-20250514-v1:0",
+]
+_MODEL_STATE: dict[str, Any] = {"resolved": None, "discovered": None, "attempts": []}
 NCBI_API_KEY = os.environ.get("NCBI_API_KEY", "")
 MAX_TURNS = 5
 
@@ -64,22 +76,97 @@ async def _fetch(client: httpx.AsyncClient, url: str, params: dict, upstream: st
 def _bedrock_client():
     from anthropic import AnthropicBedrock
 
-    region = os.environ.get("BEDROCK_REGION") or os.environ.get("AWS_REGION", "ap-northeast-1")
-    return AnthropicBedrock(aws_region=region)
+    return AnthropicBedrock(aws_region=_bedrock_region())
+
+
+def _bedrock_region() -> str:
+    return os.environ.get("BEDROCK_REGION") or os.environ.get("AWS_REGION", "ap-northeast-1")
+
+
+def _model_rank(model_id: str) -> tuple:
+    """新しく・賢く・地域が近いものを先に。(日付降順, sonnet>opus>haiku, apac>global>その他)"""
+    m = re.search(r"(20\d{6})", model_id)
+    date = int(m.group(1)) if m else 0
+    family = 0 if "sonnet" in model_id else 1 if "opus" in model_id else 2 if "haiku" in model_id else 3
+    scope = 0 if model_id.startswith("apac.") else 1 if model_id.startswith("global.") else 2
+    return (-date, family, scope)
+
+
+def _discover_models() -> list[str]:
+    """当リージョンで呼べる Anthropic のクロスリージョン推論プロファイル / 基盤モデルを列挙する。"""
+    if _MODEL_STATE["discovered"] is not None:
+        return _MODEL_STATE["discovered"]
+    found: list[str] = []
+    try:
+        import boto3
+
+        br = boto3.client("bedrock", region_name=_bedrock_region())
+        legacy_arns: set[str] = set()
+        try:
+            for fm in br.list_foundation_models(byProvider="anthropic").get("modelSummaries", []):
+                if (fm.get("modelLifecycle") or {}).get("status", "ACTIVE") != "ACTIVE":
+                    legacy_arns.add(fm.get("modelArn", ""))
+                elif "ON_DEMAND" in (fm.get("inferenceTypesSupported") or []):
+                    found.append(fm["modelId"])
+        except Exception:
+            pass
+        try:
+            paginator = br.get_paginator("list_inference_profiles")
+            for page in paginator.paginate(typeEquals="SYSTEM_DEFINED"):
+                for ip in page.get("inferenceProfileSummaries", []):
+                    pid = ip.get("inferenceProfileId", "")
+                    if "anthropic" not in pid or ip.get("status", "ACTIVE") != "ACTIVE":
+                        continue
+                    if any(m.get("modelArn", "") in legacy_arns for m in ip.get("models", [])):
+                        continue
+                    found.append(pid)
+        except Exception:
+            pass
+    except Exception:
+        pass
+    found = sorted(set(found), key=_model_rank)
+    _MODEL_STATE["discovered"] = found
+    return found
+
+
+def _candidate_models() -> list[str]:
+    seen: list[str] = []
+    for m in ([_MODEL_STATE["resolved"]] if _MODEL_STATE["resolved"] else []) + BEDROCK_MODEL_IDS + DEFAULT_MODEL_CANDIDATES + _discover_models():
+        if m and m not in seen:
+            seen.append(m)
+    return seen
 
 
 def _ask_claude(system: str, user: str, max_tokens: int) -> str:
-    """Bedrock 上の Claude に1回問い合わせ、テキストを返す。失敗は502。"""
-    try:
-        response = _bedrock_client().messages.create(
-            model=BEDROCK_MODEL_ID,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        )
-    except Exception as e:  # Bedrock側のエラーはAPI利用者へ502で返す
-        raise HTTPException(status_code=502, detail=f"Bedrock invocation failed: {e}")
-    return "".join(b.text for b in response.content if b.type == "text")
+    """Bedrock 上の Claude に問い合わせ、テキストを返す。使えないモデルは飛ばして次の候補を試す。失敗は502。"""
+    from anthropic import APIStatusError
+
+    errors: list[str] = []
+    for model in _candidate_models():
+        try:
+            response = _bedrock_client().messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+            )
+        except APIStatusError as e:
+            # 400: 無効なID / 403: アクセス未許可 / 404: Legacy などモデル側の理由は次の候補へ
+            if e.status_code in (400, 403, 404):
+                errors.append(f"{model}: {str(e)[:160]}")
+                _MODEL_STATE["attempts"] = errors[-10:]
+                if _MODEL_STATE["resolved"] == model:
+                    _MODEL_STATE["resolved"] = None
+                continue
+            raise HTTPException(status_code=502, detail=f"Bedrock invocation failed ({model}): {e}")
+        except Exception as e:  # ネットワーク等
+            raise HTTPException(status_code=502, detail=f"Bedrock invocation failed ({model}): {e}")
+        _MODEL_STATE["resolved"] = model
+        return "".join(b.text for b in response.content if b.type == "text")
+    raise HTTPException(
+        status_code=502,
+        detail="No usable Bedrock model. Tried: " + " | ".join(errors[-6:]) + " — set BEDROCK_MODEL_ID to an active model in this region.",
+    )
 
 
 def _extract_json(text: str) -> dict:
@@ -107,7 +194,33 @@ def _ask_claude_json(system: str, user: str, max_tokens: int) -> dict:
 @app.get("/")
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "saqra-portal-api", "model": BEDROCK_MODEL_ID}
+    return {
+        "status": "ok",
+        "service": "saqra-portal-api",
+        "model": _MODEL_STATE["resolved"] or "(unresolved: first call will pick one)",
+        "region": _bedrock_region(),
+    }
+
+
+@app.get("/api/models")
+def models(check: bool = Query(False)):
+    """候補モデルと当リージョンで検出したモデルを返す。check=1 で実際に1回呼んで使えるものを確定する。"""
+    out = {
+        "configured": BEDROCK_MODEL_IDS,
+        "defaults": DEFAULT_MODEL_CANDIDATES,
+        "discovered_in_region": _discover_models(),
+        "resolved": _MODEL_STATE["resolved"],
+        "last_errors": _MODEL_STATE["attempts"],
+    }
+    if check:
+        try:
+            _ask_claude("Reply with the single word OK.", "ping", max_tokens=5)
+            out["resolved"] = _MODEL_STATE["resolved"]
+            out["check"] = "ok"
+        except HTTPException as e:
+            out["check"] = e.detail
+        out["last_errors"] = _MODEL_STATE["attempts"]
+    return out
 
 
 # ================================================================ 対話型ICF分類（ICF-QOL Translator）

@@ -5,8 +5,8 @@ Description: SAQRA research portal - S3+CloudFront frontend, Lambda+HttpApi back
 Parameters:
   BedrockModelId:
     Type: String
-    Default: apac.anthropic.claude-sonnet-4-20250514-v1:0
-    Description: Bedrock model ID or inference profile ID used for ICF translation
+    Default: ""
+    Description: Bedrock model/inference-profile ID(s), comma-separated, tried in order. Empty = built-in candidates + auto-discovery in region
   AmedSearchUrl:
     Type: String
     Default: ""
@@ -56,7 +56,10 @@ Resources:
       Policies:
         - Statement:
             - Effect: Allow
-              Action: bedrock:InvokeModel
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:ListFoundationModels
+                - bedrock:ListInferenceProfiles
               Resource: "*"
       Events:
         Api:
