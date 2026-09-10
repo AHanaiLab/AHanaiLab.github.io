@@ -16,7 +16,7 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 | パス | 内容 |
 |---|---|
 | `frontend/index.html` | メイン: 研究開発マップ＋検索ポータル（1ファイル完結、バイブコーディング向けコメント付き） |
-| `frontend/icf.html` | サブ: ICF翻訳・価値観探し（対話型ICF分類 → 50年後QOL） |
+| `frontend/icf.html` | サブ: ICF翻訳（対話型ICF分類 → 50年後QOL） |
 | `frontend/guide.html` | ハッカソン参加者ガイド（改造手順・プロンプト例・発表フォーマット） |
 | `backend/app.py` | FastAPI + Mangum。対話型ICF分類・50年後QOL変換・PubMed/researchmap/AMED |
 | `backend/requirements.txt` | fastapi / mangum / httpx / anthropic[bedrock] |
@@ -29,7 +29,7 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 | ページ | 役割 |
 |---|---|
 | `index.html`（メイン） | **全がん連 × J-SUPPORT × SaQRA 研究開発マップ＋検索ポータル**。困りごと30カテゴリ（全がん連調査順）から開発マップ掲載の公的研究費研究（55件）を絞り込み。PubMed と researchmap はページ内で検索（日本語→AIが英語検索語に変換）、AMED・厚労科研・UMIN は公式サイトへ。PubMed結果の「ICFで読む」で研究を生活機能に整理し、関連カテゴリへ戻れる |
-| `icf.html`（サブ） | **ICF翻訳・価値観探し**。対話型ICF分類（ICF-QOL Translator, 設計v0.3準拠）→ 50年後QOL。結果から研究開発マップのカテゴリ（`index.html?cat=N`）とPubMed検索（`index.html?src=pubmed&q=...`）へつながる。「価値観探し」タブは準備中 |
+| `icf.html`（サブ） | **ICF翻訳**。対話型ICF分類（ICF-QOL Translator, 設計v0.3準拠）→ 50年後QOL。結果から研究開発マップのカテゴリ（`index.html?cat=N`）とPubMed検索（`index.html?src=pubmed&q=...`）へつながる |
 | `guide.html` | ハッカソン参加者ガイド |
 
 URLで初期状態を指定できます: `index.html?cat=8`（痛みカテゴリ）、`index.html?src=pubmed&q=fatigue`。

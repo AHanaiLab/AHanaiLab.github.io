@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ICF翻訳・価値観探し | SaQRA</title>
+<title>ICF翻訳 | SaQRA</title>
 <meta name="description" content="生活の状況をことばにすると、AIがICF（国際生活機能分類）に整理し、50年後のQOLを描きます。関連する研究開発マップのカテゴリにもつながります。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <!--
   ============================================================================
-  SaQRA サブページ: ICF翻訳・価値観探し — 1ファイル完結のフロントエンド
+  SaQRA サブページ: ICF翻訳（ICF-QOL Translator） — 1ファイル完結のフロントエンド
   ----------------------------------------------------------------------------
   ハッカソン参加者のみなさんへ（バイブコーディングのヒント）:
     * 色・角丸・余白は <style> 冒頭の :root の変数（--accent, --future, --cat-* など）で全体が変わります
@@ -74,7 +74,9 @@
   .tabs button { flex: 1; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2); padding: .65rem .8rem; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: "Zen Kaku Gothic New", sans-serif; }
   .tabs button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .tabs button.active.future-tab { background: var(--future); border-color: var(--future); color: #fff; }
-  main { max-width: 980px; margin: 0 auto; padding: 1rem 1rem 4rem; }
+  main { max-width: 980px; margin: 0 auto; padding: 1.2rem 1rem 4rem; }
+  .page-title { font-size: 1.4rem; font-weight: 900; margin: 0 0 .2rem; }
+  .page-title::before { content: ""; display: inline-block; width: .55em; height: .55em; background: var(--future); border-radius: 50%; margin-right: .5rem; vertical-align: .1em; }
   .panel { display: none; } .panel.active { display: block; }
   .intro { color: var(--ink-2); margin: .3rem 0 1rem; max-width: 46em; font-size: .95rem; }
   .intro b { color: var(--ink); }
@@ -193,18 +195,15 @@
   <div class="brand"><b>SaQRA</b><span>全がん連 × J-SUPPORT × SaQRA</span></div>
   <nav class="nav">
     <a href="index.html">研究開発マップ＋検索</a>
-    <a class="current" href="icf.html">ICF翻訳・価値観探し</a>
+    <a class="current" href="icf.html">ICF翻訳</a>
   </nav>
 </header>
 
-<div class="tabs" role="tablist">
-  <button class="active future-tab" data-tab="dialogue" role="tab">ICF 50年後翻訳</button>
-  <button data-tab="values" role="tab">価値観探し</button>
-</div>
 
 <main>
   <!-- ======================= 50年後翻訳（対話型ICF分類） ======================= -->
   <section class="panel active" id="panel-dialogue">
+    <h1 class="page-title">ICF 50年後翻訳</h1>
     <p class="intro"><b>生活の状況や困りごとを、あなたのことばで教えてください。</b>AIがICF（生活機能の共通語）に整理しながら2〜4回質問し、揃ったところで「50年後のQOL（生活の質）」を描きます。</p>
     <div class="dialogue">
       <div class="chat">
@@ -233,13 +232,6 @@
     </div>
   </section>
 
-  <!-- ======================= 価値観探し ======================= -->
-  <section class="panel" id="panel-values">
-    <p class="intro"><b>価値観探し</b>：あなたが大切にしていることを言葉にして、ICFの個人因子として50年後翻訳に活かします。</p>
-    <div class="card" id="values-card">
-      <p class="meta">この機能は準備中です。準備が整うまでは、「ICF 50年後翻訳」のチャットで「大切にしていること」「どんな一日が理想か」を自由に書いてください。個人因子として整理されます。</p>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -270,13 +262,6 @@ async function api(path, opts) {
 }
 const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-// ---------------------------------------------------------------- タブ
-const tabs = document.querySelectorAll('.tabs button');
-function showTab(name) {
-  tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
-}
-tabs.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 // ================================================================ 50年後翻訳（対話）
 const CATS = [
