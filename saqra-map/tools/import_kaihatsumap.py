@@ -9,7 +9,7 @@
 
 map.json の構造:
   meta{title, subtitle, source, created, updated, survey_items, footnotes}
-  categories[]: {n, name, nav（ナビ表示名、改行は \n）, en（PubMed 検索語）, blocks[]}
+  categories[]: {n, name, nav（ナビ表示名、改行は \n）, en（PubMed 検索語）, color（項目色）, blocks[]}
     blocks[] は元ページの並び順のまま:
       {type:"study", intervention, study:{title,url,status,sup}|null（null＝未実施「ー」）, cancer, generation, background, design, funding}
       {type:"guidelines", jp:<html>, overseas:<html>}
@@ -18,6 +18,7 @@ map.json の構造:
 import json, os, re, sys
 from html.parser import HTMLParser
 
+PALETTE = ['#c9164b', '#c31a70', '#801b74', '#1d2c6a', '#135d9c', '#268ac3', '#228f88', '#288c41', '#86b929', '#d6b700', '#ed8d02', '#c8191d', '#c65e6c', '#c15d88', '#945389', '#534b88', '#4078a7', '#2598c1', '#219b98', '#329764', '#9eb861', '#e5b116', '#d7a152', '#c76041', '#d87d80', '#d37ba1', '#a76f9f', '#c9164b', '#945389', '#da7d5a']  # 公式ページのナビ色（項目順）
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "frontend", "data", "map.json")
 if len(sys.argv) < 2:
@@ -194,6 +195,7 @@ for c in cats:
         else:
             blocks.append({"type": "note", "items": b["items"]})
     out["categories"].append({"n": c["n"], "name": c["name"], "nav": c["nav"].replace("<br>", "\n"),
-                              "en": en.get(c["n"], c["name"]), "blocks": blocks})
+                              "en": en.get(c["n"], c["name"]), "color": PALETTE[(c["n"] - 1) % len(PALETTE)],
+                              "blocks": blocks})
 json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print("wrote", os.path.relpath(OUT), file=sys.stderr)

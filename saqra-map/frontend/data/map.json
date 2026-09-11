@@ -19,6 +19,7 @@
    "name": "気持ちのつらさ",
    "nav": "気持ちの\nつらさ",
    "en": "psychological distress",
+   "color": "#c9164b",
    "blocks": [
     {
      "type": "study",
@@ -84,6 +85,7 @@
    "name": "身体活動の維持",
    "nav": "身体活動の\n維持",
    "en": "physical activity",
+   "color": "#c31a70",
    "blocks": [
     {
      "type": "study",
@@ -157,6 +159,7 @@
    "name": "倦怠感",
    "nav": "倦怠感",
    "en": "fatigue",
+   "color": "#801b74",
    "blocks": [
     {
      "type": "study",
@@ -192,6 +195,7 @@
    "name": "コミュニケーション",
    "nav": "コミュニ\nケーション",
    "en": "communication",
+   "color": "#1d2c6a",
    "blocks": [
     {
      "type": "study",
@@ -261,6 +265,7 @@
    "name": "栄養",
    "nav": "栄養",
    "en": "nutrition",
+   "color": "#135d9c",
    "blocks": [
     {
      "type": "study",
@@ -318,6 +323,7 @@
    "name": "情報（相談支援、情報提供）",
    "nav": "情報\n（相談支援）",
    "en": "information needs",
+   "color": "#268ac3",
    "blocks": [
     {
      "type": "study",
@@ -351,6 +357,7 @@
    "name": "医療の意思決定",
    "nav": "医療の\n意思決定",
    "en": "shared decision making",
+   "color": "#228f88",
    "blocks": [
     {
      "type": "study",
@@ -428,6 +435,7 @@
    "name": "痛み",
    "nav": "痛み",
    "en": "pain",
+   "color": "#288c41",
    "blocks": [
     {
      "type": "study",
@@ -511,6 +519,7 @@
    "name": "再発の早期発見と二次がん予防",
    "nav": "再発の早期発見\nと二次がん予防",
    "en": "recurrence surveillance second cancer",
+   "color": "#86b929",
    "blocks": [
     {
      "type": "study",
@@ -554,6 +563,7 @@
    "name": "お金",
    "nav": "お金",
    "en": "financial toxicity",
+   "color": "#d6b700",
    "blocks": [
     {
      "type": "study",
@@ -577,6 +587,7 @@
    "name": "ケアコーディネーション（格差を含む）",
    "nav": "ケアコーディ\nネーション",
    "en": "care coordination",
+   "color": "#ed8d02",
    "blocks": [
     {
      "type": "study",
@@ -656,6 +667,7 @@
    "name": "睡眠障害",
    "nav": "睡眠障害",
    "en": "sleep disturbance",
+   "color": "#c8191d",
    "blocks": [
     {
      "type": "study",
@@ -679,6 +691,7 @@
    "name": "就学・就労",
    "nav": "就学・就労",
    "en": "return to work OR school",
+   "color": "#c65e6c",
    "blocks": [
     {
      "type": "study",
@@ -702,6 +715,7 @@
    "name": "後遺症・副作用",
    "nav": "後遺症・副作用",
    "en": "late effects",
+   "color": "#c15d88",
    "blocks": [
     {
      "type": "study",
@@ -1159,6 +1173,7 @@
    "name": "アピアランス",
    "nav": "アピアランス",
    "en": "appearance",
+   "color": "#945389",
    "blocks": [
     {
      "type": "study",
@@ -1184,6 +1199,7 @@
    "name": "ホルモン療法に伴う症状（更年期障害）",
    "nav": "ホルモン療法\nに伴う症状",
    "en": "endocrine therapy symptoms",
+   "color": "#534b88",
    "blocks": [
     {
      "type": "study",
@@ -1207,6 +1223,7 @@
    "name": "心毒性",
    "nav": "心毒性",
    "en": "cardiotoxicity",
+   "color": "#4078a7",
    "blocks": [
     {
      "type": "study",
@@ -1254,6 +1271,7 @@
    "name": "家族・遺族のQOL",
    "nav": "家族・遺族の\nQOL",
    "en": "family caregivers quality of life",
+   "color": "#2598c1",
    "blocks": [
     {
      "type": "study",
@@ -1346,6 +1364,7 @@
    "name": "認知機能障害（ケモブレインを含む）",
    "nav": "認知機能障害",
    "en": "cognitive impairment",
+   "color": "#219b98",
    "blocks": [
     {
      "type": "study",
@@ -1445,6 +1464,7 @@
    "name": "情報(医師の説明)",
    "nav": "情報\n(医師の説明)",
    "en": "physician communication",
+   "color": "#329764",
    "blocks": [
     {
      "type": "study",
@@ -1468,6 +1488,7 @@
    "name": "ワクチン接種",
    "nav": "ワクチン接種",
    "en": "vaccination",
+   "color": "#9eb861",
    "blocks": [
     {
      "type": "study",
@@ -1503,6 +1524,7 @@
    "name": "遺伝相談、ゲノム情報",
    "nav": "遺伝相談、\nゲノム情報",
    "en": "genetic counseling",
+   "color": "#e5b116",
    "blocks": [
     {
      "type": "study",
@@ -1528,6 +1550,7 @@
    "name": "口腔ケア（適切な口腔ケアを行うことにより、がん治療を円滑に遂行することができる）",
    "nav": "口腔ケア",
    "en": "oral care",
+   "color": "#d7a152",
    "blocks": [
     {
      "type": "study",
@@ -1565,6 +1588,7 @@
    "name": "ＡＣＰ／人生会議",
    "nav": "ACP／\n人生会議",
    "en": "advance care planning",
+   "color": "#c76041",
    "blocks": [
     {
      "type": "study",
@@ -1606,6 +1630,7 @@
    "name": "性機能障害の評価、ケア、治療",
    "nav": "性機能障害の\n評価、ケア、治療",
    "en": "sexual dysfunction",
+   "color": "#d87d80",
    "blocks": [
     {
      "type": "study",
@@ -1629,6 +1654,7 @@
    "name": "節酒",
    "nav": "節酒",
    "en": "alcohol",
+   "color": "#d37ba1",
    "blocks": [
     {
      "type": "study",
@@ -1652,6 +1678,7 @@
    "name": "禁煙",
    "nav": "禁煙",
    "en": "smoking cessation",
+   "color": "#a76f9f",
    "blocks": [
     {
      "type": "study",
@@ -1675,6 +1702,7 @@
    "name": "社会的孤立とピアサポート",
    "nav": "社会的孤立と\nピアサポート",
    "en": "social isolation peer support",
+   "color": "#c9164b",
    "blocks": [
     {
      "type": "study",
@@ -1695,6 +1723,7 @@
    "name": "社会的偏見",
    "nav": "社会的偏見",
    "en": "stigma",
+   "color": "#945389",
    "blocks": [
     {
      "type": "study",
@@ -1715,6 +1744,7 @@
    "name": "その他",
    "nav": "その他",
    "en": "survivorship",
+   "color": "#da7d5a",
    "blocks": [
     {
      "type": "study",
