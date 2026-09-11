@@ -1,8 +1,9 @@
 # SaQRA 研究開発マップ（叩き台・静的サイト）
 
-https://saqra.jp/kaihatsumap の内容（全がん連調査順の困りごと30項目 × 公的研究費研究）を1枚のページにまとめ、
-各項目の「最新の研究動向（PubMed）」「ガイドライン（Minds／PubMed）」「AMED 研究開発課題」を
-**バックエンド（収集Lambda）が事前に取得したJSON**から表示する、非常に軽い静的サイトです。Bedrock/AI は使いません。
+https://saqra.jp/kaihatsumap/index.html の構成（イントロ・用語説明・ご注意・30項目ナビ・項目ごとの
+「介入・調査の内容／公的研究費による研究」「がん種／世代／背景／研究種類／研究費」「日本／海外のガイドライン」表）に
+準拠した1枚の静的ページです。各項目の末尾に「最新の研究動向（自動収集）」として PubMed・Minds・AMED の検索結果を
+**バックエンド（収集Lambda）が事前に取得したJSON**から表示します。Bedrock/AI は使いません。
 
 ```
 [ブラウザ] ─ CloudFront ─ S3
@@ -19,9 +20,10 @@ https://saqra.jp/kaihatsumap の内容（全がん連調査順の困りごと30�
 
 | パス | 内容 |
 |---|---|
-| `frontend/index.html` | 研究開発マップ本体（表形式、絞り込み、未実施のみ表示） |
+| `frontend/index.html` | 研究開発マップ本体（元ページ準拠の表、ナビ、キーワード絞り込み、未実施のみ表示） |
 | `frontend/admin.html` | 管理者ページ（外部データの手動更新・最終更新確認） |
-| `frontend/data/map.json` | マップ本体。`categories`（30項目、英語検索語 `en`、未実施 `gap`）と `studies`（掲載研究） |
+| `frontend/data/map.json` | マップ本体。`categories[]`（30項目、ナビ表示名 `nav`、PubMed検索語 `en`、元ページ順の `blocks[]`＝研究行／ガイドライン表／注） |
+| `tools/import_kaihatsumap.py` | 公式ページの保存HTMLから `map.json` を再生成する管理者用ツール |
 | `collector/app.py` | 収集Lambda（標準ライブラリ＋boto3のみ） |
 | `template.yaml` / `deploy.sh` / `samconfig.toml` | SAM 一式（スタック名 `saqra-map`） |
 
@@ -44,7 +46,12 @@ NCBI_API_KEY=xxxx ./deploy.sh
 ## データの更新
 
 - **外部データ（PubMed／ガイドライン／AMED）**: 週1回自動。すぐ更新したいときは管理者ページでトークンを入力して「今すぐ更新」。
-- **マップ本体（掲載研究・カテゴリ）**: `frontend/data/map.json` を編集して `./deploy.sh`。ブラウザ上で編集できる管理画面は次の段階で追加予定。
+- **マップ本体（掲載研究・カテゴリ）**: 次のどちらか。
+  - 公式ページ https://saqra.jp/kaihatsumap/index.html が更新されたら、ブラウザで「ページのソースを保存」し
+    `python3 tools/import_kaihatsumap.py 保存したファイル.html` → `./deploy.sh`（`en` は引き継がれます）
+  - 個別に直すときは `frontend/data/map.json` を編集して `./deploy.sh`
+    （`blocks[]` の `study: null` が「ー」＝未実施の行。研究が始まったら `{title,url}` を入れる）
+  - ブラウザ上で編集できる管理画面は次の段階で追加予定。
 
 ## AMEDfind / Minds のエンドポイント設定
 

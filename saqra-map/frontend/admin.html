@@ -43,7 +43,8 @@
   <div class="card">
     <h2>2. マップ本体（掲載研究・カテゴリ）の更新</h2>
     <ol>
-      <li>リポジトリの <code>saqra-map/frontend/data/map.json</code> を編集（研究の追加・修正、未実施の解除など）</li>
+      <li>公式ページ（saqra.jp/kaihatsumap）が更新された場合: ブラウザで「ページのソースを保存」し、<code>python3 tools/import_kaihatsumap.py 保存したファイル.html</code> で <code>map.json</code> を再生成</li>
+      <li>個別に直す場合: リポジトリの <code>saqra-map/frontend/data/map.json</code> を編集（<code>"study": null</code> が「ー」＝未実施の行）</li>
       <li><code>./deploy.sh</code> を実行（map.json のアップロードと外部データの再収集まで自動）</li>
     </ol>
     <p class="muted">ブラウザ上で直接編集できる画面は次の段階で追加します。</p>

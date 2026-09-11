@@ -1,914 +1,1967 @@
 {
  "meta": {
   "title": "全がん連 × J-SUPPORT × SaQRA 研究開発マップ",
-  "source": "saqra.jp/kaihatsumap",
-  "created": "2024-02-01",
-  "updated": "2026-03-01"
+  "subtitle": "〜がんサバイバーシップのアンメットニーズに応える〜",
+  "source": "https://saqra.jp/kaihatsumap/index.html",
+  "created": "2024.02.01",
+  "updated": "2026.03.01",
+  "survey_items": 29,
+  "footnotes": {
+   "1": "全がん連サバイバーシップ委員会によるサバイバーシップに関するアンケート調査（第4回J-SUPPORT研究成果報告会で報告）",
+   "2": "NCCN Survivorship Guidelines 2022 目次",
+   "3": "NCCN Clinical Oncology Guidelines（Survivorshipのほか）",
+   "4": "NCCN Clinical Oncology Guidelines for Patients"
+  }
  },
  "categories": [
   {
    "n": 1,
    "name": "気持ちのつらさ",
+   "nav": "気持ちの\nつらさ",
    "en": "psychological distress",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "自殺数の調査",
+     "study": {
+      "title": "全国がん登録を用いたがん患者の自殺に関する記述疫学的研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=213",
+      "status": "achieved"
+     },
+     "cancer": "すべて",
+     "generation": "全世代",
+     "background": "診断後、6か月",
+     "design": "観察",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "study",
+     "intervention": "認知行動療法",
+     "study": {
+      "title": "乳がん患者の再発不安・恐怖に対するスマートフォン問題解決療法および行動活性化療法の有効性：無作為割付比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=210",
+      "status": "achieved"
+     },
+     "cancer": "乳がん",
+     "generation": "20-49歳",
+     "background": "術後、1年以降",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "認知行動療法",
+     "study": {
+      "title": "がん患者の抑うつ・不安に対するスマートフォン精神療法の最適化研究：革新的試験システムを用いた多相最適化戦略試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=216",
+      "status": "ongoing"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "予後、6か月以上",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "ピアサポート",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "JPOS/JASCC 気持ちのつらさガイドライン<br><br>関連CQを５つ以上含む主なガイドライン<br>（気持ちのつらさ）<br><ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li><li>がん医療における患者‐医療者間のコミュニケーションガイドライン</li><li>終末期がん患者の輸液療法に関するガイドライン</li></ul>",
+     "overseas": "Anxiety, Depression, Trauma, and Distress<sup>*2</sup><br>Distress Management<sup>*3</sup><br>Distress Management - Distress During Cancer Care<sup>*4</sup>"
+    }
+   ]
   },
   {
    "n": 2,
    "name": "身体活動の維持",
+   "nav": "身体活動の\n維持",
    "en": "physical activity",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "リハビリテーション",
+     "study": {
+      "title": "外来がんリハビリテーションプログラムの開発に関する研究"
+     },
+     "cancer": "消化器がん呼吸器がん頭頸部がん乳がん",
+     "generation": "20歳以上",
+     "background": "外来",
+     "design": "プログラム開発（単群前後比較）",
+     "funding": "厚労科研・AMED（2016-2018）"
+    },
+    {
+     "type": "study",
+     "intervention": "リハビリテーション",
+     "study": {
+      "title": "食道癌術後患者を対象とした外来がんリハビリテーションプログラムの開発に関する研究"
+     },
+     "cancer": "食道がん",
+     "generation": "20-80歳",
+     "background": "胸部食道癌術後",
+     "design": "介入",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "study",
+     "intervention": "リハビリテーション",
+     "study": {
+      "title": "悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）"
+     },
+     "cancer": "肺がん膵がん",
+     "generation": "高齢者",
+     "background": "外来",
+     "design": "介入",
+     "funding": "厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "リハビリテーション",
+     "study": {
+      "title": "高齢者進行非小細胞肺がん/膵がんに対する早期栄養・運動介入とアナモレリン塩酸塩の併用療法の多施設共同ランダム化第二相試験"
+     },
+     "cancer": "肺がん膵がん",
+     "generation": "高齢者",
+     "background": "外来",
+     "design": "介入",
+     "funding": "AMED（2021-2023：NEXTAC-III試験）"
+    },
+    {
+     "type": "study",
+     "intervention": "リハビリテーション",
+     "study": {
+      "title": "緩和ケア病棟入院中のがん患者に対するリハビリテーションの有効性検証ならびに普及実装に向けた研究"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "入院中",
+     "design": "介入",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li><li>形成外科診療ガイドライン -頭頚部再建診療ガイドライン編-</li><li>嚥下障害診療ガイドライン</li></ul>",
+     "overseas": "Physical Activity<sup>*2</sup><br>Survivorship Care for Healthy Living<sup>*4</sup>"
+    }
+   ]
   },
   {
    "n": 3,
    "name": "倦怠感",
+   "nav": "倦怠感",
    "en": "fatigue",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "運動療法",
+     "study": {
+      "title": "悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）"
+     },
+     "cancer": "肺がん膵がん",
+     "generation": "高齢者",
+     "background": "外来",
+     "design": "介入",
+     "funding": "厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "認知行動療法",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li></ul>",
+     "overseas": "Fatigue<sup>*2</sup><br>Cancer-Related Fatigue<sup>*3</sup>"
+    }
+   ]
   },
   {
    "n": 4,
    "name": "コミュニケーション",
+   "nav": "コミュニ\nケーション",
    "en": "communication",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "意向調査",
+     "study": {
+      "title": "今後の見通しについての医師からの望ましい説明に関する研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=203",
+      "status": "achieved"
+     },
+     "cancer": "乳がん",
+     "generation": "20歳以上",
+     "background": "術後、1年以降",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "study",
+     "intervention": "意思決定支援",
+     "study": {
+      "title": "膵臓がん患者・家族と医師の協働による価値観を尊重した意思決定を促進するコミュニケーション介入プログラム臨床的有用性を検証する無作為化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=211",
+      "status": "ongoing"
+     },
+     "cancer": "膵がん",
+     "generation": "20歳以上",
+     "background": "PS0-1",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "ITやDXを用いた意思決定支援",
+     "study": {
+      "title": "高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=217",
+      "status": "ongoing"
+     },
+     "cancer": "食道がん胃がん大腸がん肝臓がん胆道がん膵臓がん",
+     "generation": "70歳以上",
+     "background": "局所進行期III期、IV期または再発期PS0-2",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "ITやDXを用いた意思決定支援",
+     "study": {
+      "title": "進行がん患者に対するモバイル端末による質問支援を用いた意思決定支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=220",
+      "status": "ongoing"
+     },
+     "cancer": "呼吸器内科消化器内科肝胆膵内科腫瘍内科のがん",
+     "generation": "20歳以上",
+     "background": "PS0-2",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がん医療における患者‐医療者間のコミュニケーションガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 5,
    "name": "栄養",
+   "nav": "栄養",
    "en": "nutrition",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "栄養",
+     "study": {
+      "title": "悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）"
+     },
+     "cancer": "肺がん膵がん",
+     "generation": "高齢者",
+     "background": "外来",
+     "design": "介入",
+     "funding": "厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "体重の維持や管理",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "study",
+     "intervention": "食事管理",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "study",
+     "intervention": "がん悪液質改善",
+     "study": {
+      "title": "ヒトがん悪液質を反映する独自樹立悪液質モデルを用いての悪液質の本態解明、ならびに創薬、診断に有用な「がん悪液質PDXモデル」の確立とその活用"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "基礎",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>嚥下障害診療ガイドライン</li></ul>",
+     "overseas": "Nutrition and Weight Management<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 6,
-   "name": "情報（相談支援）",
+   "name": "情報（相談支援、情報提供）",
+   "nav": "情報\n（相談支援）",
    "en": "information needs",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "相談、支援",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "情報提供（治療・制度）の有効性を検証",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 7,
    "name": "医療の意思決定",
+   "nav": "医療の\n意思決定",
    "en": "shared decision making",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "意思決定支援",
+     "study": {
+      "title": "膵臓がん患者・家族と医師の協働による価値観を尊重した意思決定を促進するコミュニケーション介入プログラム臨床的有用性を検証する無作為化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=211",
+      "status": "ongoing"
+     },
+     "cancer": "膵がん",
+     "generation": "20歳以上",
+     "background": "PS0-1",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "意思決定支援",
+     "study": {
+      "title": "乳房再建におけるアウトカム指標の確立と科学的根拠に基づいた患者意思決定支援（SAQLA study）"
+     },
+     "cancer": "乳がん",
+     "generation": "20歳以上",
+     "background": "再建術後",
+     "design": "探索",
+     "funding": "AMED（2017-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "ITやDXを用いた意思決定支援",
+     "study": {
+      "title": "高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=217",
+      "status": "ongoing"
+     },
+     "cancer": "食道がん胃がん大腸がん肝臓がん胆道がん膵臓がん",
+     "generation": "70歳以上",
+     "background": "局所進行期III期、IV期または再発期PS0-2",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "ITやDXを用いた意思決定支援",
+     "study": {
+      "title": "進行がん患者に対するモバイル端末による質問支援を用いた意思決定支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=220",
+      "status": "ongoing"
+     },
+     "cancer": "呼吸器内科消化器内科肝胆膵内科腫瘍内科のがん",
+     "generation": "20歳以上",
+     "background": "PS0-2",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "study",
+     "intervention": "ペイシェント・エンパワーメント",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 8,
    "name": "痛み",
+   "nav": "痛み",
    "en": "pain",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "神経障害性疼痛",
+     "study": {
+      "title": "がん患者の難治性神経障害性疼痛へのエビデンスに基づく標準的薬物療法の開発"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "難治性神経障害性疼痛を有する",
+     "design": "介入",
+     "funding": "AMED（2017-2019） JORTC-PAL08試験"
+    },
+    {
+     "type": "study",
+     "intervention": "神経障害性疼痛",
+     "study": {
+      "title": "オピオイド不応の神経障害性疼痛に対するプレガバリンとデュロキセチンの国際共同ランダム化比較試験"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "難治性神経障害性疼痛を有する",
+     "design": "介入",
+     "funding": "AMED（2020-2022）"
+    },
+    {
+     "type": "study",
+     "intervention": "神経障害性疼痛",
+     "study": {
+      "title": "がん患者のオピオイド不応の神経障害性疼痛への標準的薬物療法の開発：国際共同試験ならびに普及実装に向けた研究"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "難治性神経障害性疼痛を有する",
+     "design": "介入",
+     "funding": "AMED（2023-2025）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（痛み） <ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li><li>がん疼痛の薬物療法に関するガイドライン</li><li>がん薬物療法に伴う末梢神経障害マネジメントの手引き</li></ul>",
+     "overseas": "Pain<sup>*2</sup><br>Adult Cancer Pain<sup>*3</sup>"
+    },
+    {
+     "type": "study",
+     "intervention": "骨転移",
+     "study": {
+      "title": "有痛性骨転移に対する緩和的動脈塞栓術の即時的有効性及び安全性検証試験",
+      "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=215",
+      "status": "ongoing"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "疼痛スケール5以上",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>骨転移診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "簡便な評価方法の開発",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 9,
    "name": "再発の早期発見と二次がん予防",
+   "nav": "再発の早期発見\nと二次がん予防",
    "en": "recurrence surveillance second cancer",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "二次がん再発予防のための受診",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "気持ちのつらさや不安の軽減",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "フォローアップ",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>（各疾患の）治療ガイドライン</li><li>小児がん診療ガイドライン</li></ul>",
+     "overseas": "Survivorship Care for Cancer-Related Late and Long-Term Effects<sup>*4</sup>"
+    }
+   ]
   },
   {
    "n": 10,
    "name": "お金",
+   "nav": "お金",
    "en": "financial toxicity",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "経済毒性の要因、心理社会的な影響",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 11,
-   "name": "ケアコーディネーション",
+   "name": "ケアコーディネーション（格差を含む）",
+   "nav": "ケアコーディ\nネーション",
    "en": "care coordination",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "ケアの協調や調整",
+     "study": {
+      "title": "精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=212",
+      "status": "achieved"
+     },
+     "cancer": "／",
+     "generation": "40歳以上",
+     "background": "統合失調症",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "study",
+     "intervention": "ケアの協調や調整",
+     "study": {
+      "title": "高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=217",
+      "status": "ongoing"
+     },
+     "cancer": "食道がん胃がん大腸がん肝臓がん胆道がん膵臓がん",
+     "generation": "70歳以上",
+     "background": "局所進行期III期、IV期または再発期PS0-2",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "医師の連携",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "study",
+     "intervention": "多職種の連携",
+     "study": {
+      "title": "進行がん患者に対するスクリーニングを組み合わせた看護師主導による治療早期からの専門的緩和ケア介入プログラムの臨床的有用性を検証する無作為化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=205",
+      "status": "achieved"
+     },
+     "cancer": "肺がん",
+     "generation": "20歳以上",
+     "background": "ステージⅣ、初抗がん治療",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "多様性（LGBTQや精神疾患など）への配慮",
+     "study": {
+      "title": "精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=212",
+      "status": "achieved"
+     },
+     "cancer": "／",
+     "generation": "40歳以上",
+     "background": "統合失調症",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 12,
    "name": "睡眠障害",
+   "nav": "睡眠障害",
    "en": "sleep disturbance",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "ー",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "Sleep Disorders<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 13,
    "name": "就学・就労",
+   "nav": "就学・就労",
    "en": "return to work OR school",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "ー",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>脳腫瘍ガイドライン/小児脳腫瘍編</li></ul>",
+     "overseas": "Employment and Return to Work<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 14,
    "name": "後遺症・副作用",
+   "nav": "後遺症・副作用",
    "en": "late effects",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "頭頸部がん放射線治療患者に発生する放射線皮膚炎に対する通常処置とステロイド外用薬を加えた処置に関するランダム化第3相比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=204",
+      "status": "achieved"
+     },
+     "cancer": "頭頚部がん",
+     "generation": "20-80歳",
+     "background": "放射線療法を受けるPS0-1",
+     "design": "介入",
+     "funding": "国立がん研究センター研究開発費（27-A-3）"
+    },
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "頭頸部悪性腫瘍切除・遊離組織移植術の手術前ステロイド投与の有効性を検証する多施設共同二重盲検無作為化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=214",
+      "status": "ongoing"
+     },
+     "cancer": "頭頚部がん",
+     "generation": "20歳以上",
+     "background": "手術予定PS0-2",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "支持/緩和治療領域研究の方法論確立に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2017-2018）"
+    },
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "子宮頸癌根治術後再発高リスク患者に対する強度変調放射線治療（IMRT）を用いた低毒性補助療法の確立に向けての研究（JCOG1402）"
+     },
+     "cancer": "子宮頚がん",
+     "generation": "20-70歳",
+     "background": "ステージⅠB1-ⅡBPS0-1",
+     "design": "介入",
+     "funding": "AMED（2019-2020）"
+    },
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "包括的がんゲノムプロファイリング検査を受ける患者の苦痛緩和支援プログラム開発に向けた観察研究"
+     },
+     "cancer": "すべて",
+     "generation": "18歳以上",
+     "background": "ゲノム検査を予定",
+     "design": "観察",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "study",
+     "intervention": "支持療法",
+     "study": {
+      "title": "マルチステークホルダーを擁する支持療法・緩和治療領域における研究手法の標準化に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（支持療法） <ul class=\"list_point\"><li>終末期がん患者の輸液療法に関するガイドライン</li><li>肺癌診療ガイドライン</li><li>腹膜播種診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "包括的な支持緩和ケアの前向きコホート",
+     "study": {
+      "title": "網膜芽細胞腫患者・家族の包括的支持緩和ケアの前向きコホート研究"
+     },
+     "cancer": "網膜芽細胞腫",
+     "generation": "0-5歳",
+     "background": "診断後、１か月以内の患者とその家族",
+     "design": "観察",
+     "funding": "AMED（2023-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>小児がん診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "止血",
+     "study": {
+      "title": "出血を伴う胃がんへの緩和的放射線治療の有用性を調べる他施設前向き観察研究（JROSG 17-3）"
+     },
+     "cancer": "胃がん",
+     "generation": "20歳以上",
+     "background": "原発巣からの出血",
+     "design": "観察",
+     "funding": "JROSG"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "Gastric Cancer. 2022 Mar;25(2):411-421."
+    },
+    {
+     "type": "study",
+     "intervention": "がん免疫",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "腫瘍学",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "がんの救急時の対応",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "漢方",
+     "study": {
+      "title": "がん患者のせん妄発症を予防する抑肝散、および口腔粘膜炎の早期治癒に資する半夏瀉心湯のメタボローム解析によるレスポンダーバイオマーカーの開発ならびに「証」の可視化とその臨床応用"
+     },
+     "cancer": "頭頸部がん",
+     "generation": "18歳以上",
+     "background": "放射線療法を受ける",
+     "design": "1)観察 2)介入",
+     "funding": "AMED（2021-2023）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "妊孕性",
+     "study": {
+      "title": "小児・ＡＹＡ世代がん患者のサバイバーシップ向上を志向した妊孕性温存に関する心理支援体制の均てん化に向けた臨床研究"
+     },
+     "cancer": "乳がん",
+     "generation": "20-39歳",
+     "background": "妊孕性温存に関する意思決定",
+     "design": "介入",
+     "funding": "厚労科研（2017-2019）"
+    },
+    {
+     "type": "study",
+     "intervention": "妊孕性",
+     "study": {
+      "title": "生殖機能温存がん治療法の革新的発展にむけた総合的プラットフォームの形成"
+     },
+     "cancer": "すべて",
+     "generation": "40歳未満",
+     "background": "妊孕性温存に関する意思決定",
+     "design": "―",
+     "funding": "AMED（2016-2018）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（妊孕性） <ul class=\"list_point\"><li>子宮対がん治療ガイドライン</li><li>妊孕性温存に関する診療ガイドライン</li><li>乳がん患者の妊娠・出産と生殖医療に関するガイドライン</li><li>卵巣・卵管・腹膜がん治療ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "がん腎臓学",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "悪心、嘔吐",
+     "study": {
+      "title": "シスプラチンを含む高度催吐性化学療法による化学療法誘発性悪心・嘔吐の予防に対する標準制吐療法＋オランザピン5mgの有効性・安全性を検証する二重盲検プラセボ対照第3相ランダム化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=206",
+      "status": "achieved"
+     },
+     "cancer": "すべて（造血器悪性腫瘍を除く）",
+     "generation": "20-75歳",
+     "background": "シスプラチン化学療法",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "悪心、嘔吐",
+     "study": {
+      "title": "高度催吐性リスクのがん化学療法におけるDEX（steroid）sparing に関する研究"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "シスプラチン投与予定",
+     "design": "介入",
+     "funding": "AMED（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "悪心、嘔吐",
+     "study": {
+      "title": "シスプラチンを含む化学療法を施行される子宮がん患者の嘔気・嘔吐に対する六君子湯の効果ープラセボ対照無作為化二重盲検比較検証試験"
+     },
+     "cancer": "子宮頚がん子宮体がん",
+     "generation": "20歳以上",
+     "background": "シスプラチン投与予定",
+     "design": "介入",
+     "funding": "AMED（2018）→（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "悪心、嘔吐",
+     "study": {
+      "title": "支持/緩和治療領域臨床試験に関する各分野における方法論確立に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2017-2018）→（2019-2021）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（悪心・嘔吐） <ul class=\"list_point\"><li>制吐薬適正使用ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "リンパ浮腫",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（リンパ浮腫） <ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li><li>リンパ浮腫診療ガイドライン</li></ul>",
+     "overseas": "Lymphedema<sup>*2</sup>"
+    },
+    {
+     "type": "study",
+     "intervention": "手足症候群、皮膚障害",
+     "study": {
+      "title": "マルチキナーゼ阻害薬の手足症候群に対するハイドロコロイドドレッシング使用による予防効果の検討",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=208",
+      "status": "ongoing"
+     },
+     "cancer": "大腸がん消化管間質腫瘍肝細胞がん",
+     "generation": "20歳以上",
+     "background": "マルチキナーゼ阻害剤使用PS0-2",
+     "design": "介入",
+     "funding": "木村看護教育振興財団"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（手足症候群・皮膚障害） <ul class=\"list_point\"><li>がん治療におけるアピアランスケアガイドライン</li><li>頭頸部診療ガイドライン</li><li>頭頚部再建診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "粘膜炎",
+     "study": {
+      "title": "支持/緩和治療領域臨床試験に関する各分野における方法論確立に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2017-2018）→（2019-2021）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "神経障害",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がん薬物療法に伴う末梢神経障害マネジメントの手引き</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "しびれ",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がん薬物療法に伴う末梢神経障害マネジメントの手引き</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "好中球減少",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "便秘、下痢",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "ストーマ",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "肺臓炎、呼吸苦",
+     "study": {
+      "title": "進行がん患者の呼吸困難に対する2次治療としてのミダゾラムの有効性を探索する実施可能性プラセボ対照ランダム化比較試験",
+      "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=302",
+      "status": "ongoing"
+     },
+     "cancer": "すべて",
+     "generation": "18歳以上",
+     "background": "積極的な抗がん剤治療を受けていない",
+     "design": "介入",
+     "funding": "科研費"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "肺臓炎、呼吸苦",
+     "study": {
+      "title": "支持/緩和治療領域臨床試験に関する各分野における方法論確立に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2017-2018）→（2019-2021）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    }
+   ]
   },
   {
    "n": 15,
    "name": "アピアランス",
+   "nav": "アピアランス",
    "en": "appearance",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "アピアランスケア",
+     "study": {
+      "title": "分子標的治療薬によるざ瘡様皮膚炎に対する標準的ケア方法の確立に関する研究"
+     },
+     "cancer": "肺がん大腸がん",
+     "generation": "20歳以上",
+     "background": "EGFR阻害薬治療患者、他",
+     "design": "介入",
+     "funding": "AMED（2017-2018）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>がん治療におけるアピアランスケアガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 16,
-   "name": "ホルモン療法に伴う症状",
+   "name": "ホルモン療法に伴う症状（更年期障害）",
+   "nav": "ホルモン療法\nに伴う症状",
    "en": "endocrine therapy symptoms",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "ホルモン関連症状（ホットフラッシュ）",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>子宮頸癌治療ガイドライン</li></ul>",
+     "overseas": "Hormone-Related Symptoms<sup>*2</sup><br>Hot Flashes and Night Sweats (PDQ®)"
+    }
+   ]
   },
   {
    "n": 17,
    "name": "心毒性",
+   "nav": "心毒性",
    "en": "cardiotoxicity",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "腫瘍循環器医療",
+     "study": {
+      "title": "オミックス解析に基づく乳がん患者における化学療法による心毒性発症機序の解明と危険因子の探索"
+     },
+     "cancer": "乳がん",
+     "generation": "20歳以上",
+     "background": "薬剤性心筋症発症リスク",
+     "design": "観察",
+     "funding": "AMED（2019-2020）"
+    },
+    {
+     "type": "study",
+     "intervention": "腫瘍循環器医療",
+     "study": {
+      "title": "免疫チェックポイント阻害薬の安全な使用に資するirAE心筋障害スクリーニング手法と危険因子の探索研究"
+     },
+     "cancer": "すべて",
+     "generation": "／",
+     "background": "心筋炎発症した",
+     "design": "観察",
+     "funding": "AMED（2020-2022）"
+    },
+    {
+     "type": "study",
+     "intervention": "治療薬の併用による影響",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "AMED（2020-2022）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "ー",
+     "overseas": "Cardiovascular Disease Risk Assessment,<br>Anthracycline-Induced Cardiac Toxicity<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 18,
    "name": "家族・遺族のQOL",
+   "nav": "家族・遺族の\nQOL",
    "en": "family caregivers quality of life",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "家族のケア",
+     "study": {
+      "title": "がん患者の家族・遺族に対する効果的な精神心理的支援法の開発研究"
+     },
+     "cancer": "／",
+     "generation": "20歳以上",
+     "background": "家族遺族",
+     "design": "プログラム開発",
+     "funding": "厚労科研（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "家族のケア",
+     "study": {
+      "title": "患者体験調査*5",
+      "sup": "*5"
+     },
+     "cancer": "すべて",
+     "generation": "19歳以上",
+     "background": "がん患者",
+     "design": "観察",
+     "funding": "／"
+    },
+    {
+     "type": "note",
+     "items": [
+      "<sup>*5</sup>「患者体験調査報告書（平成30年度調査）」家族の代理回答率は21％。質問30-2「がん患者の家族の悩みや負担を相談できる支援・サービス・場所が十分あると思う」47.7％、質問19経済負担への対応「収入を増やすため、家族が仕事を増やした、あるいは働くようになった」1.8％"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "グリーフケア",
+     "study": {
+      "title": "がん患者の家族・遺族に対する効果的な精神心理的支援法の開発研究"
+     },
+     "cancer": "／",
+     "generation": "20歳以上",
+     "background": "家族遺族",
+     "design": "プログラム開発",
+     "funding": "厚労科研（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "グリーフケア",
+     "study": {
+      "title": "遺族調査*6",
+      "sup": "*6"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "遺族",
+     "design": "観察",
+     "funding": "／"
+    },
+    {
+     "type": "note",
+     "items": [
+      "<sup>*6</sup>「患者さまが受けられた医療に関するご遺族の方への調査報告書2018-2019 年度調査」 家族と医師間で心肺停止時の蘇生処置について話し合いがあった56.1％ 家族の介護負担感（全体、身体、社会、精神、経済）33-46％ 家族の抑うつ19％、強い悲嘆30％"
+     ]
+    },
+    {
+     "type": "guidelines",
+     "jp": "JPOS/JASCC遺族ガイドライン2022<br>（家族のケア）<br><ul class=\"list_point\"><li>ガイドライン該当なし</li></ul> （グリーフケア）<br><ul class=\"list_point\"><li>終末期がん患者の輸液療法に関するガイドライン</li><li>遺族ケアガイドライン</li></ul>",
+     "overseas": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "包括的な支持緩和ケアの前向きコホート",
+     "study": {
+      "title": "網膜芽細胞腫患者・家族の包括的支持緩和ケアの前向きコホート研究"
+     },
+     "cancer": "網膜芽細胞腫",
+     "generation": "0-5歳",
+     "background": "診断後、１か月以内の患者とその家族",
+     "design": "観察",
+     "funding": "AMED（2023-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>小児がん診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 19,
-   "name": "認知機能障害",
+   "name": "認知機能障害（ケモブレインを含む）",
+   "nav": "認知機能障害",
    "en": "cognitive impairment",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "がん患者の周手術期精神症状に対する抑肝散の効果に対するランダム化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=207",
+      "status": "achieved"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "6時間以上の手術",
+     "design": "介入",
+     "funding": "その他"
+    },
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "せん妄ハイリスクがん患者の術後せん妄予防におけるラメルテオンの有効性と安全性に関する多施設共同二重盲検化プラセボ対照ランダム化比較試験",
+      "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=219",
+      "status": "ongoing"
+     },
+     "cancer": "すべて",
+     "generation": "65歳以上",
+     "background": "全身麻酔手術と5日以上の入院",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "がん治療中のせん妄の発症予防を目指した多職種せん妄プログラムの開発"
+     },
+     "cancer": "／",
+     "generation": "70歳以上",
+     "background": "せん妄ハイリスク",
+     "design": "介入",
+     "funding": "AMED（2016–2017）"
+    },
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "外科的がん切除後のデクスメデトミジンによる鎮静に不応な重症せん妄発症を予測するバイオマーカーの開発"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "観察",
+     "funding": "AMED(2018-2020)"
+    },
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "認知症合併に対応した最適の治療選択と安全性の向上を目指した支援プログラムの開発"
+     },
+     "cancer": "すべて",
+     "generation": "高齢者",
+     "background": "認知機能障害併存",
+     "design": "探索",
+     "funding": "AMED（2017-2019）"
+    },
+    {
+     "type": "study",
+     "intervention": "認知症、せん妄",
+     "study": {
+      "title": "がん患者における術後せん妄予防のプレシジョンメディシンの開発"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "術後、せん妄ハイリスク",
+     "design": "探索",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "study",
+     "intervention": "せん妄の心的外傷",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<p>JPOS/JASCCせん妄ガイドライン2022</p> （認知機能障害） <ul class=\"list_point\"><li>がんのリハビリテーション診療ガイドライン</li></ul>",
+     "overseas": "Cognitive Function<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 20,
-   "name": "情報（医師の説明）",
+   "name": "情報(医師の説明)",
+   "nav": "情報\n(医師の説明)",
    "en": "physician communication",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "セカンドオピニオン",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<p>JPOS/JASCCせん妄ガイドライン2022</p> （医師のCST） <ul class=\"list_point\"><li>コミュニケーションガイドライン</li><li>終末期がん患者の輸液療法に関するガイドライン</li></ul><p>CST = Communication Skills Training</p>",
+     "overseas": "Cognitive Function<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 21,
    "name": "ワクチン接種",
+   "nav": "ワクチン接種",
    "en": "vaccination",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "ワクチン",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "study",
+     "intervention": "コロナワクチン",
+     "study": {
+      "title": "日本における新型コロナウイルス感染症（COVID-19）問題および社会全般に関する健康格差評価研究"
+     },
+     "cancer": "／",
+     "generation": "20歳以上",
+     "background": "／",
+     "design": "観察",
+     "funding": "厚労科研AMED"
+    },
+    {
+     "type": "guidelines",
+     "jp": "（免疫・感染予防）<br><ul class=\"list_point\"><li>小児白血病・リンパ腫診療ガイドライン</li></ul> （1項目のみ）<br><ul class=\"list_point\"><li>乳癌診療ガイドライン：ワクチン接種の推奨</li></ul>",
+     "overseas": "Immunizations and Infections<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 22,
    "name": "遺伝相談、ゲノム情報",
+   "nav": "遺伝相談、\nゲノム情報",
    "en": "genetic counseling",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "遺伝相談、ゲノム情報",
+     "study": {
+      "title": "包括的がんゲノムプロファイリング検査を受ける患者の苦痛緩和支援プログラム開発に向けた観察研究"
+     },
+     "cancer": "すべて",
+     "generation": "18歳以上",
+     "background": "ゲノム検査を予定",
+     "design": "観察",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>遺伝性乳癌卵巣癌（HBOC）診療ガイドライン</li><li>小児、思春期・若年がん患者の妊孕性温存に関する診療ガイドライン</li><li>膵癌診療ガイドライン</li></ul>",
+     "overseas": "Genetic/Familial High-Risk Assessment<br>(Colorectal, Breast, Ovarian, Pancreatic)<sup>*3</sup>"
+    }
+   ]
   },
   {
    "n": 23,
-   "name": "口腔ケア",
+   "name": "口腔ケア（適切な口腔ケアを行うことにより、がん治療を円滑に遂行することができる）",
+   "nav": "口腔ケア",
    "en": "oral care",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "口腔ケア",
+     "study": {
+      "title": "がん患者のせん妄発症を予防する抑肝散、および口腔粘膜炎の早期治癒に資する半夏瀉心湯のメタボローム解析によるレスポンダーバイオマーカーの開発ならびに「証」の可視化とその臨床応用"
+     },
+     "cancer": "頭頸部がん",
+     "generation": "18歳以上",
+     "background": "放射線療法を受ける",
+     "design": "1)観察 2)介入",
+     "funding": "AMED（2021-2023）"
+    },
+    {
+     "type": "study",
+     "intervention": "口腔ケア",
+     "study": {
+      "title": "がん化学療法に伴う口腔粘膜炎の疼痛緩和・発症制御を目指す新規口腔粘膜保護材の開発"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "基礎",
+     "funding": "AMED（2020-2021）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>形成外科（頭頸部再建）診療ガイドライン</li><li>口腔癌診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 24,
-   "name": "ACP／人生会議",
+   "name": "ＡＣＰ／人生会議",
+   "nav": "ACP／\n人生会議",
    "en": "advance care planning",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "意思決定支援",
+     "study": {
+      "title": "膵臓がん患者・家族と医師の協働による価値観を尊重した意思決定を促進するコミュニケーション介入プログラム臨床的有用性を検証する無作為化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=211",
+      "status": "ongoing"
+     },
+     "cancer": "膵がん",
+     "generation": "20歳以上",
+     "background": "PS0-1",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "ITやDXを用いた意思決定支援",
+     "study": {
+      "title": "進行がん患者に対するモバイル端末による質問支援を用いた意思決定支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=220",
+      "status": "ongoing"
+     },
+     "cancer": "呼吸器内科消化器内科肝胆膵内科腫瘍内科のがん",
+     "generation": "20歳以上",
+     "background": "PS0-2",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>コミュニケーションガイドライン</li><li>終末期がん患者の輸液療法に関するガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 25,
    "name": "性機能障害の評価、ケア、治療",
+   "nav": "性機能障害の\n評価、ケア、治療",
    "en": "sexual dysfunction",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "性機能",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "―"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>前立腺癌診療ガイドライン</li></ul>",
+     "overseas": "Sexual Function<sup>*2</sup>"
+    }
+   ]
   },
   {
    "n": 26,
    "name": "節酒",
+   "nav": "節酒",
    "en": "alcohol",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "節酒",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>食道癌診療ガイドライン</li><li>子宮頸癌診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   },
   {
    "n": 27,
    "name": "禁煙",
+   "nav": "禁煙",
    "en": "smoking cessation",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "禁煙",
+     "study": null,
+     "cancer": "ー",
+     "generation": "ー",
+     "background": "ー",
+     "design": "ー",
+     "funding": "ー"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>食道癌診療ガイドライン</li><li>子宮頸癌診療ガイドライン</li><li>腎癌診療ガイドライン</li></ul>",
+     "overseas": "Smoking Cessation<sup>*3</sup>"
+    }
+   ]
   },
   {
    "n": 28,
    "name": "社会的孤立とピアサポート",
+   "nav": "社会的孤立と\nピアサポート",
    "en": "social isolation peer support",
-   "gap": false
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "孤立・孤独",
+     "study": {
+      "title": "AYA世代がん患者のアンメットニードに対するスマートフォンを用いた苦痛スクリーニングおよび問題解決療法の有効性:分散型多施設ランダム化比較試験"
+     },
+     "cancer": "すべて",
+     "generation": "AYA世代",
+     "background": "外来後",
+     "design": "介入",
+     "funding": "JST"
+    }
+   ]
   },
   {
    "n": 29,
    "name": "社会的偏見",
+   "nav": "社会的偏見",
    "en": "stigma",
-   "gap": true
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "社会的偏見",
+     "study": {
+      "title": "－"
+     },
+     "cancer": "－",
+     "generation": "－",
+     "background": "－",
+     "design": "－",
+     "funding": "－"
+    }
+   ]
   },
   {
    "n": 30,
    "name": "その他",
+   "nav": "その他",
    "en": "survivorship",
-   "gap": false
-  }
- ],
- "studies": [
-  {
-   "cats": [
-    1
-   ],
-   "intervention": "自殺数の調査",
-   "title": "全国がん登録を用いたがん患者の自殺に関する記述疫学的研究",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=213",
-   "cancer": "すべて",
-   "generation": "全世代",
-   "background": "診断後、6か月",
-   "type": "観察",
-   "funding": "厚労科研"
-  },
-  {
-   "cats": [
-    1,
-    30
-   ],
-   "intervention": "認知行動療法／デジタルヘルス",
-   "title": "乳がん患者の再発不安・恐怖に対するスマートフォン問題解決療法および行動活性化療法の有効性：無作為割付比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=210",
-   "cancer": "乳がん",
-   "generation": "20-49歳",
-   "background": "術後、1年以降",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    1,
-    30
-   ],
-   "intervention": "認知行動療法／デジタルヘルス",
-   "title": "がん患者の抑うつ・不安に対するスマートフォン精神療法の最適化研究：革新的試験システムを用いた多相最適化戦略試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=216",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "予後、6か月以上",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    2
-   ],
-   "intervention": "リハビリテーション",
-   "title": "外来がんリハビリテーションプログラムの開発に関する研究",
-   "url": "",
-   "cancer": "消化器がん・呼吸器がん・頭頸部がん・乳がん",
-   "generation": "20歳以上",
-   "background": "外来",
-   "type": "プログラム開発（単群前後比較）",
-   "funding": "厚労科研・AMED（2016-2018）"
-  },
-  {
-   "cats": [
-    2
-   ],
-   "intervention": "リハビリテーション",
-   "title": "食道癌術後患者を対象とした外来がんリハビリテーションプログラムの開発に関する研究",
-   "url": "",
-   "cancer": "食道がん",
-   "generation": "20-80歳",
-   "background": "胸部食道癌術後",
-   "type": "介入",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    2,
-    3,
-    5,
-    30
-   ],
-   "intervention": "リハビリテーション／運動療法／栄養",
-   "title": "悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）",
-   "url": "",
-   "cancer": "肺がん・膵がん",
-   "generation": "高齢者",
-   "background": "外来",
-   "type": "介入",
-   "funding": "厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"
-  },
-  {
-   "cats": [
-    2
-   ],
-   "intervention": "リハビリテーション",
-   "title": "高齢者進行非小細胞肺がん/膵がんに対する早期栄養・運動介入とアナモレリン塩酸塩の併用療法の多施設共同ランダム化第二相試験",
-   "url": "",
-   "cancer": "肺がん・膵がん",
-   "generation": "高齢者",
-   "background": "外来",
-   "type": "介入",
-   "funding": "AMED（2021-2023：NEXTAC-III試験）"
-  },
-  {
-   "cats": [
-    2
-   ],
-   "intervention": "リハビリテーション",
-   "title": "緩和ケア病棟入院中のがん患者に対するリハビリテーションの有効性検証ならびに普及実装に向けた研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "入院中",
-   "type": "介入",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    4
-   ],
-   "intervention": "意向調査",
-   "title": "今後の見通しについての医師からの望ましい説明に関する研究",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=203",
-   "cancer": "乳がん",
-   "generation": "20歳以上",
-   "background": "術後、1年以降",
-   "type": "介入",
-   "funding": "厚労科研"
-  },
-  {
-   "cats": [
-    4,
-    7,
-    24
-   ],
-   "intervention": "意思決定支援",
-   "title": "膵臓がん患者・家族と医師の協働による価値観を尊重した意思決定を促進するコミュニケーション介入プログラム臨床的有用性を検証する無作為化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=211",
-   "cancer": "膵がん",
-   "generation": "20歳以上",
-   "background": "PS0-1",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    4,
-    7,
-    11,
-    30
-   ],
-   "intervention": "ITやDXを用いた意思決定支援",
-   "title": "高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=217",
-   "cancer": "食道・胃・大腸・肝臓・胆道・膵臓がん",
-   "generation": "70歳以上",
-   "background": "局所進行期III期、IV期または再発期 PS0-2",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    4,
-    7,
-    24
-   ],
-   "intervention": "ITやDXを用いた意思決定支援",
-   "title": "進行がん患者に対するモバイル端末による質問支援を用いた意思決定支援プログラム開発",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=220",
-   "cancer": "呼吸器・消化器・肝胆膵・腫瘍内科のがん",
-   "generation": "20歳以上",
-   "background": "PS0-2",
-   "type": "介入",
-   "funding": "厚労科研"
-  },
-  {
-   "cats": [
-    7
-   ],
-   "intervention": "意思決定支援",
-   "title": "乳房再建におけるアウトカム指標の確立と科学的根拠に基づいた患者意思決定支援（SAQLA study）",
-   "url": "",
-   "cancer": "乳がん",
-   "generation": "20歳以上",
-   "background": "再建術後",
-   "type": "探索",
-   "funding": "AMED（2017-2021）"
-  },
-  {
-   "cats": [
-    5
-   ],
-   "intervention": "がん悪液質改善",
-   "title": "ヒトがん悪液質を反映する独自樹立悪液質モデルを用いての悪液質の本態解明、ならびに創薬、診断に有用な「がん悪液質PDXモデル」の確立とその活用",
-   "url": "",
-   "cancer": "／",
-   "generation": "／",
-   "background": "／",
-   "type": "基礎",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    8
-   ],
-   "intervention": "神経障害性疼痛",
-   "title": "がん患者の難治性神経障害性疼痛へのエビデンスに基づく標準的薬物療法の開発",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "難治性神経障害性疼痛を有する",
-   "type": "介入",
-   "funding": "AMED（2017-2019）JORTC-PAL08試験"
-  },
-  {
-   "cats": [
-    8
-   ],
-   "intervention": "神経障害性疼痛",
-   "title": "オピオイド不応の神経障害性疼痛に対するプレガバリンとデュロキセチンの国際共同ランダム化比較試験",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "難治性神経障害性疼痛を有する",
-   "type": "介入",
-   "funding": "AMED（2020-2022）"
-  },
-  {
-   "cats": [
-    8
-   ],
-   "intervention": "神経障害性疼痛",
-   "title": "がん患者のオピオイド不応の神経障害性疼痛への標準的薬物療法の開発：国際共同試験ならびに普及実装に向けた研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "難治性神経障害性疼痛を有する",
-   "type": "介入",
-   "funding": "AMED（2023-2025）"
-  },
-  {
-   "cats": [
-    8
-   ],
-   "intervention": "骨転移",
-   "title": "有痛性骨転移に対する緩和的動脈塞栓術の即時的有効性及び安全性検証試験",
-   "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=215",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "疼痛スケール5以上",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    11,
-    30
-   ],
-   "intervention": "ケアの協調や調整／多様性への配慮／健康格差・検診",
-   "title": "精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=212",
-   "cancer": "／",
-   "generation": "40歳以上",
-   "background": "統合失調症",
-   "type": "介入",
-   "funding": "厚労科研"
-  },
-  {
-   "cats": [
-    11
-   ],
-   "intervention": "多職種の連携",
-   "title": "進行がん患者に対するスクリーニングを組み合わせた看護師主導による治療早期からの専門的緩和ケア介入プログラムの臨床的有用性を検証する無作為化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=205",
-   "cancer": "肺がん",
-   "generation": "20歳以上",
-   "background": "ステージⅣ、初抗がん治療",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "支持療法",
-   "title": "頭頸部がん放射線治療患者に発生する放射線皮膚炎に対する通常処置とステロイド外用薬を加えた処置に関するランダム化第3相比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=204",
-   "cancer": "頭頚部がん",
-   "generation": "20-80歳",
-   "background": "放射線療法 PS0-1",
-   "type": "介入",
-   "funding": "国立がん研究センター研究開発費（27-A-3）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "支持療法",
-   "title": "頭頸部悪性腫瘍切除・遊離組織移植術の手術前ステロイド投与の有効性を検証する多施設共同二重盲検無作為化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=214",
-   "cancer": "頭頚部がん",
-   "generation": "20歳以上",
-   "background": "手術予定 PS0-2",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "支持療法（研究方法開発）",
-   "title": "支持/緩和治療領域研究の方法論確立に関する研究",
-   "url": "",
-   "cancer": "／",
-   "generation": "／",
-   "background": "／",
-   "type": "研究方法開発",
-   "funding": "AMED（2017-2018）→（2019-2021）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "支持療法",
-   "title": "子宮頸癌根治術後再発高リスク患者に対する強度変調放射線治療（IMRT）を用いた低毒性補助療法の確立に向けての研究（JCOG1402）",
-   "url": "",
-   "cancer": "子宮頚がん",
-   "generation": "20-70歳",
-   "background": "ステージⅠB1-ⅡB PS0-1",
-   "type": "介入",
-   "funding": "AMED（2019-2020）"
-  },
-  {
-   "cats": [
-    14,
-    22
-   ],
-   "intervention": "支持療法／遺伝相談・ゲノム情報",
-   "title": "包括的がんゲノムプロファイリング検査を受ける患者の苦痛緩和支援プログラム開発に向けた観察研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "18歳以上",
-   "background": "ゲノム検査を予定",
-   "type": "観察",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    14,
-    30
-   ],
-   "intervention": "支持療法／eConsent",
-   "title": "マルチステークホルダーを擁する支持療法・緩和治療領域における研究手法の標準化に関する研究",
-   "url": "",
-   "cancer": "／",
-   "generation": "／",
-   "background": "／",
-   "type": "研究方法開発",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    14,
-    18,
-    30
-   ],
-   "intervention": "包括的な支持緩和ケアの前向きコホート／小児・AYA",
-   "title": "網膜芽細胞腫患者・家族の包括的支持緩和ケアの前向きコホート研究",
-   "url": "",
-   "cancer": "網膜芽細胞腫",
-   "generation": "0-5歳",
-   "background": "診断後、1か月以内の患者とその家族",
-   "type": "観察",
-   "funding": "AMED（2023-2024）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "止血",
-   "title": "出血を伴う胃がんへの緩和的放射線治療の有用性を調べる他施設前向き観察研究（JROSG 17-3）",
-   "url": "",
-   "cancer": "胃がん",
-   "generation": "20歳以上",
-   "background": "原発巣からの出血",
-   "type": "観察",
-   "funding": "JROSG"
-  },
-  {
-   "cats": [
-    14,
-    19,
-    23
-   ],
-   "intervention": "漢方／口腔ケア",
-   "title": "がん患者のせん妄発症を予防する抑肝散、および口腔粘膜炎の早期治癒に資する半夏瀉心湯のメタボローム解析によるレスポンダーバイオマーカーの開発ならびに「証」の可視化とその臨床応用",
-   "url": "",
-   "cancer": "頭頸部がん",
-   "generation": "18歳以上",
-   "background": "放射線療法を受ける",
-   "type": "1)観察 2)介入",
-   "funding": "AMED（2021-2023）"
-  },
-  {
-   "cats": [
-    14,
-    30
-   ],
-   "intervention": "妊孕性／小児・AYA",
-   "title": "小児・AYA世代がん患者のサバイバーシップ向上を志向した妊孕性温存に関する心理支援体制の均てん化に向けた臨床研究",
-   "url": "",
-   "cancer": "乳がん",
-   "generation": "20-39歳",
-   "background": "妊孕性温存に関する意思決定",
-   "type": "介入",
-   "funding": "厚労科研（2017-2019）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "妊孕性",
-   "title": "生殖機能温存がん治療法の革新的発展にむけた総合的プラットフォームの形成",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "40歳未満",
-   "background": "妊孕性温存に関する意思決定",
-   "type": "―",
-   "funding": "AMED（2016-2018）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "悪心、嘔吐",
-   "title": "シスプラチンを含む高度催吐性化学療法による化学療法誘発性悪心・嘔吐の予防に対する標準制吐療法＋オランザピン5mgの有効性・安全性を検証する二重盲検プラセボ対照第3相ランダム化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=206",
-   "cancer": "すべて（造血器悪性腫瘍を除く）",
-   "generation": "20-75歳",
-   "background": "シスプラチン化学療法",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "悪心、嘔吐",
-   "title": "高度催吐性リスクのがん化学療法におけるDEX（steroid）sparingに関する研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "シスプラチン投与予定",
-   "type": "介入",
-   "funding": "AMED（2019-2021）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "悪心、嘔吐",
-   "title": "シスプラチンを含む化学療法を施行される子宮がん患者の嘔気・嘔吐に対する六君子湯の効果ープラセボ対照無作為化二重盲検比較検証試験",
-   "url": "",
-   "cancer": "子宮頚がん・子宮体がん",
-   "generation": "20歳以上",
-   "background": "シスプラチン投与予定",
-   "type": "介入",
-   "funding": "AMED（2018→2019-2021）"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "手足症候群、皮膚障害",
-   "title": "マルチキナーゼ阻害薬の手足症候群に対するハイドロコロイドドレッシング使用による予防効果の検討",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=208",
-   "cancer": "大腸がん・消化管間質腫瘍・肝細胞がん",
-   "generation": "20歳以上",
-   "background": "マルチキナーゼ阻害剤使用 PS0-2",
-   "type": "介入",
-   "funding": "木村看護教育振興財団"
-  },
-  {
-   "cats": [
-    14
-   ],
-   "intervention": "肺臓炎、呼吸苦",
-   "title": "進行がん患者の呼吸困難に対する2次治療としてのミダゾラムの有効性を探索する実施可能性プラセボ対照ランダム化比較試験",
-   "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=302",
-   "cancer": "すべて",
-   "generation": "18歳以上",
-   "background": "積極的な抗がん剤治療を受けていない",
-   "type": "介入",
-   "funding": "科研費"
-  },
-  {
-   "cats": [
-    15
-   ],
-   "intervention": "アピアランスケア",
-   "title": "分子標的治療薬によるざ瘡様皮膚炎に対する標準的ケア方法の確立に関する研究",
-   "url": "",
-   "cancer": "肺がん・大腸がん",
-   "generation": "20歳以上",
-   "background": "EGFR阻害薬治療患者、他",
-   "type": "介入",
-   "funding": "AMED（2017-2018）"
-  },
-  {
-   "cats": [
-    17
-   ],
-   "intervention": "腫瘍循環器医療",
-   "title": "オミックス解析に基づく乳がん患者における化学療法による心毒性発症機序の解明と危険因子の探索",
-   "url": "",
-   "cancer": "乳がん",
-   "generation": "20歳以上",
-   "background": "薬剤性心筋症発症リスク",
-   "type": "観察",
-   "funding": "AMED（2019-2020）"
-  },
-  {
-   "cats": [
-    17
-   ],
-   "intervention": "腫瘍循環器医療",
-   "title": "免疫チェックポイント阻害薬の安全な使用に資するirAE心筋障害スクリーニング手法と危険因子の探索研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "／",
-   "background": "心筋炎発症した",
-   "type": "観察",
-   "funding": "AMED（2020-2022）"
-  },
-  {
-   "cats": [
-    18
-   ],
-   "intervention": "家族のケア／グリーフケア",
-   "title": "がん患者の家族・遺族に対する効果的な精神心理的支援法の開発研究",
-   "url": "",
-   "cancer": "／",
-   "generation": "20歳以上",
-   "background": "家族・遺族",
-   "type": "プログラム開発",
-   "funding": "厚労科研（2019-2021）"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "がん患者の周手術期精神症状に対する抑肝散の効果に対するランダム化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=207",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "6時間以上の手術",
-   "type": "介入",
-   "funding": "その他"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "せん妄ハイリスクがん患者の術後せん妄予防におけるラメルテオンの有効性と安全性に関する多施設共同二重盲検化プラセボ対照ランダム化比較試験",
-   "url": "https://www.j-support.org/study/recruiting/individual.html?entry_id=219",
-   "cancer": "すべて",
-   "generation": "65歳以上",
-   "background": "全身麻酔手術と5日以上の入院",
-   "type": "介入",
-   "funding": "AMED"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "がん治療中のせん妄の発症予防を目指した多職種せん妄プログラムの開発",
-   "url": "",
-   "cancer": "／",
-   "generation": "70歳以上",
-   "background": "せん妄ハイリスク",
-   "type": "介入",
-   "funding": "AMED（2016–2017）"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "外科的がん切除後のデクスメデトミジンによる鎮静に不応な重症せん妄発症を予測するバイオマーカーの開発",
-   "url": "",
-   "cancer": "／",
-   "generation": "／",
-   "background": "／",
-   "type": "観察",
-   "funding": "AMED（2018-2020）"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "認知症合併に対応した最適の治療選択と安全性の向上を目指した支援プログラムの開発",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "高齢者",
-   "background": "認知機能障害併存",
-   "type": "探索",
-   "funding": "AMED（2017-2019）"
-  },
-  {
-   "cats": [
-    19
-   ],
-   "intervention": "認知症、せん妄",
-   "title": "がん患者における術後せん妄予防のプレシジョンメディシンの開発",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "術後、せん妄ハイリスク",
-   "type": "探索",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    21
-   ],
-   "intervention": "コロナワクチン",
-   "title": "日本における新型コロナウイルス感染症（COVID-19）問題および社会全般に関する健康格差評価研究",
-   "url": "",
-   "cancer": "／",
-   "generation": "20歳以上",
-   "background": "／",
-   "type": "観察",
-   "funding": "厚労科研・AMED"
-  },
-  {
-   "cats": [
-    23
-   ],
-   "intervention": "口腔ケア",
-   "title": "がん化学療法に伴う口腔粘膜炎の疼痛緩和・発症制御を目指す新規口腔粘膜保護材の開発",
-   "url": "",
-   "cancer": "／",
-   "generation": "／",
-   "background": "／",
-   "type": "基礎",
-   "funding": "AMED（2020-2021）"
-  },
-  {
-   "cats": [
-    28
-   ],
-   "intervention": "孤立・孤独",
-   "title": "AYA世代がん患者のアンメットニードに対するスマートフォンを用いた苦痛スクリーニングおよび問題解決療法の有効性：分散型多施設ランダム化比較試験",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "AYA世代",
-   "background": "外来後",
-   "type": "介入",
-   "funding": "JST"
-  },
-  {
-   "cats": [
-    30
-   ],
-   "intervention": "Patient-reported Outcome（PRO）",
-   "title": "がん患者における患者報告アウトカム尺度開発に関する研究",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "20歳以上",
-   "background": "／",
-   "type": "尺度開発",
-   "funding": "AMED（2019-2021）"
-  },
-  {
-   "cats": [
-    30
-   ],
-   "intervention": "職域介入",
-   "title": "中小事業所における事業主および健康管理担当者による喫煙対策を支援する介入の有効性評価：クラスターランダム化比較試験",
-   "url": "https://www.j-support.org/study/completed/individual.html?entry_id=218",
-   "cancer": "／",
-   "generation": "20歳以上",
-   "background": "30～300人の中小企業",
-   "type": "介入",
-   "funding": "科研費"
-  },
-  {
-   "cats": [
-    30
-   ],
-   "intervention": "医療の質評価",
-   "title": "医療ビッグデータを用いた緩和医療の質評価および臨床課題の疫学調査方法の開発と測定",
-   "url": "",
-   "cancer": "すべて",
-   "generation": "すべて",
-   "background": "がん死亡者",
-   "type": "観察",
-   "funding": "AMED（2016-2018）"
-  },
-  {
-   "cats": [
-    30
-   ],
-   "intervention": "老年医学、高齢者のがん治療",
-   "title": "高齢肺がん患者に対する機能評価表を用いた多施設共同臨床試験",
-   "url": "",
-   "cancer": "肺がん",
-   "generation": "高齢者",
-   "background": "切除不能",
-   "type": "介入",
-   "funding": "AMED（2022-2024）"
-  },
-  {
-   "cats": [
-    30
-   ],
-   "intervention": "老年医学、高齢者のがん治療",
-   "title": "病理学的StageII/IIIで“vulnerable”な80歳以上の高齢者胃癌に対する開始量を減量したS-1術後補助化学療法に関するランダム化比較第III相試験",
-   "url": "",
-   "cancer": "胃がん",
-   "generation": "高齢者",
-   "background": "StageII/III",
-   "type": "介入",
-   "funding": "AMED（2020-2022）"
+   "blocks": [
+    {
+     "type": "study",
+     "intervention": "Patient-reported Outcome(PRO)",
+     "study": {
+      "title": "がん患者における患者報告アウトカム尺度開発に関する研究"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "／",
+     "design": "尺度開発",
+     "funding": "AMED（2019-2021）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "eConsent",
+     "study": {
+      "title": "マルチステークホルダーを擁する支持療法・緩和治療領域における研究手法の標準化に関する研究"
+     },
+     "cancer": "／",
+     "generation": "／",
+     "background": "／",
+     "design": "研究方法開発",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "デジタルヘルス",
+     "study": {
+      "title": "乳がん患者の再発不安・恐怖に対するスマートフォン問題解決療法および 行動活性化療法の有効性：無作為割付比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=210",
+      "status": "achieved"
+     },
+     "cancer": "乳がん",
+     "generation": "20-49歳",
+     "background": "術後、1年以降",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "デジタルヘルス",
+     "study": {
+      "title": "がん患者の抑うつ・不安に対するスマートフォン精神療法の最適化研究：革新的試験システムを用いた多相最適化戦略試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=216",
+      "status": "ongoing"
+     },
+     "cancer": "すべて",
+     "generation": "20歳以上",
+     "background": "予後、6か月以上",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "職域介入",
+     "study": {
+      "title": "中小事業所における事業主および健康管理担当者による喫煙対策を支援する介入の有効性評価：クラスターランダム化比較試験",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=218",
+      "status": "ongoing"
+     },
+     "cancer": "／",
+     "generation": "20歳以上",
+     "background": "30～300人の中小企業",
+     "design": "介入",
+     "funding": "科研費"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "健康格差",
+     "study": {
+      "title": "精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=212",
+      "status": "achieved"
+     },
+     "cancer": "／",
+     "generation": "40歳以上",
+     "background": "統合失調症",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "検診",
+     "study": {
+      "title": "精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=212",
+      "status": "achieved"
+     },
+     "cancer": "／",
+     "generation": "40歳以上",
+     "background": "統合失調症",
+     "design": "介入",
+     "funding": "厚労科研"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "医療の質評価",
+     "study": {
+      "title": "医療ビッグデータを用いた緩和医療の質評価および臨床課題の疫学調査方法の開発と測定"
+     },
+     "cancer": "すべて",
+     "generation": "すべて",
+     "background": "がん死亡者",
+     "design": "観察",
+     "funding": "AMED（2016-2018）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "老年医学、高齢者のがん治療",
+     "study": {
+      "title": "高齢進行・再発がん患者のニーズに即した治療選択・継続のためのアプリケーションを活用した高齢者機能評価とマネジメント強化による支援プログラム開発",
+      "url": "https://www.j-support.org/study/completed/individual.html?entry_id=217",
+      "status": "ongoing"
+     },
+     "cancer": "食道がん胃がん大腸がん肝臓がん胆道がん膵臓がん",
+     "generation": "70歳以上",
+     "background": "局所進行期III期、IV期または再発期PS0-2",
+     "design": "介入",
+     "funding": "AMED"
+    },
+    {
+     "type": "study",
+     "intervention": "老年医学、高齢者のがん治療",
+     "study": {
+      "title": "高齢肺がん患者に対する機能評価表を用いた多施設共同臨床試験"
+     },
+     "cancer": "肺がん",
+     "generation": "高齢者",
+     "background": "切除不能",
+     "design": "介入",
+     "funding": "AMED（2022-2024）"
+    },
+    {
+     "type": "study",
+     "intervention": "老年医学、高齢者のがん治療",
+     "study": {
+      "title": "悪性腫瘍に伴う悪液質の標準治療の確立（栄養と運動療法介入の有効性検証）"
+     },
+     "cancer": "肺がん膵がん",
+     "generation": "高齢者",
+     "background": "外来",
+     "design": "介入",
+     "funding": "厚労科研（2016-2018）→AMEDフォローアップ（2019-2021）"
+    },
+    {
+     "type": "study",
+     "intervention": "老年医学、高齢者のがん治療",
+     "study": {
+      "title": "病理学的StageII/IIIで“vulnerable”な80歳以上の高齢者胃癌に対する開始量を減量したS-1術後補助化学療法に関するランダム化比較第III相試験"
+     },
+     "cancer": "胃がん",
+     "generation": "高齢者",
+     "background": "StageII/III",
+     "design": "介入",
+     "funding": "AMED（2020-2022）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "小児、AYA",
+     "study": {
+      "title": "小児・AYA世代がん患者のサバイバーシップ向上を志向した妊孕性温存に関する心理支援体制の均てん化に向けた臨床研究"
+     },
+     "cancer": "乳がん",
+     "generation": "20-39歳",
+     "background": "妊孕性温存に関する意思決定",
+     "design": "介入",
+     "funding": "厚労科研（2017-2019）"
+    },
+    {
+     "type": "note",
+     "items": [
+      "現時点で該当するガイドラインの情報なし"
+     ]
+    },
+    {
+     "type": "study",
+     "intervention": "小児、AYA",
+     "study": {
+      "title": "網膜芽細胞腫患者・家族の包括的支持緩和ケアの前向きコホート研究"
+     },
+     "cancer": "網膜芽細胞腫",
+     "generation": "0-5歳",
+     "background": "診断後、１か月以内の患者とその家族",
+     "design": "観察",
+     "funding": "AMED（2023-2024）"
+    },
+    {
+     "type": "guidelines",
+     "jp": "<ul class=\"list_point\"><li>小児がん診療ガイドライン</li></ul>",
+     "overseas": "ー"
+    }
+   ]
   }
  ]
 }
