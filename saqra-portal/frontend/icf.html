@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ICF翻訳 | SaQRA</title>
-<meta name="description" content="生活の状況をことばにすると、AIがICF（国際生活機能分類）に整理し、50年後のQOLを描きます。関連する研究開発マップのカテゴリにもつながります。">
+<meta name="description" content="生活の状況をことばにすると、AIが質問しながらICF（国際生活機能分類）に整理します。テクノロジーの進化に応じた50年後のQOLをワンクリックで表示。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <!--
@@ -204,7 +204,7 @@
   <!-- ======================= 50年後翻訳（対話型ICF分類） ======================= -->
   <section class="panel active" id="panel-dialogue">
     <h1 class="page-title">ICF 50年後翻訳</h1>
-    <p class="intro"><b>生活の状況や困りごとを、あなたのことばで教えてください。</b>AIがICF（生活機能の共通語）に整理しながら2〜4回質問し、揃ったところで「50年後のQOL（生活の質）」を描きます。</p>
+    <p class="intro"><b>生活の状況や困りごとを、あなたのことばで教えてください。</b>AIが2〜4回質問しながらICF（生活機能の共通語）に整理していきます。また、テクノロジーの進化に応じた「50年後のQOL（生活の質）」をワンクリックで表示することができます。</p>
     <div class="dialogue">
       <div class="chat">
         <div class="chat-head"><span>ICF-QOL Translator</span><small id="turn-label">対話 0 / 5</small></div>
@@ -217,8 +217,8 @@
             <button type="button">32歳、産後3ヶ月です。夜眠れなくて、日中も気分が落ち込みます。夫は仕事が忙しく、実家は遠方です。</button>
           </div>
         </div>
-        <div class="quick" id="quick" hidden>
-          <button class="btn future small" id="btn-confirm" type="button">確定して50年後QOLへ</button>
+        <div class="quick" id="quick">
+          <button class="btn future small" id="btn-confirm" type="button" disabled title="まず生活の状況を1回送ってください">50年後のQOLを表示</button>
           <button class="btn ghost small" id="btn-more" type="button">もう少し追加する</button>
           <button class="btn ghost small" id="btn-json" type="button">JSONで出力</button>
           <button class="linkish" id="btn-reset" type="button">最初から</button>
@@ -319,7 +319,7 @@ function renderMeter() {
 function setBusy(b, label) {
   state.busy = b;
   document.getElementById('send').disabled = b;
-  document.getElementById('btn-confirm').disabled = b;
+  document.getElementById('btn-confirm').disabled = b || !state.icf;
   const t = messagesEl.querySelector('.typing');
   if (b) { if (!t) addMessage('ai', `<span class="typing">${esc(label || 'AIが整理しています')}</span>`); }
   else if (t) t.closest('.msg').remove();
@@ -336,9 +336,9 @@ async function sendMessage(text) {
     state.icf = d.icf; state.turn = d.turn; state.phase = d.phase; state.assessment = d.assessment;
     setBusy(false);
     addMessage('ai', renderAssistant(d));
-    quickEl.hidden = false;
+    const cbtn = document.getElementById('btn-confirm'); cbtn.disabled = false; cbtn.title = 'テクノロジーの進化に応じた2076年のQOLを描きます';
     renderMeter();
-    if (d.phase === 'confirming') document.getElementById('btn-confirm').focus();
+    if (d.phase === 'confirming') cbtn.focus();
   } catch (err) {
     setBusy(false);
     addMessage('ai', `<span class="error">うまく整理できませんでした: ${esc(err.message)}\nもう一度送ってみてください。</span>`);
@@ -355,14 +355,14 @@ document.getElementById('btn-json').addEventListener('click', () => {
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
   state.icf = null; state.turn = 0; state.phase = 'collecting'; state.assessment = null;
-  messagesEl.innerHTML = ''; examplesEl.hidden = false; quickEl.hidden = true; renderMeter();
+  messagesEl.innerHTML = ''; examplesEl.hidden = false; document.getElementById('btn-confirm').disabled = true; renderMeter();
 });
 
 // Stage 3: 50年後QOL
 document.getElementById('btn-confirm').addEventListener('click', async () => {
   if (!state.icf || state.busy) return;
-  addMessage('user', 'ICFを確定して、50年後のQOLを見せてください。');
-  setBusy(true, 'AIが50年後の暮らしを描いています（15〜25秒）');
+  addMessage('user', '50年後のQOLを表示してください。');
+  setBusy(true, 'AIがテクノロジーの進化に応じた50年後の暮らしを描いています（15〜25秒）');
   try {
     const f = await post('/icf/future', { icf: state.icf });
     setBusy(false);
@@ -370,7 +370,7 @@ document.getElementById('btn-confirm').addEventListener('click', async () => {
     addMessage('ai', renderFuture(f));
   } catch (err) {
     setBusy(false);
-    addMessage('ai', `<span class="error">描けませんでした: ${esc(err.message)}\nもう一度「確定して50年後QOLへ」を押してください。</span>`);
+    addMessage('ai', `<span class="error">描けませんでした: ${esc(err.message)}\nもう一度「50年後のQOLを表示」を押してください。</span>`);
   }
 });
 
@@ -380,11 +380,11 @@ function renderFuture(f) {
       <div class="row">
         <div class="now"><span class="lbl">いま</span>${esc(c.now)}</div>
         <div class="fut"><span class="lbl">2076年</span>${esc(c.future)}</div>
-        ${c.enabled_by ? `<div class="by">そうなる理由: ${esc(c.enabled_by)}</div>` : ''}
+        ${c.enabled_by ? `<div class="by">そうなる技術・変化: ${esc(c.enabled_by)}</div>` : ''}
       </div></div>`).join('');
   const kw = (f.search_keywords_en || []).join(' AND ');
   return `<div class="future-card">
-    <div><div class="eyebrow">50年後のQOL — 2076年</div><h3>${esc(f.headline)}</h3></div>
+    <div><div class="eyebrow">テクノロジーの進化に応じた 50年後のQOL — 2076年</div><h3>${esc(f.headline)}</h3></div>
     <div class="qol"><div class="now"><span class="lbl">いまのQOL</span>${esc(f.qol_now)}</div><div class="fut"><span class="lbl">2076年のQOL</span>${esc(f.qol_2076)}</div></div>
     ${cats}
     ${f.day_in_2076 ? `<div class="story"><b>2076年のある一日</b>${esc(f.day_in_2076)}</div>` : ''}

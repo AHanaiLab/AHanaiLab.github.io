@@ -377,7 +377,7 @@ def icf_dialogue(req: DialogueRequest):
         assessment = assess_completeness(before)
         return {
             "icf": before, "assessment": assessment, "updates": [], "turn": turn, "phase": "confirming",
-            "reply": "承知しました。ここまでの内容でICFプロファイルを確定します。「確定して50年後QOLへ」を押してください。",
+            "reply": "承知しました。ここまでの内容でICFプロファイルをまとめます。「50年後のQOLを表示」を押すと、テクノロジーの進化に応じた2076年の暮らしを描きます。",
         }
 
     if not has_profile:
@@ -393,8 +393,8 @@ def icf_dialogue(req: DialogueRequest):
 
     if assessment["all_filled"] or turn >= MAX_TURNS:
         phase = "confirming"
-        tail = "ICFプロファイルが揃いました。確定して50年後のQOLを見ますか？" if assessment["all_filled"] \
-            else "ここまでで一度まとめましょう。確定して50年後のQOLを見ますか？（「もう少し追加する」で続けることもできます）"
+        tail = "ICFプロファイルが揃いました。「50年後のQOLを表示」を押すと、テクノロジーの進化に応じた2076年の暮らしを描きます。" if assessment["all_filled"] \
+            else "ここまでで一度まとめましょう。「50年後のQOLを表示」を押すか、「もう少し追加する」で続けることもできます。"
         question = ""
     else:
         phase = "collecting"
@@ -409,8 +409,10 @@ def icf_dialogue(req: DialogueRequest):
 
 # ================================================================ Stage 3: 50年後QOL変換
 
-FUTURE_TRANSFORM_SYSTEM = """あなたは、がんサバイバーシップ研究と社会デザインに詳しい専門家です。
-確定したICFプロファイル（本人の現在の生活機能）を受け取り、「研究と社会が進んだ50年後（2076年）、この人と同じ状況にある人のQOL（生活の質）はどうなっているか」を描いてください。
+FUTURE_TRANSFORM_SYSTEM = """あなたは、がんサバイバーシップ研究・医療技術・社会デザインに詳しい専門家です。
+ICFプロファイル（本人の現在の生活機能）を受け取り、「テクノロジーの進化に応じた50年後（2076年）、この人と同じ状況にある人のQOL（生活の質）はどうなっているか」を描いてください。
+テクノロジーの進化とは: 診断・治療技術（低侵襲治療、副作用の少ない薬、個別化医療）、体調のモニタリングと予測（ウェアラブル、AI）、
+移動・仕事・家事を支える機器やロボット、遠隔医療・オンラインの相談、制度や職場のデジタル化などを指します。各カテゴリの future では、どの進化が効いているかを具体的に含めてください。
 
 方針:
 - 中学生にも分かるやさしい日本語。専門用語やICFコードは本文に出さない。
@@ -429,13 +431,13 @@ FUTURE_TRANSFORM_SYSTEM = """あなたは、がんサバイバーシップ研究
   "qol_now": "いまのQOLを2文で",
   "qol_2076": "50年後のQOLを2文で",
   "categories": [
-    {"key": "health_condition", "label": "健康状態", "now": "…", "future": "…", "enabled_by": "何が変わってそうなるか（研究・技術・制度・社会）"},
+    {"key": "health_condition", "label": "健康状態", "now": "…", "future": "…", "enabled_by": "そうなる技術・変化（研究・医療技術・機器・制度）"},
     {"key": "body_functions", "label": "心身機能", "now": "…", "future": "…", "enabled_by": "…"},
     {"key": "activities_participation", "label": "活動・参加", "now": "…", "future": "…", "enabled_by": "…"},
     {"key": "environmental_factors", "label": "環境因子", "now": "…", "future": "…", "enabled_by": "…"},
     {"key": "personal_factors", "label": "個人因子", "now": "…", "future": "…", "enabled_by": "…"}
   ],
-  "day_in_2076": "2076年のある一日を、本人の目線で3文の物語として",
+  "day_in_2076": "2076年のある一日を、本人の目線で3文の物語として（進化したテクノロジーが暮らしに溶け込んでいる様子を含める）",
   "research_needed": ["必要な研究テーマ（短く、1〜4個）"],
   "search_keywords_en": ["cancer survivors", "..."]
 }
