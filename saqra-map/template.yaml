@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SaQRA 研究開発マップ (draft) - static S3+CloudFront site with a scheduled data collector (PubMed / Minds / AMED). No Bedrock.
+
+Parameters:
+  AdminToken:
+    Type: String
+    NoEcho: true
+    Description: Shared secret the admin page sends to trigger a data refresh (X-Admin-Token header)
+  NcbiApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional NCBI E-utilities API key (raises the rate limit from 3 to 10 req/s)
+  AmedSearchUrl:
+    Type: String
+    Default: ""
+    Description: Optional AMEDfind JSON endpoint template with {q} placeholder, e.g. https://amedfind.amed.go.jp/api/search?keyword={q}
+  MindsSearchUrl:
+    Type: String
+    Default: ""
+    Description: Optional Minds guideline search URL template with {q} placeholder (HTML page; links to /docs/gl/ are extracted)
+  ScheduleExpression:
+    Type: String
+    Default: rate(7 days)
+    Description: How often the collector refreshes data
+
+Resources:
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${AWS::StackName} static map"
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: s3origin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !Ref OriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: s3origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6   # AWS managed CachingOptimized
+        CacheBehaviors:
+          - PathPattern: "data/*"
+            TargetOriginId: s3origin
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad   # AWS managed CachingDisabled: data is always fresh
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 60
+
+  CollectorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: collector/
+      Handler: app.handler
+      Runtime: python3.12
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          SITE_BUCKET: !Ref SiteBucket
+          DISTRIBUTION_ID: !Ref Distribution
+          ADMIN_TOKEN: !Ref AdminToken
+          NCBI_API_KEY: !Ref NcbiApiKey
+          AMED_SEARCH_URL: !Ref AmedSearchUrl
+          MINDS_SEARCH_URL: !Ref MindsSearchUrl
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:ListBucket]
+              Resource: [!Sub "${SiteBucket.Arn}", !Sub "${SiteBucket.Arn}/*"]
+            - Effect: Allow
+              Action: cloudfront:CreateInvalidation
+              Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins: ["*"]
+          AllowMethods: [GET, POST]
+          AllowHeaders: [Content-Type, X-Admin-Token]
+      Events:
+        Schedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: !Ref ScheduleExpression
+            Input: '{"source": "schedule"}'
+
+Outputs:
+  FrontendUrl:
+    Description: CloudFront URL of the map
+    Value: !Sub "https://${Distribution.DomainName}"
+  AdminUrl:
+    Description: Admin page
+    Value: !Sub "https://${Distribution.DomainName}/admin.html"
+  CollectorUrl:
+    Description: Function URL to trigger a data refresh (POST with X-Admin-Token)
+    Value: !GetAtt CollectorFunctionUrl.FunctionUrl
+  SiteBucketName:
+    Value: !Ref SiteBucket
+  DistributionId:
+    Value: !Ref Distribution

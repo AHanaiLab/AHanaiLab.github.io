@@ -1,0 +1,4 @@
+.admin_token
+.aws-sam/
+__pycache__/
+*.pyc
