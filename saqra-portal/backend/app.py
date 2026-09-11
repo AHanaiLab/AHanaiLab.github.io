@@ -247,17 +247,18 @@ ICF（国際生活機能分類, WHO 2001）の枠組みを使い、入力され�
 - 医療上の判断を促す表現（治療の推奨など）はしない。
 - 各ICF領域は最大3項目。該当なしは空配列。
 - 全体で簡潔に（各テキストは1〜2文）。
+- evidence は、その項目を選んだ根拠となる入力テキストの一節を **原文のまま一字一句** 抜き出す（要約・言い換え禁止、15語以内、英語入力なら英語のまま）。該当箇所がなければ空文字。
 
 必ず次のJSONのみを出力（前後の説明・コードフェンス禁止）:
 {
   "plain_summary": "この研究が何を調べ、何が分かったかを2文で（やさしい日本語）",
   "who_benefits": "この研究で暮らしが変わりうる人（例: 治療後に仕事に戻る人、家族）",
   "domains": {
-    "body_functions":       [{"code": "b***", "label": "ICF名称", "now": "いまの困りごと", "future": "50年後の暮らし"}],
-    "activities":           [{"code": "d***", "label": "ICF名称", "now": "…", "future": "…"}],
-    "participation":        [{"code": "d***", "label": "ICF名称", "now": "…", "future": "…"}],
-    "environmental_factors":[{"code": "e***", "label": "ICF名称", "now": "…", "future": "…"}],
-    "personal_factors":     [{"label": "内容", "now": "…", "future": "…"}]
+    "body_functions":       [{"code": "b***", "label": "ICF名称", "evidence": "入力からの原文引用", "now": "いまの困りごと", "future": "50年後の暮らし"}],
+    "activities":           [{"code": "d***", "label": "ICF名称", "evidence": "…", "now": "…", "future": "…"}],
+    "participation":        [{"code": "d***", "label": "ICF名称", "evidence": "…", "now": "…", "future": "…"}],
+    "environmental_factors":[{"code": "e***", "label": "ICF名称", "evidence": "…", "now": "…", "future": "…"}],
+    "personal_factors":     [{"label": "内容", "evidence": "…", "now": "…", "future": "…"}]
   },
   "day_in_2076": "50年後のある一日の情景を、当事者の目線で3〜4文の物語として",
   "open_questions": ["この未来に近づくために、まだ研究が必要なこと（1〜3個、短く）"]
@@ -270,7 +271,7 @@ def icf_future(req: ICFRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="text is required")
     user = f"題名: {req.title}\n\n{req.text}" if req.title else req.text
-    parsed = _ask_claude_json(ICF_FUTURE_SYSTEM, user[:12000], max_tokens=2000)
+    parsed = _ask_claude_json(ICF_FUTURE_SYSTEM, user[:12000], max_tokens=2600)
     domains = parsed.get("domains", {}) or {}
     return {
         "plain_summary": parsed.get("plain_summary", ""),

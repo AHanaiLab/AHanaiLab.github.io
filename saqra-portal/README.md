@@ -32,10 +32,22 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 ハッカソン参加者向けの改造手順は `frontend/guide.html`（デプロイ後は `<CloudFront URL>/guide.html`）にあります。
 ローカルに保存した `index.html` はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
 
+## AIの内部状況を可視化する2つの仕掛け
+
+「ICF 50年後翻訳」の結果パネルには、AIがブラックボックスのまま答えを返すのではなく、
+その途中経過を覗けるようにする2つの可視化機能があります（`frontend/index.html` に実装、追加の依存ライブラリなし）。
+
+| 機能 | 何をするか | 実装 |
+|---|---|---|
+| 🔎 **Jacobianレンズ** | 各ICF項目の「いま／50年後」の判断が、入力文（抄録・自分の言葉）のどの一節に基づくかをハイライト表示する。項目と原文ハイライトはマウスオーバー／クリックで相互に連動する。入力に対する出力の「感度」を疑似的に可視化する試み | バックエンド `icf_future` のプロンプトに `evidence`（原文からの逐語引用）フィールドを追加し、フロントエンドの `buildLens()` が引用文を原文中から検索してハイライトHTMLを生成する |
+| 🧠 **Second Brain** | 「ICF 50年後翻訳」を実行するたびに、AIが見つけたICF項目（概念）どうしのつながりを蓄積し、力学モデル（簡易フォースレイアウト）でノードグラフとして描画する。同じ概念が複数の研究にまたがって出てくるほど、グラフの中心に育っていく | `addToBrain()` が結果を `localStorage`（ブラウザ内のみ、外部送信なし）に蓄積し、`layoutBrain()` / `drawBrain()` が Canvas 2D に描画する |
+
+どちらも既存の `/api/icf/future` レスポンスの拡張（`evidence` フィールド）だけで実現しており、新しい依存関係やAPIエンドポイントは追加していません。
+
 ## API エンドポイント
 
 - `GET /api/pubmed/search?q=<クエリ>&retmax=10` — PubMed（esearch + efetch、抄録付き）。日本語クエリは Bedrock で英訳してから検索
-- `POST /api/icf/future` — **ICF 50年後翻訳**。リクエスト: `{"text": "...", "title": "..."}`。レスポンス: `{plain_summary, who_benefits, domains{body_functions, activities, participation, environmental_factors, personal_factors}[{code,label,now,future}], day_in_2076, open_questions}`
+- `POST /api/icf/future` — **ICF 50年後翻訳**。リクエスト: `{"text": "...", "title": "..."}`。レスポンス: `{plain_summary, who_benefits, domains{body_functions, activities, participation, environmental_factors, personal_factors}[{code,label,evidence,now,future}], day_in_2076, open_questions}`（`evidence` は入力文からの逐語引用。Jacobianレンズのハイライトに使用）
 - `POST /api/icf/translate` — ICF 分類のみ。レスポンス: `{body_functions, activities, participation, environmental_factors, personal_factors, related_categories}`
 - `GET /api/rmap/search?q=<クエリ>` — researchmap API プロキシ（`q` 以外のクエリパラメータはそのまま転送）
 - `GET /api/amed/search?q=<クエリ>` — AMEDfind 取得。**`AmedSearchUrl` パラメータ設定までは 501 を返します**（後述）

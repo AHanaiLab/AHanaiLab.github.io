@@ -16,6 +16,13 @@
     * 検索結果のカードは renderResults() が、50年後翻訳の表示は renderFuture() が作っています
     * API の呼び出し先は API_BASE。ローカルで開いたコピーでもそのまま動きます
     * このファイルをまるごと AI に貼って「〇〇を変えて」と頼むのが一番早い方法です
+
+  AIの内部状況を「見える化」する2つの仕掛け:
+    * 🔎 Jacobianレンズ（buildLens）: AIが各ICF項目をなぜそう判断したか、根拠となる入力文の一節を
+      ハイライトして見せる。「入力のどこが効いたか」を可視化する疑似的な感度分析
+    * 🧠 Second Brain（addToBrain / renderBrain）: 「ICF 50年後翻訳」を重ねるたびに、AIが見つけた
+      概念どうしのつながりを localStorage に蓄積し、力学モデルでノードグラフとして描く。
+      外部送信なし・このブラウザだけで育つ知識グラフ
   ============================================================================
 -->
 <style>
@@ -34,6 +41,12 @@
     --danger: #B3261E;
     --radius: 14px;
     --shadow: 0 1px 2px rgba(27,42,47,.06), 0 8px 24px -12px rgba(27,42,47,.18);
+    /* ICF 5領域のカテゴリカルカラー（Jacobianレンズ / Second Brain 共通） */
+    --dom-1: #2a78d6; /* 心身機能・身体構造 */
+    --dom-2: #eb6834; /* 活動 */
+    --dom-3: #1baf7a; /* 参加 */
+    --dom-4: #4a3aa7; /* 環境因子 */
+    --dom-5: #e34948; /* 個人因子 */
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -41,12 +54,14 @@
       --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8;
       --line: #2C3D44; --accent: #4CC3C0; --accent-ink: #062A2A; --future: #F2B33D; --future-bg: #2E2410;
       --future-ink: #FFE1A6; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark;
+      --dom-1: #3987e5; --dom-2: #d95926; --dom-3: #199e70; --dom-4: #9085e9; --dom-5: #e66767;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0F191C; --surface: #172329; --surface-2: #1F2E35; --ink: #E4EEF0; --ink-2: #9FB2B8;
     --line: #2C3D44; --accent: #4CC3C0; --accent-ink: #062A2A; --future: #F2B33D; --future-bg: #2E2410;
     --future-ink: #FFE1A6; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6); color-scheme: dark;
+    --dom-1: #3987e5; --dom-2: #d95926; --dom-3: #199e70; --dom-4: #9085e9; --dom-5: #e66767;
   }
 
   * { box-sizing: border-box; }
@@ -135,15 +150,28 @@
   .domain { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .domain h4 {
     margin: 0; padding: .45rem .8rem; font-size: .8rem; letter-spacing: .06em; background: var(--surface-2); color: var(--ink-2);
-    font-weight: 700;
+    font-weight: 700; display: flex; align-items: center; gap: .4rem;
   }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--line); }
+  .swatch { width: .65em; height: .65em; border-radius: 3px; flex: none; display: inline-block; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid var(--line); position: relative; box-shadow: inset 3px 0 0 var(--dom-color, transparent); transition: outline-color .15s; }
+  .row[data-ev] { cursor: pointer; }
+  .row.active { outline: 2px solid var(--dom-color, var(--accent)); outline-offset: -2px; border-radius: 4px; }
   .row > div { padding: .6rem .8rem; font-size: .9rem; }
   .row .now { color: var(--ink-2); }
   .row .fut { background: var(--future-bg); color: var(--future-ink); }
   .row .lbl { display: block; font-size: .72rem; letter-spacing: .06em; margin-bottom: .15rem; }
   .row .lbl .code { font-family: "IBM Plex Mono", monospace; margin-right: .35rem; }
   @media (max-width: 560px) { .row { grid-template-columns: 1fr; } .row .fut { border-top: 1px dashed var(--future); } }
+
+  /* ---- Jacobian レンズ（AIの判断根拠のハイライト） ---- */
+  .lens { margin-top: .7rem; border: 1px dashed var(--line); border-radius: 10px; padding: .8rem .9rem; background: var(--surface-2); }
+  .lens .hint { margin: 0 0 .5rem; font-size: .8rem; color: var(--ink-2); }
+  .lens .src { margin: 0; font-size: .88rem; line-height: 2; white-space: pre-wrap; }
+  .lens mark {
+    background: color-mix(in srgb, var(--dom-color) 32%, transparent); color: inherit; border-radius: 3px;
+    padding: .02rem .15rem; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+  .lens mark.active { background: color-mix(in srgb, var(--dom-color) 60%, transparent); outline: 2px solid var(--dom-color); outline-offset: 1px; }
   .story {
     background: var(--future-bg); color: var(--future-ink); border-radius: 10px; padding: .9rem 1rem; font-size: .95rem; line-height: 1.8;
     border-left: 4px solid var(--future);
@@ -155,10 +183,25 @@
   /* ---- 自分の言葉から / その他の検索 ---- */
   details { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
   summary { cursor: pointer; font-family: "Zen Kaku Gothic New", sans-serif; font-weight: 700; font-size: 1.05rem; }
+  .hint { font-size: .85rem; color: var(--ink-2); margin: .4rem 0 0; }
   textarea { width: 100%; min-height: 7rem; margin-top: .6rem; padding: .7rem .9rem; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
   .subsearch { display: flex; gap: .5rem; margin-top: .6rem; }
   .subsearch input { flex: 1; padding: .55rem .8rem; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1rem; }
   pre.raw { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .8rem; overflow-x: auto; font-size: .78rem; }
+
+  /* ---- Second Brain（育つ知識グラフ） ---- */
+  .brain-wrap { margin-top: .7rem; }
+  .brain-stats { font-size: .85rem; color: var(--ink-2); margin: 0 0 .6rem; }
+  .brain-canvas-box { position: relative; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+  #brain-canvas { display: block; width: 100%; height: 340px; }
+  .brain-tip {
+    position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem;
+    padding: .3rem .55rem; border-radius: 6px; transform: translate(-50%, -135%); white-space: nowrap; opacity: 0;
+    transition: opacity .1s; z-index: 5; max-width: 220px; text-overflow: ellipsis; overflow: hidden;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .78rem; color: var(--ink-2); margin: .6rem 0 0; }
+  .legend span { display: inline-flex; align-items: center; gap: .35rem; }
+  .brain-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
 
   footer { max-width: 760px; margin: 0 auto; padding: 0 1rem 2rem; font-size: .8rem; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
 </style>
@@ -211,6 +254,23 @@
     <div class="status"></div><div class="results"></div>
     <form class="subsearch" data-api="amed"><input type="search" placeholder="研究課題キーワード（AMED）" required><button class="btn ghost" type="submit">探す</button></form>
     <div class="status"></div><div class="results"></div>
+  </details>
+
+  <details id="brain">
+    <summary id="brain-summary">🧠 Second Brain（AIの中に育つ知識グラフ）</summary>
+    <p class="hint">「ICF 50年後翻訳」をするたびに、AIが見つけた概念どうしのつながりがここに育っていきます。データはあなたのブラウザだけに保存され、外部には送信されません。</p>
+    <div class="brain-wrap">
+      <div class="brain-stats" id="brain-stats">まだ何も育っていません。研究や自分の言葉を「ICF 50年後翻訳」すると、概念のつながりが増えていきます。</div>
+      <div class="brain-canvas-box">
+        <canvas id="brain-canvas" aria-label="これまでの翻訳から育った概念のつながりを示すグラフ"></canvas>
+        <div class="brain-tip" id="brain-tip"></div>
+      </div>
+      <div class="legend" id="brain-legend"></div>
+      <div class="brain-actions">
+        <button class="linkish" id="brain-relayout" type="button">🔄 配置しなおす</button>
+        <button class="linkish" id="brain-clear" type="button">🗑 リセット</button>
+      </div>
+    </div>
   </details>
 </main>
 
@@ -304,41 +364,120 @@ async function runFuture(btn, slot, payload) {
   slot.innerHTML = '<div class="status">AIが50年後の暮らしを考えています…（15〜25秒ほど）</div>';
   try {
     const d = await api('/icf/future', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    slot.innerHTML = renderFuture(d);
+    slot.innerHTML = renderFuture(d, payload.text, payload.title);
+    addToBrain(payload.title, d);
   } catch (err) {
     slot.innerHTML = `<div class="status error">翻訳できませんでした: ${esc(err.message)}</div>`;
   } finally { btn.disabled = false; }
 }
 
 const DOMAINS = [
-  ['body_functions', '心身機能・身体構造'],
-  ['activities', '活動（できること）'],
-  ['participation', '参加（社会とのつながり）'],
-  ['environmental_factors', '環境因子（まわりの支え・制度・道具）'],
-  ['personal_factors', '個人因子'],
+  ['body_functions', '心身機能・身体構造', 'dom-1'],
+  ['activities', '活動（できること）', 'dom-2'],
+  ['participation', '参加（社会とのつながり）', 'dom-3'],
+  ['environmental_factors', '環境因子（まわりの支え・制度・道具）', 'dom-4'],
+  ['personal_factors', '個人因子', 'dom-5'],
 ];
 
-function renderFuture(d) {
-  const domains = DOMAINS.map(([key, label]) => {
+// ---- Jacobianレンズ: AIの出力（各ICF項目）が、入力文のどの一節に基づくかをハイライトする
+function buildLens(sourceText, quotes) {
+  if (!sourceText || !quotes.length) return { html: '', matched: 0 };
+  const lower = sourceText.toLowerCase();
+  const spans = [];
+  quotes.forEach(q => {
+    if (q.text.length < 4) return; // 短すぎる引用は誤ハイライトのもとなので除外
+    const i = lower.indexOf(q.text.toLowerCase());
+    if (i !== -1) spans.push({ start: i, end: i + q.text.length, id: q.id, colorVar: q.colorVar, label: q.label });
+  });
+  spans.sort((a, b) => a.start - b.start);
+  const clean = [];
+  let lastEnd = -1;
+  spans.forEach(s => { if (s.start >= lastEnd) { clean.push(s); lastEnd = s.end; } });
+  let html = '', pos = 0;
+  clean.forEach(s => {
+    html += esc(sourceText.slice(pos, s.start));
+    html += `<mark data-ev="${s.id}" style="--dom-color:var(--${s.colorVar})" title="${esc(s.label)}">${esc(sourceText.slice(s.start, s.end))}</mark>`;
+    pos = s.end;
+  });
+  html += esc(sourceText.slice(pos));
+  return { html, matched: clean.length };
+}
+
+function renderFuture(d, sourceText, sourceLabel) {
+  let evSeq = 0;
+  const quotes = [];
+  const domains = DOMAINS.map(([key, label, colorVar]) => {
     const items = (d.domains && d.domains[key]) || [];
     if (!items.length) return '';
-    return `<div class="domain"><h4>${label}</h4>${items.map(it => `
-      <div class="row">
+    const rows = items.map(it => {
+      const ev = (it.evidence || '').trim();
+      let evAttr = '';
+      if (ev) {
+        const id = evSeq++;
+        quotes.push({ id, text: ev, colorVar, label: it.label || it.code || label });
+        evAttr = ` data-ev="${id}"`;
+      }
+      return `
+      <div class="row"${evAttr} style="--dom-color:var(--${colorVar})">
         <div class="now"><span class="lbl">${it.code ? `<span class="code">${esc(it.code)}</span>` : ''}${esc(it.label || '')} · いま</span>${esc(it.now || '')}</div>
         <div class="fut"><span class="lbl">50年後</span>${esc(it.future || '')}</div>
-      </div>`).join('')}</div>`;
+      </div>`;
+    }).join('');
+    return `<div class="domain"><h4><span class="swatch" style="background:var(--${colorVar})"></span>${esc(label)}</h4>${rows}</div>`;
   }).join('');
   const qs = (d.open_questions || []).length
     ? `<div><div class="meta">この未来に近づくために、まだ分かっていないこと</div><ul class="questions">${d.open_questions.map(q => `<li>${esc(q)}</li>`).join('')}</ul></div>` : '';
+
+  const lens = buildLens(sourceText, quotes);
+  const lensBtn = lens.matched
+    ? `<button class="linkish" type="button" data-lens="toggle" data-count="${lens.matched}">🔎 Jacobianレンズ：AIの根拠を見る（${lens.matched}）</button>` : '';
+  const lensPanel = lens.matched
+    ? `<div class="lens" hidden><p class="hint">色つきの下線が、各ICF項目の判断のもとになった原文の一節です。項目または下線にマウスを重ねる（タップする）と、対応する箇所が光ります。</p><p class="src">${lens.html}</p></div>`
+    : '';
+
   return `<div class="future-panel">
     <div class="lead"><b>この研究は…</b> ${esc(d.plain_summary)}</div>
     ${d.who_benefits ? `<div class="who">暮らしが変わりうる人: ${esc(d.who_benefits)}</div>` : ''}
     ${domains}
     ${d.day_in_2076 ? `<div class="story"><b>2076年のある一日</b>${esc(d.day_in_2076)}</div>` : ''}
     ${qs}
+    ${lensBtn ? `<div class="actions">${lensBtn}</div>` : ''}
+    ${lensPanel}
     <div class="caution">AIによる想像を含む翻訳です。医療上の判断は主治医にご相談ください。</div>
   </div>`;
 }
+
+// Jacobianレンズの開閉と、項目⇔原文ハイライトの相互連動
+document.addEventListener('click', e => {
+  const lensBtn = e.target.closest('button[data-lens="toggle"]');
+  if (lensBtn) {
+    const panel = lensBtn.closest('.future-panel');
+    const lensEl = panel.querySelector('.lens');
+    const wasHidden = lensEl.hasAttribute('hidden');
+    if (wasHidden) lensEl.removeAttribute('hidden'); else lensEl.setAttribute('hidden', '');
+    lensBtn.textContent = `🔎 Jacobianレンズ：AIの根拠を${wasHidden ? '隠す' : '見る'}（${lensBtn.dataset.count}）`;
+    return;
+  }
+  const mark = e.target.closest('.lens mark[data-ev]');
+  if (mark) {
+    const panel = mark.closest('.future-panel');
+    const row = panel && panel.querySelector(`.row[data-ev="${mark.dataset.ev}"]`);
+    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); flashActive(row); }
+  }
+});
+document.addEventListener('mouseover', e => {
+  const row = e.target.closest('.row[data-ev]'); if (!row) return;
+  const panel = row.closest('.future-panel');
+  const mark = panel && panel.querySelector(`mark[data-ev="${row.dataset.ev}"]`);
+  row.classList.add('active'); if (mark) mark.classList.add('active');
+});
+document.addEventListener('mouseout', e => {
+  const row = e.target.closest('.row[data-ev]'); if (!row) return;
+  const panel = row.closest('.future-panel');
+  const mark = panel && panel.querySelector(`mark[data-ev="${row.dataset.ev}"]`);
+  row.classList.remove('active'); if (mark) mark.classList.remove('active');
+});
+function flashActive(el) { el.classList.add('active'); setTimeout(() => el.classList.remove('active'), 1200); }
 
 document.getElementById('own-btn').addEventListener('click', async () => {
   const text = document.getElementById('own-text').value.trim();
@@ -381,6 +520,217 @@ document.getElementById('api-cfg').addEventListener('click', () => {
   try { v.trim() ? localStorage.setItem('saqra_api_base', v.trim()) : localStorage.removeItem('saqra_api_base'); } catch (_) {}
   location.reload();
 });
+
+// ---------------------------------------------------------------- Second Brain（育つ知識グラフ）
+// 「ICF 50年後翻訳」を重ねるたびに、AIが見つけた概念（ICF項目）どうしのつながりをこのブラウザだけに蓄積し、
+// ノード=概念／エッジ=つながり の簡易フォースレイアウトで描く。外部送信なし（localStorageのみ）。
+const BRAIN_KEY = 'saqra_second_brain_v1';
+const BRAIN_MAX_TOPICS = 14;
+
+function loadBrain() {
+  try {
+    const v = JSON.parse(localStorage.getItem(BRAIN_KEY));
+    if (v && v.nodes && v.edges && v.topics) return v;
+  } catch (_) {}
+  return { topics: [], nodes: {}, edges: {} };
+}
+function saveBrain(brain) { try { localStorage.setItem(BRAIN_KEY, JSON.stringify(brain)); } catch (_) {} }
+
+function addToBrain(sourceTitle, d) {
+  const brain = loadBrain();
+  const label = (sourceTitle || '自分の言葉').trim().slice(0, 60) || '自分の言葉';
+  const topicId = 'topic:' + label;
+  if (!brain.nodes[topicId]) brain.nodes[topicId] = { id: topicId, label, kind: 'topic', count: 0 };
+  brain.nodes[topicId].count++;
+  if (!brain.topics.includes(topicId)) brain.topics.push(topicId);
+
+  const conceptIds = [];
+  DOMAINS.forEach(([key, , colorVar]) => {
+    ((d.domains && d.domains[key]) || []).forEach(it => {
+      const name = (it.label || it.code || '').trim();
+      if (!name) return;
+      const cid = 'concept:' + key + ':' + name;
+      if (!brain.nodes[cid]) brain.nodes[cid] = { id: cid, label: name, kind: 'concept', domainColor: colorVar, count: 0 };
+      brain.nodes[cid].count++;
+      conceptIds.push(cid);
+      const ek = [topicId, cid].sort().join('~');
+      brain.edges[ek] = (brain.edges[ek] || 0) + 1;
+    });
+  });
+  // 同じ研究の中で一緒に出てきた概念どうしも、弱くつなぐ（連想）
+  for (let i = 0; i < conceptIds.length; i++) {
+    for (let j = i + 1; j < conceptIds.length; j++) {
+      const ek = [conceptIds[i], conceptIds[j]].sort().join('~');
+      brain.edges[ek] = (brain.edges[ek] || 0) + 0.4;
+    }
+  }
+  // 増えすぎ防止: 古いトピックとそれに紐づくエッジを間引く
+  while (brain.topics.length > BRAIN_MAX_TOPICS) {
+    const old = brain.topics.shift();
+    delete brain.nodes[old];
+    Object.keys(brain.edges).forEach(k => { if (k.split('~').includes(old)) delete brain.edges[k]; });
+  }
+  // どのトピックともつながらなくなった孤立概念を掃除
+  const linked = new Set();
+  Object.keys(brain.edges).forEach(k => k.split('~').forEach(id => linked.add(id)));
+  Object.keys(brain.nodes).forEach(id => { if (brain.nodes[id].kind === 'concept' && !linked.has(id)) delete brain.nodes[id]; });
+
+  saveBrain(brain);
+  updateBrainSummary(brain);
+  const brainDetails = document.getElementById('brain');
+  if (brainDetails.open) renderBrain();
+}
+
+function updateBrainSummary(brain) {
+  brain = brain || loadBrain();
+  const conceptCount = Object.values(brain.nodes).filter(n => n.kind === 'concept').length;
+  document.getElementById('brain-summary').textContent = conceptCount
+    ? `🧠 Second Brain（${brain.topics.length}件から育った${conceptCount}個の概念）`
+    : '🧠 Second Brain（AIの中に育つ知識グラフ）';
+}
+
+function layoutBrain(brain, w, h) {
+  const nodes = Object.values(brain.nodes).map(n => ({
+    ...n, x: w / 2 + (Math.random() - 0.5) * w * 0.7, y: h / 2 + (Math.random() - 0.5) * h * 0.7, vx: 0, vy: 0,
+  }));
+  const idx = {}; nodes.forEach((n, i) => { idx[n.id] = i; });
+  const edges = Object.entries(brain.edges)
+    .map(([k, weight]) => { const [a, b] = k.split('~'); return { a: idx[a], b: idx[b], weight }; })
+    .filter(e => e.a !== undefined && e.b !== undefined);
+
+  for (let it = 0; it < 260; it++) {
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        let d2 = dx * dx + dy * dy; if (d2 < 1) d2 = 1;
+        const f = 1800 / d2, dist = Math.sqrt(d2);
+        const fx = (dx / dist) * f, fy = (dy / dist) * f;
+        nodes[i].vx += fx; nodes[i].vy += fy; nodes[j].vx -= fx; nodes[j].vy -= fy;
+      }
+    }
+    edges.forEach(e => {
+      const A = nodes[e.a], B = nodes[e.b];
+      const dx = B.x - A.x, dy = B.y - A.y;
+      const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+      const f = (dist - 70) * 0.02 * Math.min(2, e.weight);
+      const fx = (dx / dist) * f, fy = (dy / dist) * f;
+      A.vx += fx; A.vy += fy; B.vx -= fx; B.vy -= fy;
+    });
+    nodes.forEach(n => {
+      n.vx += (w / 2 - n.x) * 0.002; n.vy += (h / 2 - n.y) * 0.002;
+      n.vx *= 0.85; n.vy *= 0.85; n.x += n.vx; n.y += n.vy;
+      n.x = Math.max(16, Math.min(w - 16, n.x)); n.y = Math.max(16, Math.min(h - 16, n.y));
+    });
+  }
+  return { nodes, edges, hovered: null };
+}
+
+function drawBrain(canvas, sim) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.max(1, rect.width * dpr); canvas.height = Math.max(1, rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+
+  const css = getComputedStyle(document.documentElement);
+  const v = name => css.getPropertyValue(name).trim();
+  const lineColor = v('--line'), inkColor = v('--ink'), ink2 = v('--ink-2'), accent = v('--accent'), surface = v('--surface');
+
+  ctx.strokeStyle = lineColor; ctx.lineWidth = 1;
+  sim.edges.forEach(e => {
+    const A = sim.nodes[e.a], B = sim.nodes[e.b];
+    ctx.globalAlpha = Math.min(0.6, 0.15 + e.weight * 0.08);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  sim.nodes.forEach(n => {
+    const isTopic = n.kind === 'topic';
+    n._r = isTopic ? 7 + Math.min(6, n.count) : 4 + Math.min(5, n.count);
+    ctx.beginPath(); ctx.arc(n.x, n.y, n._r, 0, Math.PI * 2);
+    ctx.fillStyle = isTopic ? accent : v('--' + n.domainColor);
+    ctx.fill();
+    if (isTopic) { ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke(); }
+  });
+
+  ctx.font = '11px "Noto Sans JP", sans-serif'; ctx.textBaseline = 'middle';
+  sim.nodes.forEach(n => {
+    if (n.kind !== 'topic' && n.count < 2 && n !== sim.hovered) return;
+    ctx.fillStyle = n.kind === 'topic' ? inkColor : ink2;
+    ctx.fillText(n.label.length > 14 ? n.label.slice(0, 13) + '…' : n.label, n.x + n._r + 4, n.y);
+  });
+
+  if (sim.hovered) {
+    const n = sim.hovered;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n._r + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = n.kind === 'topic' ? accent : v('--' + n.domainColor);
+    ctx.lineWidth = 2; ctx.stroke();
+  }
+}
+
+let currentBrainSim = null;
+function renderBrain() {
+  const brain = loadBrain();
+  const canvas = document.getElementById('brain-canvas');
+  const statsEl = document.getElementById('brain-stats');
+  const conceptCount = Object.values(brain.nodes).filter(n => n.kind === 'concept').length;
+  const edgeCount = Object.keys(brain.edges).length;
+  statsEl.textContent = brain.topics.length
+    ? `${brain.topics.length}件の研究・言葉から、${conceptCount}個の概念、${edgeCount}本のつながりが育ちました。ノードにマウスを重ねると詳細が見られます。`
+    : 'まだ何も育っていません。研究や自分の言葉を「ICF 50年後翻訳」すると、概念のつながりが増えていきます。';
+  if (!brain.topics.length) {
+    currentBrainSim = null;
+    const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  currentBrainSim = layoutBrain(brain, Math.max(200, rect.width), 340);
+  drawBrain(canvas, currentBrainSim);
+}
+
+(() => {
+  const canvas = document.getElementById('brain-canvas');
+  const tip = document.getElementById('brain-tip');
+  canvas.addEventListener('mousemove', e => {
+    if (!currentBrainSim) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    let hit = null, best = 14;
+    currentBrainSim.nodes.forEach(n => {
+      const d = Math.hypot(n.x - mx, n.y - my);
+      if (d < (n._r || 5) + 6 && d < best) { hit = n; best = d; }
+    });
+    if (hit !== currentBrainSim.hovered) { currentBrainSim.hovered = hit; drawBrain(canvas, currentBrainSim); }
+    if (hit) {
+      tip.style.opacity = '1'; tip.style.left = mx + 'px'; tip.style.top = my + 'px';
+      tip.textContent = `${hit.kind === 'topic' ? '🔍' : '💡'} ${hit.label}（${Math.round(hit.count)}回）`;
+    } else { tip.style.opacity = '0'; }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    if (currentBrainSim) { currentBrainSim.hovered = null; drawBrain(canvas, currentBrainSim); }
+    tip.style.opacity = '0';
+  });
+})();
+
+document.getElementById('brain-legend').innerHTML =
+  `<span><span class="swatch" style="background:var(--accent)"></span>研究・言葉のテーマ</span>` +
+  DOMAINS.map(([, label, colorVar]) => `<span><span class="swatch" style="background:var(--${colorVar})"></span>${esc(label)}</span>`).join('');
+
+document.getElementById('brain').addEventListener('toggle', function () { if (this.open) renderBrain(); });
+document.getElementById('brain-relayout').addEventListener('click', renderBrain);
+document.getElementById('brain-clear').addEventListener('click', () => {
+  if (!confirm('Second Brain のデータを消去します。よろしいですか？')) return;
+  try { localStorage.removeItem(BRAIN_KEY); } catch (_) {}
+  updateBrainSummary(); renderBrain();
+});
+let brainResizeT = null;
+window.addEventListener('resize', () => {
+  clearTimeout(brainResizeT);
+  brainResizeT = setTimeout(() => { if (document.getElementById('brain').open) renderBrain(); }, 200);
+});
+
+updateBrainSummary();
 </script>
 </body>
 </html>
