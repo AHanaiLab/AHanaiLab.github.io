@@ -3,341 +3,179 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>研究開発マップ | 全がん連 × J-SUPPORT × SaQRA</title>
+<title>SaQRA 研究開発マップ</title>
 <meta name="description" content="全がん連 × J-SUPPORT × SaQRA 研究開発マップ（叩き台）。がんサバイバーシップの困りごと30項目ごとに、公的研究費による研究、日本・海外のガイドライン、最新の研究動向（PubMed／Minds／AMED）を一覧します。">
 <!--
-  研究開発マップ（叩き台）— https://saqra.jp/kaihatsumap/index.html の構成・配色に準拠した静的1ページ。
-  外部ライブラリ・Webフォント・AI は使いません。
-  data/map.json        マップ本体（30カテゴリ・介入と公的研究費研究・ガイドライン・項目色）。管理者が更新する元データ
+  研究開発マップ（叩き台）— 静的1ページ。外部ライブラリ・Webフォント・AI は使いません。
+  内容は https://saqra.jp/kaihatsumap/index.html に準拠（data/map.json）。
+  data/map.json        マップ本体（30カテゴリ・介入と公的研究費研究・ガイドライン）。管理者が更新する元データ
   data/pubmed.json     最新論文（収集Lambdaが週1回更新）
   data/guidelines.json ガイドライン（PubMed guideline[pt] と Minds）
   data/amed.json       AMED 研究開発課題
   data/status.json     最終更新日時
 -->
 <style>
-  :root { --orange:#ed8d02; --red:#ed4947; --ink:#111; --gray:#767676; --gray2:#a8b6ba; --line:#d2d2d7; --cream:#fefbf2; --peach:#fcf0df; --muted:#666; }
+  :root { --green:#2e6b5e; --green-d:#255649; --bg:#f5f6f7; --card:#fff; --line:#dfe3e6; --ink:#1f2933; --muted:#6b7680; --head:#eef2f1; --red:#c9362f; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; scroll-padding-top:12px; }
-  body { font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif; background:#fff; color:var(--ink); line-height:1.8; font-size:15px; }
-  a { color:var(--ink); }
-  .wrapper { max-width:1000px; margin:0 auto; padding:0 16px; }
-  .spOnly { display:none; }
-  sup { font-size:.65em; vertical-align:super; }
+  body { font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif; background:var(--bg); color:var(--ink); line-height:1.7; font-size:15px; }
+  a { color:var(--green); }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 16px; }
 
-  /* ---- site bar ---- */
-  .siteBar { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
-  .siteBar .logo { font-weight:900; font-size:1.5em; letter-spacing:.02em; text-decoration:none; color:var(--orange); display:flex; align-items:center; gap:8px; }
-  .siteBar .logo i { display:inline-block; width:26px; height:26px; border-radius:50%; background:conic-gradient(#288c41 0 25%, #ed8d02 0 50%, #86b929 0 75%, #f1b999 0); }
-  .siteBar .logo small { font-size:.5em; font-weight:700; color:var(--muted); letter-spacing:0; }
-  .siteBar .draft { font-size:.75em; font-weight:700; color:#fff; background:var(--gray); border-radius:14px; padding:2px 12px; letter-spacing:.06em; }
+  /* ---- header ---- */
+  .bar { background:var(--green); color:#fff; padding:22px 0 20px; }
+  .bar h1 { font-size:1.5em; font-weight:700; line-height:1.3; }
+  .bar p { font-size:.9em; opacity:.92; margin-top:4px; }
+  .bar .draft { display:inline-block; margin-left:10px; font-size:.6em; vertical-align:middle; border:1px solid rgba(255,255,255,.7); border-radius:12px; padding:0 10px; font-weight:400; }
 
-  /* ---- top ---- */
-  #topImage { text-align:center; padding:6px 0 26px; position:relative; }
-  .btn_english { text-align:right; }
-  .btn_english a { display:inline-block; border:2px solid var(--orange); color:var(--orange); border-radius:20px; padding:1px 16px 1px 12px; font-size:.8em; font-weight:700; text-decoration:none; }
-  .btn_english a::before { content:"› "; }
-  #topImage h1 .head { display:block; font-weight:700; }
-  #topImage h1 .sub01 { font-size:.95em; letter-spacing:.04em; }
-  #topImage h1 .head:not(.sub01):not(.sub02) { font-size:2.2em; line-height:1.3; margin:2px 0; }
-  #topImage h1 .sub02 { font-size:.95em; font-weight:400; }
-  .keyvisual { margin:22px auto 0; max-width:520px; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
-  .keyvisual i { display:block; aspect-ratio:1; border-radius:8px; transform:rotate(45deg) scale(.7); }
-  #topImage .catchcopy { margin:26px 0 12px; font-size:1.45em; font-weight:700; color:var(--orange); line-height:1.6; }
-  #topImage .leadtext { max-width:820px; margin:0 auto; text-align:left; font-size:.95em; }
-  .groupList { list-style:none; display:flex; flex-wrap:wrap; justify-content:center; gap:10px 28px; margin-top:22px; font-size:.9em; font-weight:700; }
-  .groupList li { padding:6px 0; }
-  .groupList li + li { border-left:1px solid var(--line); padding-left:28px; }
+  /* ---- controls ---- */
+  .controls { padding:18px 0 6px; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:7px 16px; font-size:.92em; cursor:pointer; text-decoration:none; line-height:1.4; }
+  .pill:hover { border-color:var(--green); }
+  .pill.on { background:var(--green); color:#fff; border-color:var(--green); }
+  .pill small { opacity:.6; margin-right:4px; }
+  .search { display:flex; gap:10px; margin-top:14px; }
+  .search input { flex:1; min-width:0; padding:13px 16px; border:1px solid var(--line); border-radius:10px; font-size:15px; background:var(--card); color:var(--ink); }
+  .search input:focus { outline:2px solid var(--green); border-color:var(--green); }
+  .search button { border:0; border-radius:10px; background:var(--green); color:#fff; font-weight:700; font-size:15px; padding:0 26px; cursor:pointer; }
+  .search button:hover { background:var(--green-d); }
+  .sub { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; margin-top:10px; font-size:.86em; color:var(--muted); }
+  .sub label { display:flex; align-items:center; gap:5px; cursor:pointer; }
+  .sub .count { margin-left:auto; }
 
-  /* ---- introduction ---- */
-  #introduction { background:var(--cream); border-radius:6px; padding:28px 26px; }
-  .introductionList { list-style:none; display:grid; gap:18px; }
-  .introductionList li { font-size:.92em; max-width:720px; }
-  .introductionList li:nth-child(2) { justify-self:end; }
-  .subHead { font-weight:700; color:var(--orange); margin-bottom:6px; font-size:1.15em; }
-  .introductionBox { margin-top:26px; background:var(--peach); border-radius:6px; padding:20px 24px; font-size:.92em; }
-  .introductionBox dl { display:grid; grid-template-columns:11em 1fr; gap:10px 16px; }
-  .introductionBox dt { font-weight:700; }
-  .list_point { list-style:none; padding-left:0; }
-  .list_point li { padding-left:1.1em; text-indent:-1.1em; }
-  .list_point li::before { content:"・"; }
-  .exList { list-style:none; margin-top:22px; font-size:.88em; }
-  .exList a { color:var(--red); }
-  .border { border:1px solid var(--line); border-radius:6px; padding:18px 22px; margin-top:22px; font-size:.9em; background:#fff; }
-  #introduction .border { border-color:var(--orange); }
-  .indent { list-style:none; font-size:.9em; margin-top:8px; }
-  .indent li { padding-left:1em; text-indent:-1em; }
+  /* ---- about ---- */
+  details.about { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-top:14px; font-size:.9em; }
+  details.about summary { cursor:pointer; padding:12px 16px; font-weight:700; color:var(--green); list-style:none; }
+  details.about summary::before { content:"＋ "; }
+  details.about[open] summary::before { content:"－ "; }
+  details.about .body { padding:0 18px 18px; }
+  details.about h3 { font-size:1em; margin:14px 0 4px; }
+  details.about dl { display:grid; grid-template-columns:11em 1fr; gap:6px 14px; }
+  details.about dt { font-weight:700; }
+  details.about ul { padding-left:1.3em; }
+  details.about .legend span { display:inline-block; margin-right:16px; }
+  details.about .note { color:var(--muted); font-size:.92em; margin-top:8px; }
 
-  /* ---- developmentMap ---- */
-  #developmentMap { padding:60px 0 10px; }
-  #developmentMap > h2.head { text-align:center; line-height:1.3; }
-  #developmentMap > h2.head span { display:block; }
-  #developmentMap > h2.head span:first-child { font-size:1.75em; font-weight:700; }
-  #developmentMap > h2.head .bars { display:flex; justify-content:center; gap:8px; margin:6px 0 8px; }
-  #developmentMap > h2.head .bars i { width:48px; height:6px; display:block; }
-  #developmentMap > h2.head span:last-child { font-size:1.9em; letter-spacing:.18em; font-weight:300; }
-  #developmentMap > .leadtext { text-align:center; margin-top:40px; font-size:1.05em; }
-  #developmentMap > .leadtext > span { font-size:1.35em; font-weight:700; }
-  #developmentMap > .leadtext b { font-size:2em; }
-  .update { text-align:right; font-size:.95em; font-weight:700; margin-top:30px; }
-  .howtoBox { border:1px solid var(--line); border-radius:6px; padding:18px 22px; margin-top:16px; font-size:.9em; }
-  .howtoBox .ex { color:var(--orange); font-weight:700; }
-  .legendRow { display:flex; flex-wrap:wrap; gap:6px 28px; margin:6px 0 10px; font-weight:700; }
-  .legendRow .red { color:var(--red); }
-  .legendRow .icon { display:inline-flex; align-items:center; gap:2px; }
-  .howtoBox table { margin-top:6px; }
-  .refBox { display:inline-block; border:1px solid var(--line); border-radius:6px; padding:10px 16px; margin-top:16px; font-size:.85em; line-height:1.6; }
-  .refBox b { display:block; font-size:1em; margin-bottom:2px; }
-  .Mapclick { font-size:1.15em; font-weight:700; margin-top:40px; }
-  #developmentMapNav { list-style:none; display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-top:12px; }
-  #developmentMapNav li a { position:relative; display:flex; align-items:center; justify-content:center; text-align:center; min-height:58px; padding:8px 12px 8px 22px; border-radius:6px; text-decoration:none; color:#fff; font-size:.88em; font-weight:700; line-height:1.3; background:var(--c, #999); }
-  #developmentMapNav li a:hover { filter:brightness(1.1); }
-  #developmentMapNav li a::before { content:attr(data-n); position:absolute; left:8px; top:3px; font-size:.8em; font-weight:700; }
-  #developmentMapNav li a i { font-style:normal; font-weight:400; }
+  /* ---- categories ---- */
+  .list { list-style:none; margin-top:18px; }
+  .cat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px 16px; margin-bottom:16px; }
+  .cat.hidden { display:none; }
+  .cat h2 { display:flex; align-items:center; gap:10px; font-size:1.2em; }
+  .cat h2 .num { flex:none; display:inline-flex; min-width:2em; height:2em; padding:0 6px; align-items:center; justify-content:center; border-radius:999px; background:var(--green); color:#fff; font-size:.75em; font-weight:700; }
+  .cat h2 .top { margin-left:auto; font-size:.7em; font-weight:400; color:var(--muted); text-decoration:none; }
+  .cat table { width:100%; border-collapse:collapse; font-size:.9em; margin-top:12px; }
+  .cat th, .cat td { border:1px solid var(--line); padding:8px 12px; vertical-align:top; text-align:left; }
+  .cat th { background:var(--head); font-size:.82em; font-weight:700; color:var(--muted); white-space:nowrap; }
+  .t1 th:first-child, .t1 td:first-child { width:22%; font-weight:700; }
+  .t2 { margin-top:0; border-top:0; font-size:.84em; }
+  .t2 td { color:#3c4650; }
+  .t3 th { width:50%; }
+  .t3 td p { margin-bottom:2px; }
+  .t3 ul, .cat ul.plain { list-style:none; }
+  .t3 li { padding-left:1em; text-indent:-1em; }
+  .t3 li::before { content:"・"; }
+  td.center { text-align:center; color:var(--muted); }
+  .cat a.study { color:var(--green); }
+  .tag { display:inline-block; margin-left:6px; font-size:.75em; padding:0 7px; border-radius:8px; background:#fdecea; color:var(--red); vertical-align:middle; white-space:nowrap; }
+  .cat .note { list-style:none; font-size:.82em; color:var(--muted); margin-top:6px; }
+  .cat .note li { padding-left:1em; text-indent:-1em; }
+  sup { font-size:.7em; }
 
-  .tools { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; margin:26px 0 6px; padding:10px 12px; background:var(--cream); border-radius:6px; }
-  .tools input { flex:1; min-width:200px; padding:8px 12px; border:1px solid var(--line); border-radius:6px; font-size:14px; background:#fff; color:var(--ink); }
-  .tools label { font-size:.85em; display:flex; align-items:center; gap:4px; }
-  .tools .count { font-size:.82em; color:var(--muted); margin-left:auto; }
-
-  /* ---- developmentList ---- */
-  .developmentList { list-style:none; margin-top:20px; }
-  .developmentList > li { margin-top:56px; }
-  .developmentList > li.hidden { display:none; }
-  .developmentList h2.head { display:flex; align-items:center; gap:12px; font-size:1.45em; font-weight:700; color:var(--c); }
-  .developmentList h2.head .num { flex:none; display:inline-flex; width:1.55em; height:1.55em; align-items:center; justify-content:center; border-radius:50%; background:var(--c); color:#fff; font-size:.9em; font-family:Arial,Helvetica,sans-serif; font-weight:400; }
-  .developmentList h2.head .top { margin-left:auto; font-size:.6em; font-weight:400; color:var(--muted); text-decoration:none; }
-  .tableContainer { margin-top:20px; }
-  .developmentList table { width:100%; border-collapse:collapse; font-size:.9em; background:#fff; }
-  .developmentList th, .developmentList td { border:1px solid var(--line); padding:8px 12px; vertical-align:middle; }
-  .developmentList th { font-weight:700; color:#fff; font-size:.8em; text-align:center; padding:4px 10px; }
-  .developmentTable01 th { background:var(--c); text-align:left; }
-  .developmentTable01 th:first-child, .developmentTable01 td:first-child { width:17%; }
-  .developmentTable01 td { font-size:1.05em; min-height:44px; }
-  .developmentTable01 td:first-child { text-align:center; }
-  .developmentTable02 { border-top:0; }
-  .developmentTable02 th { background:var(--gray2); }
-  .developmentTable02 th i { font-style:normal; font-weight:400; font-size:.9em; display:block; line-height:1.2; }
-  .developmentTable02 td { text-align:center; font-size:.92em; }
-  .developmentTable02 th:nth-child(1), .developmentTable02 td:nth-child(1) { width:20%; }
-  .developmentTable02 th:nth-child(2), .developmentTable02 td:nth-child(2) { width:20%; }
-  .developmentTable02 th:nth-child(3), .developmentTable02 td:nth-child(3) { width:20%; }
-  .developmentTable02 th:nth-child(4), .developmentTable02 td:nth-child(4) { width:20%; }
-  .developmentTable02 th:nth-child(5), .developmentTable02 td:nth-child(5) { width:20%; }
-  .developmentTable03 { margin-top:24px; }
-  .developmentTable03 th { background:var(--gray); width:50%; }
-  .developmentTable03 td { font-size:.9em; vertical-align:top; padding:10px 12px; }
-  .developmentTable03 td p { margin-bottom:2px; }
-  td.center { text-align:center; }
-  .achieved { color:var(--red); }
-  .linkin { color:var(--ink); }
-  .linkin::after { content:""; display:inline-block; width:.9em; height:.9em; margin-left:4px; vertical-align:-0.1em; background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23646464' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7'/><path d='M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'/></svg>"); }
-  .indent.ex { margin-top:8px; font-size:.85em; }
-
-  /* ---- 自動収集ブロック ---- */
-  details.auto { margin-top:18px; border:1px dashed var(--line); border-radius:6px; background:#fafafa; }
-  details.auto summary { cursor:pointer; padding:8px 14px; font-weight:700; font-size:.88em; color:var(--muted); list-style:none; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  details.auto summary::before { content:"＋"; font-weight:700; }
-  details.auto[open] summary::before { content:"－"; }
-  details.auto summary small { font-weight:400; }
-  .autoGrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; padding:0 14px 14px; font-size:.85em; }
-  .autoGrid h4 { font-size:.95em; border-bottom:2px solid var(--line); margin-bottom:6px; }
+  details.auto { margin-top:14px; border-top:1px dashed var(--line); padding-top:8px; }
+  details.auto summary { cursor:pointer; font-weight:700; font-size:.88em; color:var(--green); list-style:none; }
+  details.auto summary::before { content:"＋ "; }
+  details.auto[open] summary::before { content:"－ "; }
+  details.auto summary small { font-weight:400; color:var(--muted); margin-left:6px; }
+  .autoGrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-top:8px; font-size:.85em; }
+  .autoGrid h4 { font-size:.95em; margin-bottom:4px; }
   .autoGrid ul { list-style:none; }
   .autoGrid li { padding-left:10px; text-indent:-10px; margin-bottom:4px; }
-  .autoGrid li a { text-decoration:none; border-bottom:1px dotted var(--gray); }
+  .autoGrid li a { text-decoration:none; border-bottom:1px dotted var(--green); color:var(--ink); }
   .autoGrid li small { color:var(--muted); font-size:.85em; }
   .autoGrid .pending { color:var(--muted); }
-  .autoGrid .ext { display:inline-block; margin-top:4px; font-size:.9em; color:var(--orange); font-weight:700; text-decoration:none; }
-  .more { background:none; border:0; color:var(--orange); cursor:pointer; font-size:.9em; padding:2px 0; }
+  .autoGrid .ext { display:inline-block; margin-top:4px; font-size:.9em; font-weight:700; text-decoration:none; }
+  .more { background:none; border:0; color:var(--green); cursor:pointer; font-size:.9em; padding:2px 0; }
 
-  .footer { text-align:center; padding:46px 12px 36px; font-size:.82em; margin-top:60px; border-top:1px solid var(--line); }
-  .footer b { display:block; font-size:1.15em; margin-bottom:6px; }
-  .footer .copy { margin-top:14px; font-size:.9em; }
-  .footer .src { margin-top:10px; color:var(--muted); font-size:.9em; }
-  .footer .src a { color:var(--muted); }
-  #totop { position:fixed; right:14px; bottom:14px; width:44px; height:44px; border-radius:50%; background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.25); opacity:.9; }
+  .footer { text-align:center; padding:28px 12px 34px; font-size:.8em; color:var(--muted); }
+  .footer a { color:var(--muted); }
+  #totop { position:fixed; right:14px; bottom:14px; width:42px; height:42px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.2); }
 
   @media (max-width:760px) {
-    .spOnly { display:inline; }
     body { font-size:14px; }
-    #topImage h1 .head:not(.sub01):not(.sub02) { font-size:1.7em; }
-    .groupList { flex-direction:column; gap:4px; }
-    .groupList li + li { border-left:0; padding-left:0; }
-    .introductionBox dl { grid-template-columns:1fr; gap:2px 0; }
-    .introductionBox dd { margin-bottom:10px; }
-    #developmentMapNav { grid-template-columns:repeat(2, 1fr); gap:8px; }
+    .bar h1 { font-size:1.25em; }
+    .pills { flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; }
+    .pill { white-space:nowrap; flex:none; }
+    #totop { width:36px; height:36px; bottom:10px; right:10px; opacity:.85; }
+    details.about dl { grid-template-columns:1fr; gap:2px 0; }
+    details.about dd { margin-bottom:8px; }
     .autoGrid { grid-template-columns:1fr; }
-    .developmentTable01 th:first-child, .developmentTable01 td:first-child { width:28%; }
-    .developmentTable02, .developmentTable02 tbody, .developmentTable02 tr { display:block; }
-    .developmentTable02 tr:first-child { display:none; }
-    .developmentTable02 td { display:block; border-top:0; text-align:left; }
-    .developmentTable02 td[data-h]::before { content:attr(data-h) " : "; font-size:.85em; color:var(--muted); font-weight:700; }
-    .developmentTable02 th:nth-child(n), .developmentTable02 td:nth-child(n) { width:auto; }
-    .developmentTable03, .developmentTable03 tbody, .developmentTable03 tr { display:block; }
-    .developmentTable03 th, .developmentTable03 td { display:block; width:auto; }
-    .developmentTable03 td + td { border-top:0; }
-    .developmentTable03 tr:first-child th:last-child { display:none; }
-    .developmentTable03 td:last-child::before { content:"海外のガイドライン"; display:block; font-weight:700; color:var(--muted); font-size:.85em; }
+    .t1 th:first-child, .t1 td:first-child { width:30%; }
+    .t2, .t2 tbody, .t2 tr { display:block; }
+    .t2 tr:first-child { display:none; }
+    .t2 td { display:block; border-top:0; }
+    .t2 td[data-h]::before { content:attr(data-h) " : "; font-size:.85em; color:var(--muted); font-weight:700; }
+    .t3, .t3 tbody, .t3 tr { display:block; }
+    .t3 th, .t3 td { display:block; width:auto; }
+    .t3 td + td { border-top:0; }
+    .t3 tr:first-child th:last-child { display:none; }
+    .t3 td:last-child::before { content:"海外のガイドライン"; display:block; font-weight:700; color:var(--muted); font-size:.85em; }
   }
 </style>
 </head>
 <body>
-<main class="wrapper">
-<div class="developmentMapWrapper">
-  <div class="siteBar">
-    <a class="logo" href="https://saqra.jp/" target="_blank" rel="noopener"><i></i>SaQRA <small>日本がんサバイバーシップ研究グループ</small></a>
-    <span class="draft">叩き台（DRAFT）</span>
+<header class="bar">
+  <div class="wrap">
+    <h1>SaQRA 研究開発マップ<span class="draft">叩き台</span></h1>
+    <p>全がん連 × J-SUPPORT × SaQRA ／ 困りごと30項目 × 公的研究費研究・ガイドライン・PubMed・AMED</p>
   </div>
+</header>
 
-  <!--intro//START-->
-  <section id="topImage">
-    <p class="btn_english"><a href="https://saqra.jp/kaihatsumap/en/index.html" target="_blank" rel="noopener">English</a></p>
-    <h1>
-      <span class="head sub01">全がん連 × J-SUPPORT × SaQRA</span>
-      <span class="head">研究開発マップ</span>
-      <span class="head sub02">〜がんサバイバーシップの<br class="spOnly">アンメットニーズに応える〜</span>
-    </h1>
-    <div class="keyvisual" aria-hidden="true">
-      <i style="background:#fbe3d7"></i><i style="background:#f6d3cb"></i><i style="background:#fbe9c4"></i><i style="background:#d9ecd0"></i>
-      <i style="background:#fbe9c4"></i><i style="background:#d9ecd0"></i><i style="background:#fbe3d7"></i><i style="background:#f6d3cb"></i>
-    </div>
-    <p class="catchcopy">個別の価値に配慮したケアを<br>必要なすべての人々に届けるために</p>
-    <p class="leadtext">
-      私ども日本がんサバイバーシップ研究グループ（SaQRA）は、がんに関わる全ての人の意向を中心的価値に捉えた治療やケアの開発、社会・臨床への実装に関する研究を実施・伴走支援しています。この研究開発マップは、日本国内で実施されている主要な研究を俯瞰するとともに、アンメットニーズに応えた研究を計画するために利用します。
-    </p>
-    <ul class="groupList">
-      <li>一般社団法人 全国がん患者団体連合会</li>
-      <li>SaQRA 日本がんサバイバーシップ研究グループ</li>
-      <li>J-SUPPORT 日本がん支持療法研究グループ</li>
-    </ul>
-  </section>
-
-  <section id="introduction">
-    <ul class="introductionList">
-      <li>
-        <dl>
-          <dt class="subHead">『開発マップはどのように作られているの？』</dt>
-          <dd>
-            全国がん患者団体連合会（全がん連）サバイバーシップ委員会による調査<sup>*1</sup>の27項目について、公的研究機関による研究の実施状況、日本と海外のガイドラインの有無について情報を収集しました。<br>
-            調査結果と収集した情報を元に、全がん連PPI委員会と日本がん支持療法研究グループ（J-SUPPORT）開発マップ作成委員会、SaQRAが議論を重ねて作成し、2024年2月に公開しました。
-          </dd>
-        </dl>
-      </li>
-      <li>
-        <dl>
-          <dt class="subHead">『今後どのようなアップデートがありますか？』</dt>
-          <dd>[―]が記載されている項目は、マップ作成時点で研究がなされていない項目で、今後の研究が望まれています。<br>
-            この叩き台では、各項目の下に「最新の研究動向（自動収集）」として PubMed・Minds・AMED の検索結果を週1回自動で追加しています（内容は未査読の機械的な検索結果です）。</dd>
-        </dl>
-      </li>
-    </ul>
-    <div class="introductionBox">
-      <h3 class="subHead">記載されている用語の説明</h3>
-      <dl>
-        <dt>介入・調査の内容</dt>
-        <dd>アウトカムに対して解決する手段、検討が求められる課題</dd>
-        <dt>国内の公的研究費<br>による研究</dt>
-        <dd>
-          臨床試験登録データベース、または公的研究費データベースに掲載されている国内臨床試験・臨床研究
-          <ul class="list_point">
-            <li>厚労科研＝厚生労働省による科学研究費補助金</li>
-            <li>AMED＝日本医療研究開発機構による研究助成</li>
-            <li>科研費＝日本学術振興会による科学研究費助成事業助成金</li>
-          </ul>
-        </dd>
-        <dt>日本のガイドライン</dt>
-        <dd>SaQRAガイドラインCQレビューより、アウトカムを基準に記載</dd>
-        <dt>海外のガイドライン</dt>
-        <dd>
-          <ul class="list_point">
-            <li>NCCN Survivorship Guidelines 2022 目次</li>
-            <li>NCCN Clinical Oncology Guidelines (Survivorshipのほか）</li>
-            <li>NCCN Clinical Oncology Guidelines for Patients<br>を元に記載</li>
-          </ul>
-        </dd>
-      </dl>
-    </div>
-    <ul class="exList">
-      <li><sup>*1</sup>サバイバーシップ委員会による調査</li>
-      <li>全がん連サバイバーシップ委員会が、サバイバーシップに関するアンケート調査を実施しました。</li>
-      <li>結果の説明はJ-SUPPORTホームページにて公開しています。</li>
-      <li>（<a href="https://www.j-support.org/events/meeting/4th_seikahoukoku/index.html" target="_blank" rel="noopener">第4回J-SUPPORT研究成果報告会 セッション②：全がん連サバイバーシップニーズ調査報告 私たちが考える“がんサバイバーシップ”</a>）</li>
-      <li>がん患者・ご家族・ご遺族など様々な立場の方を対象として、アメリカNCCNの「サバイバーシップ・ガイドライン」を参考に作成した27項目について、困ったことを選択するよう求めました。</li>
-    </ul>
-    <div class="border">
-      <h3 class="subHead">開発マップをご覧いただく際のご注意</h3>
-      <p>
-        本ページで掲載している開発マップは、臨床試験を効率的に計画するための概念図であり、重要臨床課題は網羅性を担保するものではなく、示されている治療や臨床試験が個々の患者さんの治療選択の際の目安とはならないことにご注意ください。<br>
-        このページで紹介している研究は作成時点のものであり、最新ではない場合があります。
-      </p>
-      <ul class="indent">
-        <li>（注）これらの情報は、臨床試験に参加する患者さんを募集するための情報ではありませんのでご注意ください。<br>
-          また、開発戦略マップでご紹介している、他組織の臨床試験の内容についてのお問い合わせ等はお受けすることが出来ませんのでご了承ください。</li>
-      </ul>
-    </div>
-  </section>
-
-  <section id="developmentMap">
-    <h2 class="head">
-      <span>開発マップ</span>
-      <span class="bars" aria-hidden="true"><i style="background:#288c41"></i><i style="background:#c9164b"></i><i style="background:#ed8d02"></i><i style="background:#86b929"></i><i style="background:#f1b999"></i></span>
-      <span>FLOW CHART</span>
-    </h2>
-    <p class="leadtext"><span>全がん連調査<b id="survey-items">29</b>項目を</span><br>アウトカムとしてとらえ、<br class="spOnly">カテゴリ名を困りごと順に掲載しています</p>
-    <p class="update" id="update-line">2024.02.01作成<br>2026.03.01更新</p>
-
-    <div class="howtoBox">
-      <h3>表の見方</h3>
-      <p class="ex">例）</p>
-      <div class="legendRow"><span class="red">［赤文字］：成果論文公開済み</span><span class="icon">［<a class="linkin" aria-hidden="true"></a>］：リンクあり</span></div>
-      <div class="developmentList" style="--c:#da7d5a">
-        <table class="developmentTable01"><tbody>
-          <tr><th>介入・調査の内容</th><th>公的研究費による研究</th></tr>
-          <tr><td>健康格差</td><td><a class="linkin achieved" href="https://www.j-support.org/" target="_blank" rel="noopener">精神科臨床場面における多職種協働によるがん検診の受診推奨法の実施可能性に関する非対照、非盲検の探索的臨床研究</a></td></tr>
-        </tbody></table>
-        <table class="developmentTable02"><tbody>
-          <tr><th>がん種</th><th>世代</th><th>背景</th><th>研究種類</th><th>研究費<i>（主に公的研究費）</i></th></tr>
-          <tr><td data-h="がん種">／</td><td data-h="世代">40歳以上</td><td data-h="背景">統合失調症</td><td data-h="研究種類">介入</td><td data-h="研究費">厚労科研</td></tr>
-        </tbody></table>
-        <div class="legendRow" style="margin-top:8px"><span>［／］：特定や分類なし</span></div>
-        <table class="developmentTable03" style="margin-top:6px"><tbody>
-          <tr><th>日本のガイドライン</th><th>海外のガイドライン</th></tr>
-          <tr><td><ul class="list_point"><li>小児がん診療ガイドライン</li></ul></td><td class="center">ー</td></tr>
-        </tbody></table>
-        <div class="legendRow" style="margin-top:8px; justify-content:flex-end"><span>［ー］：開発マップ作成時点で情報なし</span></div>
-      </div>
-      <div class="refBox"><b>海外のガイドライン引用元</b><sup>*2</sup> NCCN Survivorship Guidelines 2022 目次<br><sup>*3</sup> NCCN Clinical Oncology Guidelines (Survivorshipのほか)<br><sup>*4</sup> NCCN Clinical Oncology Guidelines for Patients</div>
-    </div>
-
-    <h3 class="Mapclick">クリックすると各項目に移動します</h3>
-    <ol id="developmentMapNav"></ol>
-
-    <div class="tools">
-      <input type="search" id="q" placeholder="キーワードで絞り込み（例: せん妄、AMED、乳がん）">
+<main class="wrap">
+  <div class="controls">
+    <div class="pills" id="nav"><button class="pill on" type="button" data-cat="all">すべて</button></div>
+    <form class="search" id="form"><input type="search" id="q" placeholder="例: せん妄、AMED、乳がん、ガイドライン"><button type="submit">検索</button></form>
+    <div class="sub">
       <label><input type="checkbox" id="only-gap"> 未実施（ー）を含む項目のみ</label>
+      <span id="update-line"></span>
       <span class="count" id="count"></span>
     </div>
-    <!--intro//END-->
+  </div>
 
-    <!--contents//START-->
-    <ol class="developmentList" id="developmentList"><li style="text-align:center;color:var(--muted)">読み込み中…</li></ol>
-    <!--contents//END-->
-  </section>
-</div>
+  <details class="about">
+    <summary>このマップについて（作り方・用語・表の見方・ご注意）</summary>
+    <div class="body">
+      <p>私ども日本がんサバイバーシップ研究グループ（SaQRA）は、がんに関わる全ての人の意向を中心的価値に捉えた治療やケアの開発、社会・臨床への実装に関する研究を実施・伴走支援しています。この研究開発マップは、日本国内で実施されている主要な研究を俯瞰するとともに、アンメットニーズに応えた研究を計画するために利用します。</p>
+      <h3>開発マップはどのように作られているの？</h3>
+      <p>全国がん患者団体連合会（全がん連）サバイバーシップ委員会による調査<sup>*1</sup>の27項目について、公的研究機関による研究の実施状況、日本と海外のガイドラインの有無について情報を収集しました。調査結果と収集した情報を元に、全がん連PPI委員会と日本がん支持療法研究グループ（J-SUPPORT）開発マップ作成委員会、SaQRAが議論を重ねて作成し、2024年2月に公開しました。</p>
+      <h3>今後どのようなアップデートがありますか？</h3>
+      <p>[ー]が記載されている項目は、マップ作成時点で研究がなされていない項目で、今後の研究が望まれています。この叩き台では、各項目の下に「最新の研究動向（自動収集）」として PubMed・Minds・AMED の検索結果を週1回自動で追加しています（未査読の機械的な検索結果です）。</p>
+      <h3>用語の説明</h3>
+      <dl>
+        <dt>介入・調査の内容</dt><dd>アウトカムに対して解決する手段、検討が求められる課題</dd>
+        <dt>国内の公的研究費による研究</dt><dd>臨床試験登録データベース、または公的研究費データベースに掲載されている国内臨床試験・臨床研究（厚労科研＝厚生労働省による科学研究費補助金、AMED＝日本医療研究開発機構による研究助成、科研費＝日本学術振興会による科学研究費助成事業助成金）</dd>
+        <dt>日本のガイドライン</dt><dd>SaQRAガイドラインCQレビューより、アウトカムを基準に記載</dd>
+        <dt>海外のガイドライン</dt><dd><sup>*2</sup> NCCN Survivorship Guidelines 2022 目次 ／ <sup>*3</sup> NCCN Clinical Oncology Guidelines（Survivorshipのほか） ／ <sup>*4</sup> NCCN Clinical Oncology Guidelines for Patients を元に記載</dd>
+      </dl>
+      <h3>表の見方</h3>
+      <p class="legend"><span><span class="tag" style="margin:0">成果論文公開済み</span></span><span>［／］特定や分類なし</span><span>［ー］開発マップ作成時点で情報なし</span></p>
+      <p class="note"><sup>*1</sup> 全がん連サバイバーシップ委員会が、サバイバーシップに関するアンケート調査を実施しました。結果の説明は <a href="https://www.j-support.org/events/meeting/4th_seikahoukoku/index.html" target="_blank" rel="noopener">J-SUPPORTホームページ</a> にて公開しています。がん患者・ご家族・ご遺族など様々な立場の方を対象として、アメリカNCCNの「サバイバーシップ・ガイドライン」を参考に作成した27項目について、困ったことを選択するよう求めました。</p>
+      <h3>ご注意</h3>
+      <p class="note">本ページで掲載している開発マップは、臨床試験を効率的に計画するための概念図であり、重要臨床課題は網羅性を担保するものではなく、示されている治療や臨床試験が個々の患者さんの治療選択の際の目安とはならないことにご注意ください。このページで紹介している研究は作成時点のものであり、最新ではない場合があります。これらの情報は、臨床試験に参加する患者さんを募集するための情報ではありません。また、他組織の臨床試験の内容についてのお問い合わせ等はお受けすることが出来ません。</p>
+    </div>
+  </details>
+
+  <ol class="list" id="list"><li style="text-align:center;color:var(--muted)">読み込み中…</li></ol>
 </main>
 
 <div class="footer">
-  <b>日本がんサバイバーシップ研究グループ</b>
-  〒104-0045　東京都中央区築地5-1-1<br>国立研究開発法人国立がんセンター がん対策研究所 サバイバーシップ研究部
-  <div class="copy">Copyright ©Survivorship Care and Quality of life Research Association All Rights Reserved.</div>
-  <div class="src">出典：<a href="https://saqra.jp/kaihatsumap/index.html" target="_blank" rel="noopener">saqra.jp/kaihatsumap</a> に準拠した叩き台 ／ <span id="status-line">自動収集データ：未取得</span> ／ <a href="admin.html">管理者ページ</a></div>
+  出典：<a href="https://saqra.jp/kaihatsumap/index.html" target="_blank" rel="noopener">全がん連 × J-SUPPORT × SaQRA 研究開発マップ</a>（saqra.jp）に準拠した叩き台<br>
+  <span id="status-line">自動収集データ：未取得</span> ／ <a href="admin.html">管理者ページ</a>
 </div>
-<a id="totop" href="#topImage" aria-label="ページ上部へ">▲</a>
+<a id="totop" href="#" aria-label="ページ上部へ">▲</a>
 
 <script>
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const pad2 = n => String(n).padStart(2, '0');
-const PALETTE = ['#c9164b','#c31a70','#801b74','#1d2c6a','#135d9c','#268ac3','#228f88','#288c41','#86b929','#d6b700','#ed8d02','#c8191d','#c65e6c','#c15d88','#945389','#534b88','#4078a7','#2598c1','#219b98','#329764','#9eb861','#e5b116','#d7a152','#c76041','#d87d80','#d37ba1','#a76f9f','#c9164b','#945389','#da7d5a'];
-const colorOf = c => /^#[0-9a-f]{6}$/i.test(c.color || '') ? c.color : PALETTE[(c.n - 1) % PALETTE.length];
 async function load(name, fallback) {
   try { const r = await fetch(`data/${name}.json`, { cache: 'no-cache' }); if (!r.ok) throw 0; return await r.json(); } catch (_) { return fallback; }
 }
@@ -347,29 +185,28 @@ function studyCell(b) {
   if (!s) return '<td class="center">ー</td>';
   const sup = s.sup ? `<sup>${esc(s.sup)}</sup>` : '';
   const title = esc(s.title.replace(/\*\d$/, ''));
-  if (s.url) return `<td><a href="${esc(s.url)}" target="_blank" rel="noopener" class="${s.status === 'achieved' ? 'achieved' : 'linkin'}">${title}</a>${sup}</td>`;
-  return `<td>${title}${sup}</td>`;
+  const tag = s.status === 'achieved' ? '<span class="tag">成果論文公開済み</span>' : '';
+  if (s.url) return `<td><a class="study" href="${esc(s.url)}" target="_blank" rel="noopener">${title}</a>${sup}${tag}</td>`;
+  return `<td>${title}${sup}${tag}</td>`;
 }
 function studyBlock(b) {
   const m = [['がん種', b.cancer], ['世代', b.generation], ['背景', b.background], ['研究種類', b.design], ['研究費', b.funding]];
-  return `<section class="tableContainer">
-  <table class="developmentTable01"><tbody>
-    <tr><th>介入・調査<br class="spOnly">の内容</th><th>公的研究費による研究</th></tr>
+  return `<table class="t1"><tbody>
+    <tr><th>介入・調査の内容</th><th>公的研究費による研究</th></tr>
     <tr><td>${esc(b.intervention)}</td>${studyCell(b)}</tr>
   </tbody></table>
-  <table class="developmentTable02"><tbody>
-    <tr><th>がん種</th><th>世代</th><th>背景</th><th>研究種類</th><th>研究費<i>（主に公的研究費）</i></th></tr>
+  <table class="t2"><tbody>
+    <tr><th>がん種</th><th>世代</th><th>背景</th><th>研究種類</th><th>研究費（主に公的研究費）</th></tr>
     <tr>${m.map(([h, v]) => `<td data-h="${h}">${esc(v || 'ー')}</td>`).join('')}</tr>
-  </tbody></table>
-</section>`;
+  </tbody></table>`;
 }
 function glBlock(b) {
-  return `<table class="developmentTable03"><tbody>
+  return `<table class="t3"><tbody>
     <tr><th>日本のガイドライン</th><th>海外のガイドライン</th></tr>
     <tr><td${b.jp.trim() === 'ー' ? ' class="center"' : ''}>${b.jp}</td><td${b.overseas.trim() === 'ー' ? ' class="center"' : ''}>${b.overseas}</td></tr>
   </tbody></table>`;
 }
-function noteBlock(b) { return `<ul class="indent ex">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`; }
+function noteBlock(b) { return `<ul class="note">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`; }
 
 function itemsHTML(list, extLabel, extUrl) {
   const lis = (list || []).map(it => `<li><a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>${it.source || it.year ? ` <small>${esc(it.source || '')}${it.year ? ' ' + esc(it.year) : ''}</small>` : ''}</li>`);
@@ -381,7 +218,7 @@ function autoBlock(c, pm, g, a) {
   const q = encodeURIComponent(`${c.en} AND cancer survivors`);
   const glList = [...(g.minds || []).map(x => ({ ...x, source: 'Minds' })), ...(g.pubmed || [])];
   return `<details class="auto">
-  <summary>最新の研究動向（自動収集） <small>PubMed ${(pm || []).length}件 ／ ガイドライン ${glList.length}件 ／ AMED ${(a.items || []).length}件</small></summary>
+  <summary>最新の研究動向（自動収集）<small>PubMed ${(pm || []).length}件 ／ ガイドライン ${glList.length}件 ／ AMED ${(a.items || []).length}件</small></summary>
   <div class="autoGrid">
     <div><h4>PubMed 最新論文（直近5年）</h4>${itemsHTML(pm, 'PubMedで検索', `https://pubmed.ncbi.nlm.nih.gov/?term=${q}&sort=date`)}</div>
     <div><h4>ガイドライン（Minds／PubMed）</h4>${itemsHTML(glList, 'Mindsで検索', g.minds_home || 'https://minds.jcqhc.or.jp/')}</div>
@@ -394,24 +231,22 @@ document.addEventListener('click', e => {
   const span = b.previousElementSibling.querySelector('[data-rest]'); span.outerHTML = span.innerHTML; b.remove();
 });
 
+let activeCat = 'all';
 (async () => {
   const [map, pubmed, gl, amed, status] = await Promise.all([load('map', null), load('pubmed', {}), load('guidelines', {}), load('amed', {}), load('status', null)]);
-  const list = document.getElementById('developmentList');
+  const list = document.getElementById('list');
   if (!map) { list.innerHTML = '<li style="color:#b00">data/map.json を読み込めませんでした。</li>'; return; }
-  if (map.meta) {
-    document.getElementById('update-line').innerHTML = `${esc(map.meta.created)}作成<br>${esc(map.meta.updated)}更新`;
-    if (map.meta.survey_items) document.getElementById('survey-items').textContent = map.meta.survey_items;
-  }
+  if (map.meta) document.getElementById('update-line').textContent = `${map.meta.created}作成 ／ ${map.meta.updated}更新（元データ）`;
   const hasGap = c => c.blocks.some(b => b.type === 'study' && !b.study);
-  document.getElementById('developmentMapNav').innerHTML = map.categories.map(c =>
-    `<li class="n${pad2(c.n)}"><a href="#n${pad2(c.n)}" data-n="${c.n}" style="--c:${colorOf(c)}"><span>${esc(c.nav || c.name).replace(/\n/g, '<br>').replace(/（([^）]*)）/g, '<br><i>（$1）</i>').replace(/\(([^)]*)\)/g, '<br><i>($1)</i>').replace(/<br><br>/g, '<br>')}</span></a></li>`).join('');
+  const nav = document.getElementById('nav');
+  nav.insertAdjacentHTML('beforeend', map.categories.map(c => `<button class="pill" type="button" data-cat="${c.n}"><small>${c.n}</small>${esc((c.nav || c.name).replace(/\n/g, ''))}</button>`).join(''));
 
   list.innerHTML = map.categories.map(c => {
-    const n = String(c.n), id = `n${pad2(c.n)}`;
+    const n = String(c.n);
     const body = c.blocks.map(b => b.type === 'study' ? studyBlock(b) : b.type === 'guidelines' ? glBlock(b) : noteBlock(b)).join('');
     const text = [c.name, ...c.blocks.flatMap(b => b.type === 'study' ? [b.intervention, b.study && b.study.title, b.cancer, b.generation, b.background, b.design, b.funding] : b.type === 'guidelines' ? [b.jp, b.overseas] : b.items)].filter(Boolean).join(' ').replace(/<[^>]+>/g, '').toLowerCase();
-    return `<li id="${id}" data-gap="${hasGap(c) ? 1 : 0}" data-text="${esc(text)}" style="--c:${colorOf(c)}">
-  <h2 class="head"><span class="num">${c.n}</span>${esc(c.name)}<a class="top" href="#developmentMapNav">▲ 一覧へ</a></h2>
+    return `<li class="cat" id="n${n}" data-cat="${n}" data-gap="${hasGap(c) ? 1 : 0}" data-text="${esc(text)}">
+  <h2><span class="num">${n}</span>${esc(c.name)}<a class="top" href="#">▲ 上へ</a></h2>
   ${body}
   ${autoBlock(c, pubmed[n] || [], gl[n] || {}, amed[n] || {})}
 </li>`;
@@ -428,14 +263,20 @@ document.addEventListener('click', e => {
 function applyFilter() {
   const q = document.getElementById('q').value.trim().toLowerCase(), onlyGap = document.getElementById('only-gap').checked;
   let shown = 0, total = 0;
-  document.querySelectorAll('#developmentList > li[id]').forEach(li => {
+  document.querySelectorAll('#list > li.cat').forEach(li => {
     total++;
-    const ok = (!q || li.dataset.text.includes(q)) && (!onlyGap || li.dataset.gap === '1');
+    const ok = (activeCat === 'all' || li.dataset.cat === activeCat) && (!q || li.dataset.text.includes(q)) && (!onlyGap || li.dataset.gap === '1');
     li.classList.toggle('hidden', !ok); if (ok) shown++;
-    const nav = document.querySelector(`#developmentMapNav li.${li.id}`); if (nav) nav.style.display = ok ? '' : 'none';
   });
   document.getElementById('count').textContent = `${shown} / ${total} 項目`;
 }
+document.getElementById('nav').addEventListener('click', e => {
+  const b = e.target.closest('.pill'); if (!b) return;
+  activeCat = b.dataset.cat;
+  document.querySelectorAll('#nav .pill').forEach(p => p.classList.toggle('on', p === b));
+  applyFilter();
+});
+document.getElementById('form').addEventListener('submit', e => { e.preventDefault(); applyFilter(); });
 document.getElementById('q').addEventListener('input', applyFilter);
 document.getElementById('only-gap').addEventListener('change', applyFilter);
 </script>
