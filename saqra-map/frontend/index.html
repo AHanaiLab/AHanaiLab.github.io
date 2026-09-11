@@ -44,18 +44,6 @@
   .sub label { display:flex; align-items:center; gap:5px; cursor:pointer; }
   .sub .count { margin-left:auto; }
 
-  /* ---- about ---- */
-  details.about { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-top:14px; font-size:.9em; }
-  details.about summary { cursor:pointer; padding:12px 16px; font-weight:700; color:var(--green); list-style:none; }
-  details.about summary::before { content:"＋ "; }
-  details.about[open] summary::before { content:"－ "; }
-  details.about .body { padding:0 18px 18px; }
-  details.about h3 { font-size:1em; margin:14px 0 4px; }
-  details.about dl { display:grid; grid-template-columns:11em 1fr; gap:6px 14px; }
-  details.about dt { font-weight:700; }
-  details.about ul { padding-left:1.3em; }
-  details.about .legend span { display:inline-block; margin-right:16px; }
-  details.about .note { color:var(--muted); font-size:.92em; margin-top:8px; }
 
   /* ---- categories ---- */
   .list { list-style:none; margin-top:18px; }
@@ -107,8 +95,6 @@
     .pills { flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; }
     .pill { white-space:nowrap; flex:none; }
     #totop { width:36px; height:36px; bottom:10px; right:10px; opacity:.85; }
-    details.about dl { grid-template-columns:1fr; gap:2px 0; }
-    details.about dd { margin-bottom:8px; }
     .autoGrid { grid-template-columns:1fr; }
     .t1 th:first-child, .t1 td:first-child { width:30%; }
     .t2, .t2 tbody, .t2 tr { display:block; }
@@ -141,30 +127,6 @@
       <span class="count" id="count"></span>
     </div>
   </div>
-
-  <details class="about">
-    <summary>このマップについて（作り方・用語・表の見方・ご注意）</summary>
-    <div class="body">
-      <p>私ども日本がんサバイバーシップ研究グループ（SaQRA）は、がんに関わる全ての人の意向を中心的価値に捉えた治療やケアの開発、社会・臨床への実装に関する研究を実施・伴走支援しています。この研究開発マップは、日本国内で実施されている主要な研究を俯瞰するとともに、アンメットニーズに応えた研究を計画するために利用します。</p>
-      <h3>開発マップはどのように作られているの？</h3>
-      <p>全国がん患者団体連合会（全がん連）サバイバーシップ委員会による調査<sup>*1</sup>の27項目について、公的研究機関による研究の実施状況、日本と海外のガイドラインの有無について情報を収集しました。調査結果と収集した情報を元に、全がん連PPI委員会と日本がん支持療法研究グループ（J-SUPPORT）開発マップ作成委員会、SaQRAが議論を重ねて作成し、2024年2月に公開しました。</p>
-      <h3>今後どのようなアップデートがありますか？</h3>
-      <p>[ー]が記載されている項目は、マップ作成時点で研究がなされていない項目で、今後の研究が望まれています。この叩き台では、各項目の下に「最新の研究動向（自動収集）」として PubMed・Minds・AMED の検索結果を週1回自動で追加しています（未査読の機械的な検索結果です）。</p>
-      <h3>用語の説明</h3>
-      <dl>
-        <dt>介入・調査の内容</dt><dd>アウトカムに対して解決する手段、検討が求められる課題</dd>
-        <dt>国内の公的研究費による研究</dt><dd>臨床試験登録データベース、または公的研究費データベースに掲載されている国内臨床試験・臨床研究（厚労科研＝厚生労働省による科学研究費補助金、AMED＝日本医療研究開発機構による研究助成、科研費＝日本学術振興会による科学研究費助成事業助成金）</dd>
-        <dt>日本のガイドライン</dt><dd>SaQRAガイドラインCQレビューより、アウトカムを基準に記載</dd>
-        <dt>海外のガイドライン</dt><dd><sup>*2</sup> NCCN Survivorship Guidelines 2022 目次 ／ <sup>*3</sup> NCCN Clinical Oncology Guidelines（Survivorshipのほか） ／ <sup>*4</sup> NCCN Clinical Oncology Guidelines for Patients を元に記載</dd>
-      </dl>
-      <h3>表の見方</h3>
-      <p class="legend"><span><span class="tag" style="margin:0">成果論文公開済み</span></span><span>［／］特定や分類なし</span><span>［ー］開発マップ作成時点で情報なし</span></p>
-      <p class="note"><sup>*1</sup> 全がん連サバイバーシップ委員会が、サバイバーシップに関するアンケート調査を実施しました。結果の説明は <a href="https://www.j-support.org/events/meeting/4th_seikahoukoku/index.html" target="_blank" rel="noopener">J-SUPPORTホームページ</a> にて公開しています。がん患者・ご家族・ご遺族など様々な立場の方を対象として、アメリカNCCNの「サバイバーシップ・ガイドライン」を参考に作成した27項目について、困ったことを選択するよう求めました。</p>
-      <h3>ご注意</h3>
-      <p class="note">本ページで掲載している開発マップは、臨床試験を効率的に計画するための概念図であり、重要臨床課題は網羅性を担保するものではなく、示されている治療や臨床試験が個々の患者さんの治療選択の際の目安とはならないことにご注意ください。このページで紹介している研究は作成時点のものであり、最新ではない場合があります。これらの情報は、臨床試験に参加する患者さんを募集するための情報ではありません。また、他組織の臨床試験の内容についてのお問い合わせ等はお受けすることが出来ません。</p>
-    </div>
-  </details>
-
   <ol class="list" id="list"><li style="text-align:center;color:var(--muted)">読み込み中…</li></ol>
 </main>
 
