@@ -15,7 +15,7 @@
     * 検索タブ: マップ掲載研究（このページ内）/ PubMed・researchmap（API経由でその場に表示）/ AMED・厚労科研・UMIN（公式サイトへ）
     * 研究カードは renderStudy()、PubMedカードは renderPubmed() が作っています
     * URLで初期状態を指定できます: index.html?cat=8  index.html?src=pubmed&q=fatigue
-    * サブページ「ICF翻訳」は icf.html
+    * サブページ「きょうの暮らし」（対話型ePRO、WHOQOL-BREFベース）は icf.html
   ============================================================================
 -->
 <style>
@@ -137,7 +137,7 @@
   <div class="update">マップ掲載データ：2024.02.01作成 / 2026.03.01更新</div>
   <nav class="nav">
     <a class="current" href="index.html">研究開発マップ＋検索</a>
-    <a class="icf" href="icf.html">ICF翻訳 →</a>
+    <a class="icf" href="icf.html">きょうの暮らし →</a>
   </nav>
 </div>
 
@@ -171,13 +171,13 @@
     <div id="searchOut"></div>
   </div>
 
-  <!-- ②ICF翻訳（サブページへ） -->
+  <!-- ②きょうの暮らし（サブページへ） -->
   <div class="cta">
     <div>
-      <h2><span>2</span>　ICFベースのQoL翻訳</h2>
-      <p>困りごとの語りを、AIが2〜4回質問しながらICF（国際生活機能分類）に整理します。テクノロジーの進化に応じた「50年後のQOL」もワンクリックで表示できます。結果から、このページの研究カテゴリへ戻ってこられます。</p>
+      <h2><span>2</span>　きょうの暮らし（生活の質の振り返り）</h2>
+      <p>この2週間の生活の質を、全体評価・影響した領域・経験・大切なこと・希望の5つの短い質問で振り返ります。WHOQOL-BREFの考え方を参考にした対話形式で、AI（LLM）やサーバーは使わずブラウザ内だけで完結します。</p>
     </div>
-    <a class="btn btn-orange" href="icf.html">ICF翻訳を開く →</a>
+    <a class="btn btn-orange" href="icf.html">きょうの暮らしを開く →</a>
   </div>
 
   <div class="footer">
@@ -440,7 +440,7 @@ function searchExternal(src, kw) {
     <div class="gl-box">${esc(e.note || '')}${kw ? `<br>検索窓に「<b>${esc(kw)}</b>」を入力してください。` : ''}</div>`;
 }
 
-/* ============ ICFコード → 研究開発マップのカテゴリ（icf.html と共通） ============ */
+/* ============ ICFコード → 研究開発マップのカテゴリ（「ICFで読む」機能で使用） ============ */
 const CODE_TO_CATS = [
   [/^b1(26|30|52)/, [1]], [/^b455/, [3]], [/^b134/, [12]], [/^b28/, [8]], [/^b2(65|70)/, [14]], [/^b5(10|35)/, [14, 23]],
   [/^b1(40|44|64)/, [19]], [/^b180/, [15]], [/^b5(30|55)/, [16]], [/^b4(10|15|20)/, [17]], [/^b6/, [25]],

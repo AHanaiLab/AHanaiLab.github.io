@@ -8,7 +8,7 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
    └─ API Gateway (HTTP API) ─ Lambda（FastAPI/Mangum）
                       ├─ PubMed / researchmap プロキシ
                       ├─ AMED（取得・パース）
-                      └─ Bedrock（対話型ICF分類・50年後QOL変換）
+                      └─ Bedrock（PubMed日本語検索の英訳・「ICFで読む」）
 ```
 
 ## ファイル構成
@@ -16,9 +16,9 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 | パス | 内容 |
 |---|---|
 | `frontend/index.html` | メイン: 研究開発マップ＋検索ポータル（1ファイル完結、バイブコーディング向けコメント付き） |
-| `frontend/icf.html` | サブ: ICF翻訳（対話型ICF分類 → 50年後QOL） |
+| `frontend/icf.html` | サブ: きょうの暮らし（WHOQOL-BREFベースの対話型ePRO、LLM不使用・ブラウザ内完結） |
 | `frontend/guide.html` | ハッカソン参加者ガイド（改造手順・プロンプト例・発表フォーマット） |
-| `backend/app.py` | FastAPI + Mangum。対話型ICF分類・50年後QOL変換・PubMed/researchmap/AMED |
+| `backend/app.py` | FastAPI + Mangum。PubMed/researchmap/AMED・「ICFで読む」（ICF分類）。旧icf.html用の対話型ICF分類・50年後QOL変換も後方互換で残置 |
 | `backend/requirements.txt` | fastapi / mangum / httpx / anthropic[bedrock] |
 | `template.yaml` | SAM テンプレート（Lambda, HTTP API, S3, CloudFront OAC） |
 | `deploy.sh` | build → deploy → API_BASE 差し込み → S3 同期 → invalidation を一括実行 |
@@ -29,20 +29,19 @@ S3 + CloudFront（フロントエンド）と Lambda + API Gateway（FastAPI/Man
 | ページ | 役割 |
 |---|---|
 | `index.html`（メイン） | **全がん連 × J-SUPPORT × SaQRA 研究開発マップ＋検索ポータル**。困りごと30カテゴリ（全がん連調査順）から開発マップ掲載の公的研究費研究（55件）を絞り込み。PubMed と researchmap はページ内で検索（日本語→AIが英語検索語に変換）、AMED・厚労科研・UMIN は公式サイトへ。PubMed結果の「ICFで読む」で研究を生活機能に整理し、関連カテゴリへ戻れる |
-| `icf.html`（サブ） | **ICF翻訳**。対話型ICF分類（ICF-QOL Translator, 設計v0.3準拠）→ 50年後QOL。結果から研究開発マップのカテゴリ（`index.html?cat=N`）とPubMed検索（`index.html?src=pubmed&q=...`）へつながる |
+| `icf.html`（サブ） | **きょうの暮らし**。WHOQOL-BREFの考え方を参考にした対話型ePRO試作。全体評価・影響した領域・経験・大切なこと・希望の5つの短い質問で振り返りを作成。LLM/バックエンドは使わず、回答はブラウザ内だけで処理（サーバー送信なし）。任意機能から「50年後」の思考実験も可能 |
 | `guide.html` | ハッカソン参加者ガイド |
 
 URLで初期状態を指定できます: `index.html?cat=8`（痛みカテゴリ）、`index.html?src=pubmed&q=fatigue`。
 
-**ICF 50年後翻訳の流れ**（icf.html）: 生活の状況を入力 → AIがICF（健康状態／心身機能b／身体構造s／活動・参加d／環境因子e／個人因子）に仮分類、充足度メーター更新 → 足りないカテゴリを質問（2〜4ターン、最大5） → 「50年後のQOLを表示」 → テクノロジーの進化に応じた2076年のQOL（いま／2076年の対比・そうなる技術・一日の物語・必要な研究）→ 関連カテゴリ・論文へ。
+**きょうの暮らしの流れ**（icf.html）: この2週間の生活の質を全体評価 → 影響したWHOQOL-BREF領域を選択 → その領域での経験 → 経験の意味・価値 → 今後望む方向、の5回答で振り返りが自動完成。ICFは文脈整理のオントロジーとしてのみ使用し、本人の評価から障害・重症度・ニーズを推定しません。任意機能から対話の継続・50年後の比較・未来の一日の想像・回答の見直しができ、JSONで保存できます。
 
-ローカルに保存した HTML はそのまま同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
+このページはAPI/LLMを呼び出さず、ローカルに保存してそのまま開いても同じように動きます。`index.html` はローカル保存版でも同じAPIに接続して動きます（`?api=` または画面下部「API設定」で接続先を変更可）。
 
 ## API エンドポイント
 
-- `POST /api/icf/dialogue` — 対話型ICF分類。リクエスト: `{"message": "...", "icf": <前回のICF or null>, "turn": <前回のturn>}`。レスポンス: `{icf, assessment{categories, missing, all_filled, completeness_pct}, updates[], turn, phase: "collecting"|"confirming", reply, question}`。Lambdaはステートレスなので ICF と turn はクライアントが保持して毎回送る。1ターン = LLM 1回（分類/マージと次の質問を同時生成、充足判定はPythonのルール）
-- `POST /api/icf/future` — Stage 3: 50年後QOL変換。リクエスト: `{"icf": {...}}`。レスポンス: `{headline, qol_now, qol_2076, categories[{label, now, future, enabled_by}], day_in_2076, research_needed[], search_keywords_en[]}`
-- `POST /api/icf/translate` — テキスト（論文抄録など）のICF分類のみ。レスポンス: `{summary, body_functions, body_structures, activities_participation, environmental_factors, personal_factors}`
+- `POST /api/icf/translate` — テキスト（論文抄録など）のICF分類のみ。`index.html` の「ICFで読む」から呼ばれます。レスポンス: `{summary, body_functions, body_structures, activities_participation, environmental_factors, personal_factors}`
+- `POST /api/icf/dialogue` / `POST /api/icf/future` — 対話型ICF分類・50年後QOL変換（旧 icf.html 用）。現在どのページからも呼ばれていませんが、後方互換のため `backend/app.py` に残しています
 - `GET /api/pubmed/search?q=<クエリ>&retmax=10` — PubMed（esearch + efetch、抄録付き）。日本語クエリは Bedrock で英訳してから検索
 - `GET /api/rmap/search?q=<クエリ>` — researchmap API プロキシ
 - `GET /api/amed/search?q=<クエリ>` — AMEDfind 取得。**`AmedSearchUrl` パラメータ設定までは 501 を返します**（後述）
@@ -93,7 +92,7 @@ chmod +x deploy.sh
 curl "https://<api-id>.execute-api.ap-northeast-1.amazonaws.com/api/pubmed/search?q=cancer+survivorship"
 ```
 
-CloudFront の URL を開き、カテゴリ「8. 痛み」で研究が4件出ること、PubMedタブで日本語検索できること、`icf.html` で例文を送ってAIの質問が返ることを確認してください。
+CloudFront の URL を開き、カテゴリ「8. 痛み」で研究が4件出ること、PubMedタブで日本語検索できること、`icf.html`（きょうの暮らし）で5つの質問に答えて振り返りが完成することを確認してください。
 
 ## AMEDfind エンドポイントの設定
 
@@ -127,7 +126,7 @@ const API_BASE = API_BASE_RAW.startsWith('__') ? '/api' : API_BASE_RAW;
 ## 費用感
 
 - Lambda / API Gateway / S3 / CloudFront: この規模ならほぼ無料枠内
-- Bedrock: 呼び出し分のみ（ICF翻訳1回あたり数円以下）
+- Bedrock: 呼び出し分のみ（PubMed日本語検索の英訳・「ICFで読む」1回あたり数円以下。「きょうの暮らし」はBedrockを呼びません）
 
 ## 独自ドメイン
 
