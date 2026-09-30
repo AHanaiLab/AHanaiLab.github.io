@@ -10,7 +10,24 @@
 <footer>試作 v6 ・ schema 6.0.0 ・ 送信なし</footer></main><script>
 'use strict';const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* 任意：LLMレンダラを使う場合はエンドポイントを設定（未設定ならテンプレート文を使用）。レンダラは文章化のみを行い、世界の構造・選択肢・推定は本ファイル側で決定する。 */
-const RENDER_ENDPOINT=null;
+const RENDER_ENDPOINT='https://3th43zcgdlthsksjduaoqsfo340zzewo.lambda-url.ap-northeast-1.on.aws/';
+const RENDER_MAX_CALLS=6,RENDER_TIMEOUT_MS=3000;let renderCallCount=0;const renderCache={};
+function sKey(k){return 'ft_render_v6|'+actLabel()+'|'+k}
+function templateText(k){return WORLD[k].t(actLabel())}
+function getText(k){return renderCache[k]??templateText(k)}
+async function primeText(k,onUpdate){if(renderCache[k]!==undefined)return;
+if(!RENDER_ENDPOINT){renderCache[k]=templateText(k);return}
+let cached=null;try{cached=sessionStorage.getItem(sKey(k))}catch(e){}
+if(cached!==null){renderCache[k]=cached===''?templateText(k):cached;if(cached)st.renderer.used=true;onUpdate?.();return}
+if(renderCallCount>=RENDER_MAX_CALLS){renderCache[k]=templateText(k);return}
+renderCallCount++;const tmpl=templateText(k);let text=null;
+try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),RENDER_TIMEOUT_MS);
+const res=await fetch(RENDER_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({activity:actLabel(),archetype:k,template_text:tmpl}),signal:ctrl.signal});
+clearTimeout(timer);
+if(res.ok){const data=await res.json();if(data&&typeof data.text==='string'&&data.text.trim()){text=data.text.trim();if(data.model_id_hash)st.renderer.model_id_hash=data.model_id_hash}}
+}catch(e){}
+try{sessionStorage.setItem(sKey(k),text??'')}catch(e){}
+renderCache[k]=text??tmpl;if(text)st.renderer.used=true;onUpdate?.()}
 const ACTS=[{v:'walk',l:'歩いて出かける',icf:'d450/d460 歩行・移動'},{v:'bath',l:'入浴・身支度',icf:'d510/d520 セルフケア'},{v:'home',l:'買い物・料理・家事',icf:'d620/d630 家庭生活'},{v:'plan',l:'予定・手続き・お金の管理',icf:'d230/d860 日課・経済'},{v:'meet',l:'家族や友人と会う',icf:'d750/d760 対人関係'},{v:'role',l:'仕事・役割・趣味',icf:'d850/d920 主要生活領域・余暇'}];
 const ATTR={move:'自由に動ける・行ける',connect:'人と会う・つながる',decide:'自分で決める',self:'自分の身体で行うこと自体',indep:'人に頼らない',safe:'安心・安全',priv:'見られない・プライバシー',ease:'負担が少ない・楽'};
 /* 世界原型 A–D と属性シグネチャ（成果物J・J_world_archetypes.csv に対応）*/
@@ -20,7 +37,7 @@ C:{name:'C　段取りや判断をAIエージェントに委ねる',sig:{ease:1,
 D:{name:'D　委ねることを最小限にし、多少の不便を受け入れる',sig:{self:1,decide:1,indep:1,priv:1,move:-1,safe:-1,ease:-1,connect:0},t:a=>`${a}は、時間がかかり不便があっても、できる限り自分の身体と判断で行います。支援機器は最小限で、見守りのセンサーもありません。`}};
 const PAIRS=[['A','D'],['B','A'],['C','D'],['B','C']];
 const B0={need:{label:'活動の表明（COPM参考・ICF d章）'},purpose:{label:'何のために（属性への対応づけ）'},intr:{label:'内在的か道具的か'},pair:{label:'生活機能をそろえた世界対'},recog:{label:'member checking'}};
-let st={schema_version:'6.0.0',created_at:new Date().toISOString(),formative_evaluation:true,research_data:false,personal_data_collected:false,step:0,stated_need:null,stated_need_icf:null,purpose_attributes:[],intrinsic_response:null,comparisons:[],inferred_profile:null,recognition:null,messages:[],completed_at:null};
+let st={schema_version:'6.0.0',created_at:new Date().toISOString(),formative_evaluation:true,research_data:false,personal_data_collected:false,step:0,stated_need:null,stated_need_icf:null,purpose_attributes:[],intrinsic_response:null,comparisons:[],inferred_profile:null,recognition:null,messages:[],completed_at:null,renderer:{used:false,model_id_hash:null}};
 const STEPS=['need','purpose','intr','p0','p1','p2','p3','hyp','done'];let pending=[];
 function say(role,text,basis=null){st.messages.push({role,text,time:new Date().toISOString(),basis})}
 function actLabel(){return st.stated_need??'その活動'}
@@ -36,7 +53,7 @@ function accept(raw){const text=String(raw??'').trim(),s=STEPS[st.step];$('messa
 if(s==='need'){if(!text)return;const a=ACTS.find(x=>x.v===text||x.l===text);st.stated_need=a?a.l:text;st.stated_need_icf=a?a.icf:'free text (unclassified)';say('user',st.stated_need);next();return}
 if(s==='purpose'){if(text==='__next'){st.purpose_attributes=[...pending];pending=[];say('user',st.purpose_attributes.map(k=>ATTR[k]).join('、')||'選択なし');next();return}if(ATTR[text]){pending.includes(text)?pending.splice(pending.indexOf(text),1):pending.push(text);render()}return}
 if(s==='intr'){const map={yes:'はい。結果が同じなら委ねてよい',part:'一部は自分で行いたい',no:'いいえ。自分で行うこと自体が大切'};if(!map[text])return;st.intrinsic_response=text;say('user',map[text]);next();return}
-if(s.startsWith('p')){const n=Number(s[1]),pr=PAIRS[n];if(!['L','R','same','skip'].includes(text))return;const choice=text==='L'?pr[0]:text==='R'?pr[1]:text;st.comparisons.push({pair_id:n+1,worlds:pr,texts:{[pr[0]]:WORLD[pr[0]].t(actLabel()),[pr[1]]:WORLD[pr[1]].t(actLabel())},fa_matched_by_design:true,choice:choice==='skip'?null:choice,reason:$('reason')?.value?.trim()||null,time:new Date().toISOString()});say('user',choice==='same'?'どちらも同じくらい':choice==='skip'?'回答しない':WORLD[choice].name);next();return}
+if(s.startsWith('p')){const n=Number(s[1]),pr=PAIRS[n];if(!['L','R','same','skip'].includes(text))return;const choice=text==='L'?pr[0]:text==='R'?pr[1]:text;st.comparisons.push({pair_id:n+1,worlds:pr,texts:{[pr[0]]:getText(pr[0]),[pr[1]]:getText(pr[1])},fa_matched_by_design:true,choice:choice==='skip'?null:choice,reason:$('reason')?.value?.trim()||null,time:new Date().toISOString()});say('user',choice==='same'?'どちらも同じくらい':choice==='skip'?'回答しない':WORLD[choice].name);next();return}
 if(s==='hyp'){const map={fit:'当てはまる',partly:'一部当てはまる',nofit:'当てはまらない'};if(!map[text])return;st.recognition={response:text,label:map[text],comment:$('reason')?.value?.trim()||null,coded_as:text==='fit'?'model_recognised':'model_disagreement_not_participant_error'};say('user',map[text]);next()}}
 function render(){const s=STEPS[st.step],i=st.step;$('progress').innerHTML=STEPS.slice(0,8).map((_,n)=>'<span class="dot '+(n<i?'on':'')+'"></span>').join('')+'<span>'+(s==='done'?'完了':(i+1)+' / 8')+'</span>';
 $('chat').innerHTML=st.messages.map(m=>'<div class="msg '+m.role+'">'+(m.role==='assistant'?'<span class="avatar">↗</span>':'')+'<div class="bubble">'+esc(m.text)+(m.basis?'<span class="basis">'+esc(m.basis.label)+'</span>':'')+'</div></div>').join('');
@@ -45,7 +62,8 @@ if(s==='need')h=ACTS.map(a=>`<button type="button" data-answer="${a.v}">${esc(a.
 else if(s==='purpose'){h=Object.entries(ATTR).map(([k,l])=>`<button type="button" class="${pending.includes(k)?'sel':''}" data-answer="${k}">${esc(l)}</button>`).join('')+'<button type="button" class="primary" data-answer="__next">次へ</button>'}
 else if(s==='intr'){$('choices').className='choices';h=['yes','part','no'].map(v=>`<button type="button" data-answer="${v}">${esc({yes:'はい。結果が同じなら委ねてよい',part:'一部は自分で行いたい',no:'いいえ。自分で行うこと自体が大切'}[v])}</button>`).join('')}
 else if(s.startsWith('p')){const pr=PAIRS[Number(s[1])];$('matched').textContent=`どちらの暮らしでも「${actLabel()}」の目的は同じ程度に達成されるとします。違いは、誰が・何が担うか、そのやり方です。`;
-$('worlds').innerHTML=pr.map((k,j)=>`<button type="button" class="world" data-answer="${j===0?'L':'R'}"><b>${esc(WORLD[k].name)}</b>${esc(WORLD[k].t(actLabel()))}</button>`).join('');
+$('worlds').innerHTML=pr.map((k,j)=>`<button type="button" class="world" data-answer="${j===0?'L':'R'}" data-k="${k}"><b>${esc(WORLD[k].name)}</b><span class="wtext">${esc(getText(k))}</span></button>`).join('');
+pr.forEach(k=>{if(renderCache[k]===undefined)primeText(k,()=>{const el=document.querySelector('.world[data-k="'+k+'"] .wtext');if(el)el.textContent=getText(k)})});
 h='<button type="button" data-answer="same">どちらも同じくらい</button><button type="button" data-answer="skip">回答しない</button><textarea id="reason" aria-label="選んだ理由（任意）" placeholder="理由があれば一言（任意）" maxlength="300" style="grid-column:1/-1;height:40px;border:1px solid var(--line);border-radius:12px;background:white"></textarea>'}
 else if(s==='hyp'){const p=st.inferred_profile;h=`<div class="result" style="grid-column:1/-1;margin-bottom:6px"><div class="two-col"><div class="col"><h3>あなたが表明したこと</h3><div class="big">${esc(st.stated_need)}</div><p class="hint">${esc(st.stated_need_icf)}</p><p style="font-size:12.5px">何のために：${esc(st.purpose_attributes.map(k=>ATTR[k]).join('、')||'—')}</p><p style="font-size:12.5px">自分で行うこと自体：${esc({yes:'こだわらない',part:'一部は大切',no:'大切'}[st.intrinsic_response]??'—')}</p></div><div class="col"><h3>4回の選択から示唆されること（仮説）</h3>${Object.entries(p.attribute_weights).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><span>${esc(ATTR[k])}</span><i class="${v<0?'neg':''}" style="width:${Math.min(100,Math.abs(v)*22)}%"></i><span>${v>0?'+':''}${v}</span></div>`).join('')}</div></div><p class="note">左は観測値、右は推定です。両者が食い違う場合、それはこの手続きについての知見であり、あなたの訂正ではありません。</p></div>`+['fit','partly','nofit'].map(v=>`<button type="button" data-answer="${v}">${esc({fit:'当てはまる',partly:'一部当てはまる',nofit:'当てはまらない'}[v])}</button>`).join('')+'<textarea id="reason" aria-label="どこが違うか（任意）" placeholder="違うと感じた点があれば（任意）" maxlength="300" style="grid-column:1/-1;height:40px;border:1px solid var(--line);border-radius:12px;background:white"></textarea>'}
 $('choices').innerHTML=h;$('result').hidden=s!=='done';$('extras').hidden=s!=='done';
