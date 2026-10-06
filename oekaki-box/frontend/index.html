@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>お絵描きボックス</title>
+<style>
+  :root { --bg:#fffaf0; --fg:#2b2b2b; --accent:#e8590c; --line:#d9d2c3; --card:#fff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1e1c19; --fg:#eee8dc; --accent:#ff8a4c; --line:#4a463f; --card:#2a2723; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  h1 { font-size:1.4rem; margin:.2em 0; }
+  .banner { padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--card); margin:10px 0; }
+  .banner.closed { border-color:#c92a2a; }
+  .tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+  .tools button, .tools label { font-size:.95rem; }
+  button { border:1px solid var(--line); background:var(--card); color:var(--fg); border-radius:8px; padding:8px 12px; cursor:pointer; }
+  button.on { outline:2px solid var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:bold; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .swatches { display:flex; gap:6px; flex-wrap:wrap; }
+  .swatch { width:30px; height:30px; border-radius:50%; border:2px solid var(--line); padding:0; }
+  .swatch.on { outline:3px solid var(--accent); }
+  #wrap { border:2px solid var(--line); border-radius:10px; background:#fff; touch-action:none; line-height:0; }
+  canvas { width:100%; height:auto; display:block; touch-action:none; cursor:crosshair; }
+  form { display:grid; gap:10px; margin-top:14px; }
+  input[type=text], textarea { width:100%; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); font:inherit; }
+  .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .note { font-size:.85rem; opacity:.8; }
+  #msg { min-height:1.4em; font-weight:bold; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎨 お絵描きボックス</h1>
+  <p class="note">描いた絵は事務局にだけ届きます。公開はされません。お名前やログインは不要です(ニックネームは任意)。</p>
+  <div id="banner" class="banner">受付状況を確認しています…</div>
+
+  <section id="app" hidden>
+    <div class="tools">
+      <button id="pen" class="on" type="button">✏️ ペン</button>
+      <button id="eraser" type="button">🧽 消しゴム</button>
+      <span class="swatches" id="swatches"></span>
+      <label>太さ <input id="size" type="range" min="1" max="40" value="6"></label>
+      <button id="undo" type="button">↩ 戻す</button>
+      <button id="redo" type="button">↪ やり直す</button>
+      <button id="clear" type="button">🗑 全消し</button>
+    </div>
+    <div id="wrap"><canvas id="cv" width="900" height="700"></canvas></div>
+
+    <form id="form" autocomplete="off">
+      <label>ニックネーム(任意)<input id="nickname" type="text" maxlength="40"></label>
+      <label>事務局へのメッセージ(任意)<textarea id="message" rows="3" maxlength="500"></textarea></label>
+      <div class="hp" aria-hidden="true"><label>website <input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+      <button id="send" class="primary" type="submit">事務局に送る</button>
+      <div id="msg" role="status"></div>
+    </form>
+  </section>
+</main>
+
+<script>
+const API_BASE_BUILD = '__API_BASE__';
+// 置換されていない(ローカルで開いた)場合は ?api=... か同一オリジンの /api を使う
+const API_BASE = API_BASE_BUILD.startsWith('__')
+  ? (new URLSearchParams(location.search).get('api') || '/api')
+  : API_BASE_BUILD;
+
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const COLORS = ['#000000','#e03131','#f08c00','#2f9e44','#1971c2','#7048e8','#e64980','#795548','#ffffff'];
+let color = COLORS[0], tool = 'pen';
+const undoStack = [], redoStack = [];
+let drawn = false;           // 何か描かれたか(白紙送信の防止)
+
+function fillWhite() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); }
+fillWhite();
+
+COLORS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'swatch' + (i === 0 ? ' on' : ''); b.style.background = c;
+  b.setAttribute('aria-label', '色 ' + c);
+  b.onclick = () => { color = c; tool = 'pen'; sync(); document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s === b)); };
+  $('swatches').appendChild(b);
+});
+function sync() { $('pen').classList.toggle('on', tool === 'pen'); $('eraser').classList.toggle('on', tool === 'eraser'); }
+$('pen').onclick = () => { tool = 'pen'; sync(); };
+$('eraser').onclick = () => { tool = 'eraser'; sync(); };
+
+function snapshot() { undoStack.push(ctx.getImageData(0, 0, cv.width, cv.height)); if (undoStack.length > 30) undoStack.shift(); redoStack.length = 0; }
+$('undo').onclick = () => { if (!undoStack.length) return; redoStack.push(ctx.getImageData(0, 0, cv.width, cv.height)); ctx.putImageData(undoStack.pop(), 0, 0); };
+$('redo').onclick = () => { if (!redoStack.length) return; undoStack.push(ctx.getImageData(0, 0, cv.width, cv.height)); ctx.putImageData(redoStack.pop(), 0, 0); };
+$('clear').onclick = () => { if (!confirm('全部消しますか?')) return; snapshot(); fillWhite(); drawn = false; };
+
+function pos(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height };
+}
+let last = null;
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  snapshot(); last = pos(e); drawn = true;
+  stroke(last, last);
+});
+cv.addEventListener('pointermove', e => { if (!last) return; const p = pos(e); stroke(last, p); last = p; });
+['pointerup','pointercancel'].forEach(t => cv.addEventListener(t, () => { last = null; }));
+function stroke(a, b) {
+  ctx.strokeStyle = tool === 'eraser' ? '#fff' : color;
+  ctx.lineWidth = +$('size').value * (tool === 'eraser' ? 2 : 1);
+  ctx.lineCap = ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x + 0.01, b.y + 0.01); ctx.stroke();
+}
+
+// ---- 受付期間 ----
+const fmt = s => new Date(s).toLocaleString('ja-JP', { dateStyle: 'medium', timeStyle: 'short' });
+async function loadStatus() {
+  const banner = $('banner');
+  try {
+    const r = await fetch(`${API_BASE}/status`); const s = await r.json();
+    const range = `${fmt(s.open_from)} 〜 ${fmt(s.open_until)}`;
+    if (s.state === 'open') {
+      banner.textContent = `受付中:${range}`; $('app').hidden = false;
+    } else if (s.state === 'before') {
+      banner.textContent = `まだ受付前です(${range})`;
+    } else {
+      banner.textContent = `受付は終了しました(${range})。ご参加ありがとうございました。`; banner.classList.add('closed');
+    }
+  } catch { banner.textContent = '受付状況を取得できませんでした。時間をおいて再読み込みしてください。'; banner.classList.add('closed'); }
+}
+loadStatus();
+
+// ---- 送信 ----
+$('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = $('msg');
+  if (!drawn) { msg.textContent = 'まだ何も描かれていません'; return; }
+  if (!confirm('この絵を事務局に送ります。よろしいですか?')) return;
+  $('send').disabled = true; msg.textContent = '送信中…';
+  try {
+    const r = await fetch(`${API_BASE}/submit`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: cv.toDataURL('image/png'),
+        nickname: $('nickname').value, message: $('message').value, website: $('website').value,
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `エラー (${r.status})`);
+    msg.textContent = '✅ 送りました。ありがとうございました!';
+    snapshot(); fillWhite(); drawn = false; $('message').value = '';
+  } catch (err) {
+    msg.textContent = '送信できませんでした: ' + err.message;
+    $('send').disabled = false; return;
+  }
+  setTimeout(() => { $('send').disabled = false; }, 3000);
+});
+</script>
+</body>
+</html>

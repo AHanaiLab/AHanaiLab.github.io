@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Oekaki box - anonymous drawing submissions to the secretariat (S3+CloudFront frontend, Lambda+HttpApi backend, private S3 inbox, limited-time window)
+
+Parameters:
+  OpenFrom:
+    Type: String
+    Default: "2026-10-01T00:00:00+09:00"
+    Description: 受付開始日時 (ISO 8601, 例 2026-10-01T00:00:00+09:00)
+  OpenUntil:
+    Type: String
+    Default: "2026-10-31T23:59:59+09:00"
+    Description: 受付終了日時 (ISO 8601)。これを過ぎるとAPIは投稿を拒否し、画面も「受付終了」になります
+  NotifyEmail:
+    Type: String
+    Default: ""
+    Description: 投稿があるたびに通知を受け取るメールアドレス (空なら通知なし。デプロイ後に届く購読確認メールの承認が必要)
+  RetentionDays:
+    Type: Number
+    Default: 90
+    Description: 受信した絵を自動削除するまでの日数
+
+Conditions:
+  HasNotifyEmail: !Not [!Equals [!Ref NotifyEmail, ""]]
+
+Globals:
+  HttpApi:
+    CorsConfiguration:
+      AllowOrigins:
+        - "*"
+      AllowMethods:
+        - GET
+        - POST
+        - OPTIONS
+      AllowHeaders:
+        - Content-Type
+    # 匿名公開APIなので乱用を抑える
+    DefaultRouteSettings:
+      ThrottlingBurstLimit: 10
+      ThrottlingRateLimit: 5
+
+Resources:
+  # 事務局だけが読める受信箱。公開しない
+  InboxBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-drawings
+            Status: Enabled
+            ExpirationInDays: !Ref RetentionDays
+
+  NotifyTopic:
+    Type: AWS::SNS::Topic
+
+  NotifySubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotifyEmail
+    Properties:
+      TopicArn: !Ref NotifyTopic
+      Protocol: email
+      Endpoint: !Ref NotifyEmail
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: app.handler
+      Runtime: python3.12
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          INBOX_BUCKET: !Ref InboxBucket
+          NOTIFY_TOPIC_ARN: !Ref NotifyTopic
+          OPEN_FROM: !Ref OpenFrom
+          OPEN_UNTIL: !Ref OpenUntil
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref InboxBucket
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotifyTopic.TopicName
+      Events:
+        Status:
+          Type: HttpApi
+          Properties:
+            Path: /api/status
+            Method: GET
+        Submit:
+          Type: HttpApi
+          Properties:
+            Path: /api/submit
+            Method: POST
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${AWS::StackName} frontend"
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_200
+        Origins:
+          - Id: s3origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !Ref OriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: s3origin
+          ViewerProtocolPolicy: redirect-to-https
+          # AWS managed cache policy: CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 60
+
+Outputs:
+  ApiUrl:
+    Description: HTTP API base URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  InboxBucketName:
+    Description: 事務局の受信箱 (非公開S3)
+    Value: !Ref InboxBucket
+  FrontendBucketName:
+    Description: S3 bucket for the frontend
+    Value: !Ref FrontendBucket
+  DistributionId:
+    Description: CloudFront distribution ID
+    Value: !Ref Distribution
+  FrontendUrl:
+    Description: CloudFront URL
+    Value: !Sub "https://${Distribution.DomainName}"
