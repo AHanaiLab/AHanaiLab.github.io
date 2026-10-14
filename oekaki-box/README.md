@@ -25,8 +25,12 @@ NOTIFY_EMAIL=you@example.com \
 ## 事務局の受信
 
 ```bash
-./fetch.sh     # ./inbox/ に PNG と JSON(ニックネーム・メッセージ)を同期
+./fetch.sh     # PNG と JSON(ニックネーム・メッセージ)を同期
 ```
+
+保存先は、Google ドライブ for desktop があれば自動で「マイドライブ/お絵描きボックス」になり、
+Drive に同期されます。なければ `./inbox/` です。`DEST=/保存先 ./fetch.sh` で指定もできます。
+取得済みのファイルは再ダウンロードされません。
 
 ## 期間の変更・終了
 
