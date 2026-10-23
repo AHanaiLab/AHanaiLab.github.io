@@ -4,7 +4,7 @@
 # 使い方:
 #   ./deploy.sh
 #   OPEN_FROM=2026-10-01T00:00:00+09:00 OPEN_UNTIL=2026-10-31T23:59:59+09:00 \
-#   NOTIFY_EMAIL=you@example.com ./deploy.sh
+#   NOTIFY_EMAIL=you@example.com TRIPO_API_KEY=tsk_xxx ./deploy.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -34,6 +34,9 @@ PARAM_OVERRIDES=()
 [ -n "${OPEN_FROM:-}" ] && PARAM_OVERRIDES+=("OpenFrom=${OPEN_FROM}")
 [ -n "${OPEN_UNTIL:-}" ] && PARAM_OVERRIDES+=("OpenUntil=${OPEN_UNTIL}")
 [ -n "${NOTIFY_EMAIL:-}" ] && PARAM_OVERRIDES+=("NotifyEmail=${NOTIFY_EMAIL}")
+[ -n "${TRIPO_API_KEY:-}" ] && PARAM_OVERRIDES+=("TripoApiKey=${TRIPO_API_KEY}")
+[ -n "${TRIPO_API_BASE:-}" ] && PARAM_OVERRIDES+=("TripoApiBase=${TRIPO_API_BASE}")
+[ -n "${DAILY_MODEL_LIMIT:-}" ] && PARAM_OVERRIDES+=("DailyModelLimit=${DAILY_MODEL_LIMIT}")
 [ -n "${RETENTION_DAYS:-}" ] && PARAM_OVERRIDES+=("RetentionDays=${RETENTION_DAYS}")
 
 echo "==> sam build"

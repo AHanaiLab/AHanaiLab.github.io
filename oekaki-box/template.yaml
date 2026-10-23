@@ -19,9 +19,23 @@ Parameters:
     Type: Number
     Default: 90
     Description: 受信した絵を自動削除するまでの日数
+  TripoApiKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Tripo API キー (tsk_...)。空なら3D生成は無効 (お絵描きの受付だけ動きます)
+  TripoApiBase:
+    Type: String
+    Default: "https://api.tripo3d.ai/v2/openapi"
+    Description: Tripo API のベースURL (公式ドキュメントで確認して必要なら変更)
+  DailyModelLimit:
+    Type: Number
+    Default: 100
+    Description: 1日に3D生成する上限数 (JST)。超えた分は絵だけ受け付けます
 
 Conditions:
   HasNotifyEmail: !Not [!Equals [!Ref NotifyEmail, ""]]
+  HasTripoKey: !Not [!Equals [!Ref TripoApiKey, ""]]
 
 Globals:
   HttpApi:
@@ -84,11 +98,16 @@ Resources:
           NOTIFY_TOPIC_ARN: !Ref NotifyTopic
           OPEN_FROM: !Ref OpenFrom
           OPEN_UNTIL: !Ref OpenUntil
+          MODELS_ENABLED: !If [HasTripoKey, "1", "0"]
+          DAILY_MODEL_LIMIT: !Ref DailyModelLimit
+          WORKER_FUNCTION: !Ref ModelWorkerFunction
       Policies:
-        - S3WritePolicy:
+        - S3CrudPolicy:
             BucketName: !Ref InboxBucket
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt NotifyTopic.TopicName
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ModelWorkerFunction
       Events:
         Status:
           Type: HttpApi
@@ -100,6 +119,29 @@ Resources:
           Properties:
             Path: /api/submit
             Method: POST
+        Model:
+          Type: HttpApi
+          Properties:
+            Path: /api/model/{token}
+            Method: GET
+
+  # 絵 → Tripo で3D(GLB)化する非同期ワーカー。ApiFunction から非同期に呼ばれる
+  ModelWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: worker.handler
+      Runtime: python3.12
+      Timeout: 900
+      MemorySize: 256
+      Environment:
+        Variables:
+          INBOX_BUCKET: !Ref InboxBucket
+          TRIPO_API_KEY: !Ref TripoApiKey
+          TRIPO_API_BASE: !Ref TripoApiBase
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref InboxBucket
 
   FrontendBucket:
     Type: AWS::S3::Bucket

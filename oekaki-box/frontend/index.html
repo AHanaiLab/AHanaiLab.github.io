@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>お絵描きボックス</title>
+<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 <style>
   :root { --bg:#fffaf0; --fg:#2b2b2b; --accent:#e8590c; --line:#d9d2c3; --card:#fff; }
   @media (prefers-color-scheme: dark) {
@@ -31,6 +32,10 @@
   .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
   .note { font-size:.85rem; opacity:.8; }
   #msg { min-height:1.4em; font-weight:bold; }
+  .opt { display:flex; gap:8px; align-items:flex-start; font-size:.9rem; }
+  .opt input { margin-top:.3em; }
+  #model { margin-top:14px; }
+  model-viewer { width:100%; height:420px; background:var(--card); border:1px solid var(--line); border-radius:10px; }
 </style>
 </head>
 <body>
@@ -55,9 +60,17 @@
       <label>ニックネーム(任意)<input id="nickname" type="text" maxlength="40"></label>
       <label>事務局へのメッセージ(任意)<textarea id="message" rows="3" maxlength="500"></textarea></label>
       <div class="hp" aria-hidden="true"><label>website <input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+      <label class="opt"><input id="want3d" type="checkbox">
+        <span>3Dにして回転表示で見る(絵を外部サービス Tripo に送って3Dモデルを作ります。完成まで数分かかります)</span></label>
       <button id="send" class="primary" type="submit">事務局に送る</button>
       <div id="msg" role="status"></div>
     </form>
+  </section>
+  <section id="model" hidden>
+    <h2>あなたの絵の3Dモデル</h2>
+    <p id="modelMsg" class="note"></p>
+    <model-viewer id="viewer" auto-rotate camera-controls shadow-intensity="1" hidden></model-viewer>
+    <p class="note" id="modelLink"></p>
   </section>
 </main>
 
@@ -131,6 +144,33 @@ async function loadStatus() {
 }
 loadStatus();
 
+// ---- 3Dモデルの進捗 → 回転ビューア ----
+let polling = 0;
+async function watchModel(token) {
+  const my = ++polling, sec = $('model'), mm = $('modelMsg');
+  sec.hidden = false; $('viewer').hidden = true;
+  const started = Date.now();
+  while (my === polling && Date.now() - started < 15 * 60 * 1000) {
+    try {
+      const r = await fetch(`${API_BASE}/model/${token}`);
+      if (r.status === 404) { mm.textContent = '3Dモデルが見つかりませんでした。'; return; }
+      const j = await r.json();
+      if (j.state === 'done') {
+        const v = $('viewer'); v.src = j.url; v.hidden = false;
+        mm.textContent = 'できました!ドラッグで回せます。';
+        $('modelLink').textContent = 'このページのURLを控えておくと、あとでまた見られます(15分間有効)。';
+        return;
+      }
+      if (j.state === 'failed') { mm.textContent = '3Dモデルを作れませんでした(絵は事務局に届いています)。'; return; }
+      mm.textContent = '3Dモデルを作っています…(数分かかります。このページを開いたままお待ちください)';
+    } catch { mm.textContent = '状態を確認できません。再試行しています…'; }
+    await new Promise(res => setTimeout(res, 5000));
+  }
+  if (my === polling) mm.textContent = '時間がかかっています。しばらくしてからこのURLを開き直してください。';
+}
+const m0 = new URLSearchParams(location.search).get('m');
+if (m0 && /^[0-9a-f]{32}$/.test(m0)) watchModel(m0);
+
 // ---- 送信 ----
 $('form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -144,11 +184,14 @@ $('form').addEventListener('submit', async e => {
       body: JSON.stringify({
         image: cv.toDataURL('image/png'),
         nickname: $('nickname').value, message: $('message').value, website: $('website').value,
+        want3d: $('want3d').checked,
       }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `エラー (${r.status})`);
     msg.textContent = '✅ 送りました。ありがとうございました!';
+    if (j.token) { history.replaceState(null, '', '?m=' + j.token); watchModel(j.token); }
+    else if (j.model === 'limit') msg.textContent += '(本日の3D生成は上限に達したため、絵だけ受け付けました)';
     snapshot(); fillWhite(); drawn = false; $('message').value = '';
   } catch (err) {
     msg.textContent = '送信できませんでした: ' + err.message;

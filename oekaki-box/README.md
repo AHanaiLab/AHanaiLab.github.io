@@ -11,6 +11,18 @@
 - **荒らし対策**: スロットリング(5req/s)、ハニーポット、PNG検証、サイズ・文字数制限
 - **IaC**: AWS SAM(`saqra-portal` と同じ。S3 + CloudFront 配信)
 
+## 3Dモデル化(任意・Unity 用 GLB)
+
+`TRIPO_API_KEY` を指定すると、投稿者が「3Dにして見る」にチェックしたときだけ、
+絵を [Tripo](https://www.tripo3d.ai/) に送って GLB を作ります。完成すると投稿画面に回転ビューアが出ます。
+GLB は絵と同じ受信箱に保存され、`./fetch.sh` で Drive に届きます。Unity へは glTFast などで取り込めます。
+
+- 処理は非同期の Lambda(`worker.py`)。スマホは待つだけです
+- 1日の上限は `DAILY_MODEL_LIMIT`(既定100、JST)。超えた分は絵だけ受け付けます
+- 閲覧用リンク(`?m=…`)は投稿者だけが知る推測不能な鍵。表示用の一時URLは15分で失効
+- Tripo を呼ぶのは `backend/worker.py` の `tripo_*` 3関数だけ。API の仕様やURLが違う場合はここと `TRIPO_API_BASE` を直します
+- キー未指定なら3D機能は無効(チェックボックスを付けても絵だけ届く)
+
 ## デプロイ
 
 ```bash

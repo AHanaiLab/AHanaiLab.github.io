@@ -1,15 +1,18 @@
 """お絵描き投稿 API: 受付期間の判定と、事務局用の非公開S3への保存のみ。
 
+GET  /api/model/{token} -> {"state": "pending|running|done|failed", "url": "(done時のみ GLB の一時URL)"}
 GET  /api/status  -> {"state": "before|open|closed", "open_from", "open_until", "now"}
 POST /api/submit  -> {"image": "data:image/png;base64,...", "nickname": "", "message": "", "website": ""}
 """
 import base64
 import json
+import re
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import boto3
+from botocore.config import Config
 
 BUCKET = os.environ["INBOX_BUCKET"]
 TOPIC_ARN = os.environ.get("NOTIFY_TOPIC_ARN", "")
@@ -21,8 +24,15 @@ MAX_NICKNAME = 40
 MAX_MESSAGE = 500
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
-s3 = boto3.client("s3")
+MODELS_ENABLED = os.environ.get("MODELS_ENABLED") == "1"
+DAILY_MODEL_LIMIT = int(os.environ.get("DAILY_MODEL_LIMIT", "0"))
+WORKER_FUNCTION = os.environ.get("WORKER_FUNCTION", "")
+JST = timezone(timedelta(hours=9))
+TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
+
+s3 = boto3.client("s3", config=Config(signature_version="s3v4"))
 sns = boto3.client("sns")
+lam = boto3.client("lambda")
 
 
 def _resp(status, body):
@@ -39,6 +49,36 @@ def _state(now):
     if now > OPEN_UNTIL:
         return "closed"
     return "open"
+
+
+def _start_model_job(png_key, now):
+    """3D生成を依頼する。戻り値は (状態, token)。上限超過・無効時は token=None"""
+    if not MODELS_ENABLED:
+        return "disabled", None
+    day = now.astimezone(JST).strftime("%Y-%m-%d")
+    used = s3.list_objects_v2(Bucket=BUCKET, Prefix=f"quota/{day}/", MaxKeys=DAILY_MODEL_LIMIT + 1)["KeyCount"]
+    if used >= DAILY_MODEL_LIMIT:
+        return "limit", None
+    token = uuid.uuid4().hex   # 投稿者だけが知る閲覧用の鍵
+    s3.put_object(Bucket=BUCKET, Key=f"quota/{day}/{token}", Body=b"")
+    s3.put_object(Bucket=BUCKET, Key=f"jobs/{token}.json", Body=json.dumps({"state": "pending"}).encode())
+    lam.invoke(FunctionName=WORKER_FUNCTION, InvocationType="Event",
+               Payload=json.dumps({"token": token, "png_key": png_key}).encode())
+    return "pending", token
+
+
+def _model(token):
+    if not TOKEN_RE.match(token or ""):
+        return _resp(404, {"error": "not found"})
+    try:
+        job = json.loads(s3.get_object(Bucket=BUCKET, Key=f"jobs/{token}.json")["Body"].read())
+    except s3.exceptions.NoSuchKey:
+        return _resp(404, {"error": "not found"})
+    out = {"state": job.get("state", "pending")}
+    if out["state"] == "done":
+        out["url"] = s3.generate_presigned_url(
+            "get_object", Params={"Bucket": BUCKET, "Key": job["model_key"]}, ExpiresIn=900)
+    return _resp(200, out)
 
 
 def _status():
@@ -105,7 +145,10 @@ def _submit(event):
         except Exception:  # 通知失敗で投稿自体は失敗させない
             pass
 
-    return _resp(200, {"ok": True})
+    model_state, token = ("none", None)
+    if body.get("want3d"):
+        model_state, token = _start_model_job(f"{key}.png", now)
+    return _resp(200, {"ok": True, "model": model_state, "token": token})
 
 
 def handler(event, _context):
@@ -114,4 +157,6 @@ def handler(event, _context):
         return _status()
     if route == "POST /api/submit":
         return _submit(event)
+    if route == "GET /api/model/{token}":
+        return _model((event.get("pathParameters") or {}).get("token"))
     return _resp(404, {"error": "not found"})
