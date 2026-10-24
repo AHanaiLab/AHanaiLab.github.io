@@ -72,6 +72,11 @@ Resources:
           - Id: expire-drawings
             Status: Enabled
             ExpirationInDays: !Ref RetentionDays
+          # 事務局に送られなかったプレビュー用の絵・3Dは短期間で消す
+          - Id: expire-previews
+            Status: Enabled
+            Prefix: previews/
+            ExpirationInDays: 7
 
   NotifyTopic:
     Type: AWS::SNS::Topic
@@ -118,6 +123,11 @@ Resources:
           Type: HttpApi
           Properties:
             Path: /api/submit
+            Method: POST
+        Preview:
+          Type: HttpApi
+          Properties:
+            Path: /api/preview
             Method: POST
         Model:
           Type: HttpApi
