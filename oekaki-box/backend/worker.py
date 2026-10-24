@@ -15,7 +15,7 @@ import boto3
 
 BUCKET = os.environ["INBOX_BUCKET"]
 API_KEY = os.environ.get("TRIPO_API_KEY", "")
-BASE = os.environ.get("TRIPO_API_BASE", "https://openapi.tripo3d.com/v3").rstrip("/")   # キーを発行したサイトのURL
+BASE = os.environ.get("TRIPO_API_BASE", "https://openapi.tripo3d.ai/v3").rstrip("/")   # キーを発行したサイトのURL
 
 # image-to-model の指定(Unity/メタバース向け)。費用と重さを抑える設定
 GEN_PARAMS = {
