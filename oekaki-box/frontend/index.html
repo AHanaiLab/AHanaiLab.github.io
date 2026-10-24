@@ -185,11 +185,12 @@ async function watchModel(token, my) {
         const v = $('viewer'); previewDone = true;
         mm.textContent = '3Dを読み込んでいます…';
         v.addEventListener('load', () => { if (my === polling) mm.textContent = 'できました!ドラッグで回せます。よければ下の「事務局に送る」を押してください。直したいときは描き直して、もう一度プレビューできます。'; }, { once: true });
-        v.addEventListener('error', () => { mm.innerHTML = '3Dは作られましたが、画面に表示できませんでした。このまま「事務局に送る」で3Dも届きます。'; }, { once: true });
+        v.addEventListener('error', () => { mm.innerHTML = '3Dはできましたが、この画面では表示できませんでした。「事務局に送る」を押すと、3Dも事務局に届きます。'; }, { once: true });
         v.src = j.url; v.hidden = false;
-        setTimeout(() => { if (my === polling && mm.textContent === '3Dを読み込んでいます…') mm.textContent = '表示に時間がかかっています。表示されなくても、このまま「事務局に送る」で3Dも届きます。'; }, 20000);
+        setTimeout(() => { if (my === polling && mm.textContent === '3Dを読み込んでいます…') mm.textContent = '表示に時間がかかっています。表示されなくても、「事務局に送る」を押すと、3Dも事務局に届きます。'; }, 20000);
         return;
       }
+      if (j.state !== 'failed') mm.textContent = `3Dモデルを作っています…(経過 ${Math.round((Date.now() - started) / 1000)} 秒。通常は1〜3分ほどかかります。描き直すと中止されます)`;
       if (j.state === 'failed') { mm.textContent = '3Dモデルを作れませんでした。描き直すか、3Dなしでそのまま送れます。'; return; }
     } catch { /* 通信が途切れても再試行する */ }
     await new Promise(res => setTimeout(res, 5000));
