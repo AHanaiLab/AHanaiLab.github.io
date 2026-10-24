@@ -58,7 +58,7 @@
 
     <div class="tools">
       <button id="preview3d" type="button">🧊 3Dプレビューを作る</button>
-      <span class="note">3Dにしない場合は、プレビューを作らずに「送信」ボタンを押してください。<br>修正をしたい場合は、再度お絵描きと3Dプレビューをしてから、送信をしてください。</span>
+      <span class="note">3Dにしたくない場合は、プレビューを作らずに「送信」ボタンを押してください（2Dの絵を額縁に入れてメタバース内に展示します）。<br>修正をしたい場合は、再度お絵描きと3Dプレビューをしてから、送信をしてください。</span>
     </div>
     <section id="model" hidden>
       <h2>3Dプレビュー</h2>
@@ -85,7 +85,7 @@ const API_BASE = API_BASE_BUILD.startsWith('__')
 
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
-const COLORS = ['#000000','#e03131','#f08c00','#2f9e44','#1971c2','#7048e8','#e64980','#795548','#ffffff'];
+const COLORS = ['#000000','#868e96','#e03131','#f08c00','#ffc078','#ffd43b','#2f9e44','#74c0fc','#1971c2','#7048e8','#e64980','#795548','#4e342e','#ffffff'];
 let color = COLORS[0], tool = 'pen';
 const undoStack = [], redoStack = [];
 let drawn = false;           // 何か描かれたか(白紙送信の防止)
