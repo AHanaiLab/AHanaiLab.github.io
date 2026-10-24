@@ -15,7 +15,16 @@ import boto3
 
 BUCKET = os.environ["INBOX_BUCKET"]
 API_KEY = os.environ.get("TRIPO_API_KEY", "")
-BASE = os.environ.get("TRIPO_API_BASE", "https://api.tripo3d.ai/v2/openapi").rstrip("/")
+BASE = "https://openapi.tripo3d.com/v3"   # https://developers.tripo3d.com/en/docs/introduction
+
+# image-to-model の指定(Unity/メタバース向け)。費用と重さを抑える設定
+GEN_PARAMS = {
+    "model": "v3.1-20260211",
+    "texture": True,
+    "pbr": False,          # 色テクスチャのみ(PBR 材質マップは作らない=消費クレジットを抑える)
+    "face_limit": 30000,   # ポリゴン数の上限。メタバース向けに軽量化
+}
+FAILED_STATES = ("failed", "cancelled", "canceled", "error", "banned", "expired", "unknown")
 
 POLL_SECONDS = 5
 DEADLINE_SECONDS = 780   # Lambda の 900 秒より手前で諦める
@@ -36,42 +45,59 @@ def _request(method, url, body=None, headers=None):
         raise RuntimeError(f"{method} {url} -> HTTP {e.code}: {e.read()[:500]!r}") from None
 
 
+def _data(raw):
+    """Tripo の共通応答 {"code": 0, "data": {...}} を検査して data を返す"""
+    res = json.loads(raw)
+    if res.get("code") != 0:
+        raise RuntimeError(f"tripo error: {str(res)[:300]}")
+    return res["data"]
+
+
 def tripo_upload(png: bytes) -> str:
-    """画像を Tripo にアップロードして file_token を返す"""
+    """POST /files (multipart) で画像をアップロードして file_token を返す"""
     boundary = uuid.uuid4().hex
     body = (
         f"--{boundary}\r\n"
         'Content-Disposition: form-data; name="file"; filename="drawing.png"\r\n'
         "Content-Type: image/png\r\n\r\n"
     ).encode() + png + f"\r\n--{boundary}--\r\n".encode()
-    res = json.loads(_request("POST", f"{BASE}/upload", body,
-                              {"Content-Type": f"multipart/form-data; boundary={boundary}"}))
-    return res["data"]["image_token"]
+    raw = _request("POST", f"{BASE}/files", body, {"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    return _data(raw)["file_token"]
 
 
 def tripo_create_task(file_token: str) -> str:
-    """image_to_model タスクを作って task_id を返す"""
-    payload = json.dumps({"type": "image_to_model", "file": {"type": "png", "file_token": file_token}}).encode()
-    res = json.loads(_request("POST", f"{BASE}/task", payload, {"Content-Type": "application/json"}))
-    return res["data"]["task_id"]
+    """POST /generation/image-to-model でタスクを作って task_id を返す"""
+    payload = json.dumps({"input": file_token, **GEN_PARAMS}).encode()
+    raw = _request("POST", f"{BASE}/generation/image-to-model", payload, {"Content-Type": "application/json"})
+    return _data(raw)["task_id"]
+
+
+def _get_task(task_id: str) -> dict:
+    """タスクの状態を取得する。ドキュメントで確認できたパス /tasks/{id} を先に試し、404なら /task/{id}"""
+    try:
+        return _data(_request("GET", f"{BASE}/tasks/{task_id}"))
+    except RuntimeError as e:
+        if "HTTP 404" not in str(e):
+            raise
+        return _data(_request("GET", f"{BASE}/task/{task_id}"))
 
 
 def tripo_wait(task_id: str) -> bytes:
     """完了まで待って GLB のバイト列を返す。失敗・時間切れは例外"""
     end = time.time() + DEADLINE_SECONDS
     while time.time() < end:
-        data = json.loads(_request("GET", f"{BASE}/task/{task_id}"))["data"]
+        data = _get_task(task_id)
         status = str(data.get("status", "")).lower()
         if status == "success":
-            out = data.get("output") or {}
-            url = out.get("pbr_model") or out.get("model") or out.get("base_model")
+            url = (data.get("output") or {}).get("model_url")
             if not url:
-                raise RuntimeError("no model url in output")
-            # 配布URLは短時間で失効するので、すぐ取得する
-            with urllib.request.urlopen(url, timeout=120) as r:
+                raise RuntimeError(f"no model_url in output: {str(data)[:300]}")
+            # 配布URLは短時間で失効することがあるので、すぐ取得する
+            req = urllib.request.Request(url, headers={"User-Agent": "oekaki-box/1.0"})
+            with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
-        if status in ("failed", "cancelled", "banned", "expired"):
-            raise RuntimeError(f"tripo task {status}")
+        if status in FAILED_STATES:
+            raise RuntimeError(f"tripo task {status}: {str(data)[:300]}")
         time.sleep(POLL_SECONDS)
     raise TimeoutError("tripo task timed out")
 
