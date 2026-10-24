@@ -41,7 +41,7 @@
 <body>
 <main>
   <h1>🎨 お絵描きボックス</h1>
-  <p class="note">描いた絵は事務局にだけ届きます。公開はされません。お名前やログインは不要です(ニックネームは任意)。</p>
+  <p class="note">描いた絵は事務局にだけ届きます。描いている途中の絵や入力は、この端末のブラウザに自動で保存され、画面を閉じても戻せます。公開はされません。お名前やログインは不要です(ニックネームは任意)。</p>
   <div id="banner" class="banner">受付状況を確認しています…</div>
 
   <section id="app" hidden>
@@ -147,10 +147,10 @@ async function loadStatus() {
 loadStatus();
 
 // ---- 3Dプレビュー(送信前に確認・描き直しができる) ----
-let polling = 0, previewToken = null, previewDone = false, previewStale = false;
+let polling = 0, previewToken = null, previewDone = false, previewStale = false, previewImage = null;
 function resetPreview() {            // 絵が変わったらプレビューは無効(別の絵の3Dを送らない)
   if (previewToken) previewStale = true;   // 3Dを作った/作っている最中に絵を変えた
-  polling++; previewToken = null; previewDone = false;
+  polling++; previewToken = null; previewDone = false; $('preview3d').disabled = false;
   if (!$('model').hidden) { $('viewer').hidden = true; $('modelMsg').textContent = '絵を変えたので、3Dは作り直しが必要です。'; }
 }
 ['pointerdown'].forEach(t => cv.addEventListener(t, resetPreview));
@@ -163,11 +163,13 @@ $('preview3d').onclick = async () => {
   $('preview3d').disabled = true; $('model').hidden = false; $('viewer').hidden = true;
   mm.textContent = '3Dモデルを作っています…(数分かかります。描き直すと中止されます)';
   try {
+    const img = cv.toDataURL('image/png');
     const r = await fetch(`${API_BASE}/preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: cv.toDataURL('image/png') }) });
+      body: JSON.stringify({ image: img }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `エラー (${r.status})`);
-    previewToken = j.token; previewDone = false; previewStale = false; polling++;
+    previewToken = j.token; previewImage = img; previewDone = false; previewStale = false; polling++;
+    saveDraft();   // この時点で保存。画面が閉じても、あとで続きを確認できる
     await watchModel(j.token, polling);
   } catch (err) { mm.textContent = '3Dプレビューを作れませんでした: ' + err.message; }
   $('preview3d').disabled = false;
@@ -178,7 +180,7 @@ async function watchModel(token, my) {
   while (my === polling && Date.now() - started < 15 * 60 * 1000) {
     try {
       const r = await fetch(`${API_BASE}/model/${token}`);
-      if (r.status === 404) { mm.textContent = '3Dモデルが見つかりませんでした。'; return; }
+      if (r.status === 404) { previewToken = null; previewDone = false; mm.textContent = '前回の3Dが見つかりませんでした(期限切れの可能性があります)。もう一度プレビューを作ってください。'; return; }
       const j = await r.json();
       if (my !== polling) return;
       if (j.state === 'done') {
@@ -191,11 +193,57 @@ async function watchModel(token, my) {
         return;
       }
       if (j.state !== 'failed') mm.textContent = `3Dモデルを作っています…(経過 ${Math.round((Date.now() - started) / 1000)} 秒。通常は1〜3分ほどかかります。描き直すと中止されます)`;
-      if (j.state === 'failed') { mm.textContent = '3Dモデルを作れませんでした。描き直すか、3Dなしでそのまま送れます。'; return; }
+      if (j.state === 'failed') { previewToken = null; previewDone = false; mm.textContent = '3Dモデルを作れませんでした。描き直すか、3Dなしでそのまま送れます。'; return; }
     } catch { /* 通信が途切れても再試行する */ }
     await new Promise(res => setTimeout(res, 5000));
   }
   if (my === polling) mm.textContent = '時間がかかっています。3Dなしでそのまま送ることもできます。';
+}
+
+// ---- 下書きの自動保存(画面が閉じても、絵・入力・3Dプレビューの進行を復元する) ----
+const DRAFT_KEY = 'oekakiBox.draft.v1';
+let saveTimer = 0, restoring = false;
+function saveDraft() {
+  if (restoring) return;
+  try {
+    if (!drawn && !$('nickname').value && !$('message').value && !previewToken) { localStorage.removeItem(DRAFT_KEY); return; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      image: drawn ? cv.toDataURL('image/png') : null,
+      nickname: $('nickname').value, message: $('message').value,
+      token: previewToken, stale: previewStale, previewImage: previewToken ? previewImage : null,
+    }));
+  } catch { /* 保存できなくても描画は続けられる */ }
+}
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 400); }
+function clearDraft() { clearTimeout(saveTimer); try { localStorage.removeItem(DRAFT_KEY); } catch { /* 無視 */ } }
+['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, scheduleSave));
+['undo', 'redo', 'clear'].forEach(id => $(id).addEventListener('click', scheduleSave));
+['nickname', 'message'].forEach(id => $(id).addEventListener('input', scheduleSave));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
+addEventListener('pagehide', saveDraft);
+
+function restoreDraft() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { /* 壊れていたら無視 */ }
+  if (!d) return;
+  restoring = true;
+  $('nickname').value = d.nickname || ''; $('message').value = d.message || '';
+  previewStale = !!d.stale;
+  const resume = () => {
+    restoring = false;
+    if (d.image || d.nickname || d.message) $('msg').textContent = '前回の絵と入力を復元しました。';
+    if (d.token && !d.stale && d.previewImage) {      // 3Dの生成は、画面を閉じていてもサーバーで続いている
+      previewToken = d.token; previewImage = d.previewImage; previewDone = false;
+      $('model').hidden = false; $('modelMsg').textContent = '前回の3Dプレビューの続きを確認しています…';
+      watchModel(d.token, ++polling);
+    }
+  };
+  if (d.image) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0); drawn = true; resume(); };
+    img.onerror = () => { restoring = false; };
+    img.src = d.image;
+  } else resume();
 }
 
 // ---- 送信 ----
@@ -211,7 +259,7 @@ $('form').addEventListener('submit', async e => {
     const r = await fetch(`${API_BASE}/submit`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        image: cv.toDataURL('image/png'),
+        image: (previewDone && previewToken && previewImage) ? previewImage : cv.toDataURL('image/png'),   // 3Dを作った絵と同じ内容を送る
         nickname: $('nickname').value, message: $('message').value, website: $('website').value,
         preview_token: previewDone ? previewToken : null,
       }),
@@ -223,13 +271,14 @@ $('form').addEventListener('submit', async e => {
     if (j.model) msg.textContent += '(3Dモデルも一緒に届きました)';
     else if (hadPreview) msg.textContent += '(3Dは付かず、絵だけが届きました)';
     polling++; previewToken = null; previewDone = false; previewStale = false; $('model').hidden = true;
-    snapshot(); fillWhite(); drawn = false; $('message').value = ''; $('nickname').value = '';
+    snapshot(); fillWhite(); drawn = false; $('message').value = ''; $('nickname').value = ''; previewImage = null; clearDraft();
   } catch (err) {
     msg.textContent = '送信できませんでした: ' + err.message;
     $('send').disabled = false; return;
   }
   setTimeout(() => { $('send').disabled = false; }, 3000);
 });
+restoreDraft();
 </script>
 </body>
 </html>
