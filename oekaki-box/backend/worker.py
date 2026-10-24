@@ -24,6 +24,21 @@ GEN_PARAMS = {
     "pbr": False,          # 色テクスチャのみ(PBR 材質マップは作らない=消費クレジットを抑える)
     "face_limit": 30000,   # ポリゴン数の上限。メタバース向けに軽量化
 }
+
+
+def _parse_overrides(text):
+    """'enable_image_autofix=true,orientation=align_image,face_limit=50000' を dict にする"""
+    out = {}
+    for item in filter(None, (text or "").split(",")):
+        k, _, v = item.partition("=")
+        k, v = k.strip(), v.strip()
+        if not k:
+            continue
+        out[k] = True if v.lower() == "true" else False if v.lower() == "false" else int(v) if v.lstrip("-").isdigit() else v
+    return out
+
+
+GEN_PARAMS.update(_parse_overrides(os.environ.get("TRIPO_GEN_PARAMS", "")))   # デプロイ時に設定を上書きできる
 FAILED_STATES = ("failed", "cancelled")   # 状態は queued / running / success / failed / cancelled
 
 POLL_SECONDS = 5
@@ -102,7 +117,10 @@ def handler(event, _context):
     model_key = png_key.rsplit(".", 1)[0] + ".glb"
     try:
         _write_job(token, state="running")
-        png = s3.get_object(Bucket=BUCKET, Key=png_key)["Body"].read()
+        try:   # 切り抜き済みの入力画像があれば、それを Tripo に渡す
+            png = s3.get_object(Bucket=BUCKET, Key=png_key.rsplit(".", 1)[0] + ".input.png")["Body"].read()
+        except s3.exceptions.NoSuchKey:
+            png = s3.get_object(Bucket=BUCKET, Key=png_key)["Body"].read()
         glb = tripo_wait(tripo_create_task(tripo_upload(png)))
         s3.put_object(Bucket=BUCKET, Key=model_key, Body=glb, ContentType="model/gltf-binary")
         _write_job(token, state="done", model_key=model_key)

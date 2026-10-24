@@ -28,6 +28,10 @@ Parameters:
     Type: String
     Default: "https://openapi.tripo3d.ai/v3"
     Description: Tripo v3 API のベースURL (キーを発行したサイトに合わせる。国際版アカウントは .ai、中国版は .com)
+  TripoGenParams:
+    Type: String
+    Default: ""
+    Description: "3D生成の設定を上書き (例: enable_image_autofix=true,orientation=align_image)。空なら既定"
   DailyModelLimit:
     Type: Number
     Default: 100
@@ -156,6 +160,7 @@ Resources:
           INBOX_BUCKET: !Ref InboxBucket
           TRIPO_API_KEY: !Ref TripoApiKey
           TRIPO_API_BASE: !Ref TripoV3Base
+          TRIPO_GEN_PARAMS: !Ref TripoGenParams
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref InboxBucket

@@ -88,6 +88,22 @@ const cv = $('cv'), ctx = cv.getContext('2d');
 const COLORS = ['#000000','#868e96','#e03131','#f08c00','#ffc078','#ffd43b','#2f9e44','#74c0fc','#1971c2','#7048e8','#e64980','#795548','#4e342e','#ffffff'];
 let color = COLORS[0], tool = 'pen';
 const undoStack = [], redoStack = [];
+// 3D生成用に、絵の被写体を切り抜いて、白背景の正方形(1024px)にする。小さい絵や余白の多い絵は崩れやすいため
+function cropForModel() {
+  const w = cv.width, h = cv.height, d = ctx.getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    if (d[i] < 245 || d[i + 1] < 245 || d[i + 2] < 245) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return null;
+  const side = Math.max(x1 - x0 + 1, y1 - y0 + 1), S = Math.round(side * 1.24), OUT = 1024;
+  const out = document.createElement('canvas'); out.width = out.height = OUT;
+  const o = out.getContext('2d'); o.fillStyle = '#fff'; o.fillRect(0, 0, OUT, OUT); o.imageSmoothingQuality = 'high';
+  o.drawImage(cv, (x0 + x1) / 2 - S / 2, (y0 + y1) / 2 - S / 2, S, S, 0, 0, OUT, OUT);
+  return out.toDataURL('image/png');
+}
+
 let drawn = false;           // 何か描かれたか(白紙送信の防止)
 
 function fillWhite() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); }
@@ -165,7 +181,7 @@ $('preview3d').onclick = async () => {
   try {
     const img = cv.toDataURL('image/png');
     const r = await fetch(`${API_BASE}/preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: img }) });
+      body: JSON.stringify({ image: img, input_image: cropForModel() }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || `エラー (${r.status})`);
     previewToken = j.token; previewImage = img; previewDone = false; previewStale = false; polling++;

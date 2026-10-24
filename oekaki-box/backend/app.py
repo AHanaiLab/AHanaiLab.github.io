@@ -69,7 +69,7 @@ def _parse_png(body):
     return png, None
 
 
-def _start_model_job(png, now):
+def _start_model_job(png, now, input_png=None):
     """3D生成を依頼する。戻り値は (状態, token)。上限超過・無効時は token=None"""
     if not MODELS_ENABLED:
         return "disabled", None
@@ -80,6 +80,8 @@ def _start_model_job(png, now):
     token = uuid.uuid4().hex   # 投稿者だけが知る閲覧用の鍵
     png_key = f"previews/{token}.png"
     s3.put_object(Bucket=BUCKET, Key=png_key, Body=png, ContentType="image/png")
+    if input_png:   # 被写体を切り抜いて拡大した、3D生成用の画像(送信照合用の元の絵とは別に保存)
+        s3.put_object(Bucket=BUCKET, Key=f"previews/{token}.input.png", Body=input_png, ContentType="image/png")
     s3.put_object(Bucket=BUCKET, Key=f"quota/{day}/{token}", Body=b"")
     s3.put_object(Bucket=BUCKET, Key=f"jobs/{token}.json", Body=json.dumps({"state": "pending"}).encode())
     lam.invoke(FunctionName=WORKER_FUNCTION, InvocationType="Event",
@@ -99,7 +101,12 @@ def _preview(event):
     png, err = _parse_png(body)
     if err:
         return err
-    state, token = _start_model_job(png, now)
+    input_png = None
+    if body.get("input_image"):
+        input_png, err = _parse_png({"image": body["input_image"]})
+        if err:
+            return err
+    state, token = _start_model_job(png, now, input_png)
     if state == "disabled":
         return _resp(503, {"error": "3Dプレビューは現在使えません"})
     if state == "limit":
