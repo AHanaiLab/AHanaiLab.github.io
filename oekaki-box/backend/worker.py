@@ -23,6 +23,7 @@ GEN_PARAMS = {
     "texture": True,
     "pbr": False,          # 色テクスチャのみ(PBR 材質マップは作らない=消費クレジットを抑える)
     "face_limit": 30000,   # ポリゴン数の上限。メタバース向けに軽量化
+    "enable_image_autofix": True,   # 入力画像を自動補正。線画の絵で、比較して最もきれいだった設定
 }
 
 

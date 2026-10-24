@@ -20,7 +20,7 @@ import uuid
 BASE = os.environ.get("TRIPO_API_BASE", "https://openapi.tripo3d.ai/v3").rstrip("/")
 KEY = os.environ.get("TRIPO_API_KEY", "")
 
-COMMON = {"model": "v3.1-20260211", "texture": True, "pbr": False, "face_limit": 30000}   # 現在の本番設定
+COMMON = {"model": "v3.1-20260211", "texture": True, "pbr": False, "face_limit": 30000}   # 本番の基本設定(本番はこれに autofix を加えたもの)
 VARIANTS = {
     "base": {},                                                    # 現在の本番設定
     "autofix": {"enable_image_autofix": True},                     # 入力画像を自動で補正
