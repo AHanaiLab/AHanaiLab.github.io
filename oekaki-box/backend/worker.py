@@ -24,7 +24,7 @@ GEN_PARAMS = {
     "pbr": False,          # 色テクスチャのみ(PBR 材質マップは作らない=消費クレジットを抑える)
     "face_limit": 30000,   # ポリゴン数の上限。メタバース向けに軽量化
 }
-FAILED_STATES = ("failed", "cancelled", "canceled", "error", "banned", "expired", "unknown")
+FAILED_STATES = ("failed", "cancelled")   # 状態は queued / running / success / failed / cancelled
 
 POLL_SECONDS = 5
 DEADLINE_SECONDS = 780   # Lambda の 900 秒より手前で諦める
@@ -72,21 +72,11 @@ def tripo_create_task(file_token: str) -> str:
     return _data(raw)["task_id"]
 
 
-def _get_task(task_id: str) -> dict:
-    """タスクの状態を取得する。ドキュメントで確認できたパス /tasks/{id} を先に試し、404なら /task/{id}"""
-    try:
-        return _data(_request("GET", f"{BASE}/tasks/{task_id}"))
-    except RuntimeError as e:
-        if "HTTP 404" not in str(e):
-            raise
-        return _data(_request("GET", f"{BASE}/task/{task_id}"))
-
-
 def tripo_wait(task_id: str) -> bytes:
     """完了まで待って GLB のバイト列を返す。失敗・時間切れは例外"""
     end = time.time() + DEADLINE_SECONDS
     while time.time() < end:
-        data = _get_task(task_id)
+        data = _data(_request("GET", f"{BASE}/tasks/{task_id}"))   # GET /tasks/{task_id}
         status = str(data.get("status", "")).lower()
         if status == "success":
             url = (data.get("output") or {}).get("model_url")
@@ -97,7 +87,7 @@ def tripo_wait(task_id: str) -> bytes:
             with urllib.request.urlopen(req, timeout=120) as r:
                 return r.read()
         if status in FAILED_STATES:
-            raise RuntimeError(f"tripo task {status}: {str(data)[:300]}")
+            raise RuntimeError(f"tripo task {status}: code={data.get('error_code')} {data.get('error_message')}")
         time.sleep(POLL_SECONDS)
     raise TimeoutError("tripo task timed out")
 
