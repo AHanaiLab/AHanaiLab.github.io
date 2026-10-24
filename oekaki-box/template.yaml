@@ -24,6 +24,10 @@ Parameters:
     Default: ""
     NoEcho: true
     Description: Tripo API キー (tsk_...)。空なら3D生成は無効 (お絵描きの受付だけ動きます)
+  TripoV3Base:
+    Type: String
+    Default: "https://openapi.tripo3d.com/v3"
+    Description: Tripo v3 API のベースURL (キーを発行したサイトに合わせる。国際版は .ai の場合あり)
   DailyModelLimit:
     Type: Number
     Default: 100
@@ -144,6 +148,7 @@ Resources:
         Variables:
           INBOX_BUCKET: !Ref InboxBucket
           TRIPO_API_KEY: !Ref TripoApiKey
+          TRIPO_API_BASE: !Ref TripoV3Base
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref InboxBucket
