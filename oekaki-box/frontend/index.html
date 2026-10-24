@@ -182,8 +182,12 @@ async function watchModel(token, my) {
       const j = await r.json();
       if (my !== polling) return;
       if (j.state === 'done') {
-        const v = $('viewer'); v.src = j.url; v.hidden = false; previewDone = true;
-        mm.textContent = 'できました!ドラッグで回せます。よければ下の「事務局に送る」を押してください。直したいときは描き直して、もう一度プレビューできます。';
+        const v = $('viewer'); previewDone = true;
+        mm.textContent = '3Dを読み込んでいます…';
+        v.addEventListener('load', () => { if (my === polling) mm.textContent = 'できました!ドラッグで回せます。よければ下の「事務局に送る」を押してください。直したいときは描き直して、もう一度プレビューできます。'; }, { once: true });
+        v.addEventListener('error', () => { mm.innerHTML = '3Dは作られましたが、画面に表示できませんでした。このまま「事務局に送る」で3Dも届きます。'; }, { once: true });
+        v.src = j.url; v.hidden = false;
+        setTimeout(() => { if (my === polling && mm.textContent === '3Dを読み込んでいます…') mm.textContent = '表示に時間がかかっています。表示されなくても、このまま「事務局に送る」で3Dも届きます。'; }, 20000);
         return;
       }
       if (j.state === 'failed') { mm.textContent = '3Dモデルを作れませんでした。描き直すか、3Dなしでそのまま送れます。'; return; }
@@ -218,7 +222,7 @@ $('form').addEventListener('submit', async e => {
     if (j.model) msg.textContent += '(3Dモデルも一緒に届きました)';
     else if (hadPreview) msg.textContent += '(3Dは付かず、絵だけが届きました)';
     polling++; previewToken = null; previewDone = false; previewStale = false; $('model').hidden = true;
-    snapshot(); fillWhite(); drawn = false; $('message').value = '';
+    snapshot(); fillWhite(); drawn = false; $('message').value = ''; $('nickname').value = '';
   } catch (err) {
     msg.textContent = '送信できませんでした: ' + err.message;
     $('send').disabled = false; return;

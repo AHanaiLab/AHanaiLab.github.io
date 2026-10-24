@@ -67,6 +67,13 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+      # 画面(CloudFront)から、署名付きURLで3D(GLB)を読み込めるようにする
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, HEAD]
+            AllowedOrigins: ["*"]
+            AllowedHeaders: ["*"]
+            MaxAge: 3000
       LifecycleConfiguration:
         Rules:
           - Id: expire-drawings
