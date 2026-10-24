@@ -7,6 +7,7 @@ Tripo API を呼ぶのは tripo_* の3関数だけ。仕様が変わったらこ
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 import uuid
 
@@ -25,10 +26,14 @@ s3 = boto3.client("s3")
 def _request(method, url, body=None, headers=None):
     req = urllib.request.Request(url, data=body, method=method)
     req.add_header("Authorization", f"Bearer {API_KEY}")
+    req.add_header("User-Agent", "oekaki-box/1.0")   # 既定の Python-urllib はWAFに弾かれやすい
     for k, v in (headers or {}).items():
         req.add_header(k, v)
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:   # 原因が分かるよう、応答本文をログに残す(キーは含まれない)
+        raise RuntimeError(f"{method} {url} -> HTTP {e.code}: {e.read()[:500]!r}") from None
 
 
 def tripo_upload(png: bytes) -> str:
