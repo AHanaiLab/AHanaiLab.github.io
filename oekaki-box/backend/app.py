@@ -57,15 +57,15 @@ def _parse_png(body):
     image = body.get("image") or ""
     prefix = "data:image/png;base64,"
     if not image.startswith(prefix):
-        return None, _resp(400, {"error": "PNG画像が必要です"})
+        return None, _resp(400, {"error": "絵のデータが正しくありません"})
     try:
         png = base64.b64decode(image[len(prefix):], validate=True)
     except ValueError:
-        return None, _resp(400, {"error": "画像を読み取れませんでした"})
+        return None, _resp(400, {"error": "絵のデータを読みこめませんでした"})
     if not png.startswith(PNG_MAGIC):
-        return None, _resp(400, {"error": "PNG画像が必要です"})
+        return None, _resp(400, {"error": "絵のデータが正しくありません"})
     if len(png) > MAX_PNG_BYTES:
-        return None, _resp(413, {"error": "画像が大きすぎます(3MBまで)"})
+        return None, _resp(413, {"error": "絵のデータが大きすぎます"})
     return png, None
 
 
@@ -93,11 +93,11 @@ def _preview(event):
     """3Dプレビュー用。事務局には送られず、Tripo にだけ送る。1回ごとに1日の上限を消費する"""
     now = datetime.now(timezone.utc)
     if _state(now) != "open":
-        return _resp(403, {"error": "現在は受付期間外です"})
+        return _resp(403, {"error": "いまは受付の期間ではありません"})
     try:
         body = json.loads(event.get("body") or "{}")
     except json.JSONDecodeError:
-        return _resp(400, {"error": "不正なリクエストです"})
+        return _resp(400, {"error": "うまく送れませんでした。もう一度ためしてください"})
     png, err = _parse_png(body)
     if err:
         return err
@@ -108,9 +108,9 @@ def _preview(event):
             return err
     state, token = _start_model_job(png, now, input_png)
     if state == "disabled":
-        return _resp(503, {"error": "3Dプレビューは現在使えません"})
+        return _resp(503, {"error": "いまは3Dにする機能を使えません"})
     if state == "limit":
-        return _resp(429, {"error": "本日の3D生成は上限に達しました。絵だけ送ることはできます"})
+        return _resp(429, {"error": "きょうは3Dをつくれる数がいっぱいになりました。2Dの絵だけなら送れます"})
     return _resp(200, {"ok": True, "token": token})
 
 
@@ -159,12 +159,12 @@ def _status():
 def _submit(event):
     now = datetime.now(timezone.utc)
     if _state(now) != "open":
-        return _resp(403, {"error": "現在は受付期間外です"})
+        return _resp(403, {"error": "いまは受付の期間ではありません"})
 
     try:
         body = json.loads(event.get("body") or "{}")
     except json.JSONDecodeError:
-        return _resp(400, {"error": "不正なリクエストです"})
+        return _resp(400, {"error": "うまく送れませんでした。もう一度ためしてください"})
 
     # ボット対策のハニーポット(人間には見えない入力欄)。埋まっていたら成功を装って捨てる
     if body.get("website"):
