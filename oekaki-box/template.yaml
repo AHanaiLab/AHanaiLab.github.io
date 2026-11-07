@@ -9,7 +9,7 @@ Parameters:
     Description: 受付開始日時 (ISO 8601, 例 2026-10-01T00:00:00+09:00)
   OpenUntil:
     Type: String
-    Default: "2026-10-31T23:59:59+09:00"
+    Default: "2026-11-20T23:59:59+09:00"
     Description: 受付終了日時 (ISO 8601)。これを過ぎるとAPIは投稿を拒否し、画面も「受付終了」になります
   NotifyEmail:
     Type: String

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# お絵描きボックス一括デプロイ:
+# たからものを描いておくろう 一括デプロイ:
 #   sam build && sam deploy → フロントの API_BASE 差し込み → S3 同期 → CloudFront invalidation
 # 使い方:
 #   ./deploy.sh
-#   OPEN_FROM=2026-10-01T00:00:00+09:00 OPEN_UNTIL=2026-10-31T23:59:59+09:00 \
+#   OPEN_FROM=2026-10-01T00:00:00+09:00 OPEN_UNTIL=2026-11-20T23:59:59+09:00 \
 #   NOTIFY_EMAIL=you@example.com TRIPO_API_KEY=tsk_xxx ./deploy.sh
 set -euo pipefail
 cd "$(dirname "$0")"

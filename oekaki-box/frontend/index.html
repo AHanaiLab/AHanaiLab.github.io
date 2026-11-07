@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>お絵描きボックス</title>
+<title>たからものを描いておくろう</title>
 <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 <style>
   :root { --bg:#fffaf0; --fg:#2b2b2b; --accent:#e8590c; --line:#d9d2c3; --card:#fff; }
@@ -40,7 +40,7 @@
 </head>
 <body>
 <main>
-  <h1>🎨 お絵描きボックス</h1>
+  <h1>たからものを描いておくろう</h1>
   <p class="note">ニックネームやコメントは任意です。</p>
   <div id="banner" class="banner">受付状況を確認しています…</div>
 
@@ -146,7 +146,12 @@ function stroke(a, b) {
 }
 
 // ---- 受付期間 ----
-const fmt = s => new Date(s).toLocaleString('ja-JP', { dateStyle: 'medium', timeStyle: 'short' });
+// 受付期間は、見ている人の端末の時差にかかわらず日本時間で、「2026/10/01 0:00」の形式にする
+const fmt = iso => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso)).map(x => [x.type, x.value]));
+  return `${p.year}/${p.month}/${p.day} ${Number(p.hour)}:${p.minute}`;
+};
 async function loadStatus() {
   const banner = $('banner');
   try {
