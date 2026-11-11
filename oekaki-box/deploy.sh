@@ -27,6 +27,20 @@ if ! aws sts get-caller-identity >/dev/null 2>&1; then
   exit 1
 fi
 
+# Tripo のキーを指定したときは、デプロイの前に有効か確かめる(間違ったキーのままデプロイして、3Dが全部失敗するのを防ぐ)
+if [ -n "${TRIPO_API_KEY:-}" ]; then
+  case "${TRIPO_API_KEY}" in
+    tsk_*) ;;
+    *) echo "エラー: TRIPO_API_KEY が 'tsk_' で始まっていません。'tcli_' は client_id で、使えません。シークレットキー(tsk_...)を指定してください" >&2; exit 1 ;;
+  esac
+  CHECK_BASE="${TRIPO_API_BASE:-https://openapi.tripo3d.ai/v3}"
+  CHECK="$(curl -s -m 20 -H "Authorization: Bearer ${TRIPO_API_KEY}" "${CHECK_BASE}/account/balance" || true)"
+  case "${CHECK}" in
+    *'"code":0'*) echo "==> Tripo キーを確認しました (${CHECK_BASE})" ;;
+    *) echo "エラー: Tripo のキーが ${CHECK_BASE} で認められませんでした: ${CHECK}" >&2; exit 1 ;;
+  esac
+fi
+
 STACK_NAME="${STACK_NAME:-oekaki-box}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 
