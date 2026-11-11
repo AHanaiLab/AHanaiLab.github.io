@@ -46,7 +46,7 @@ def summarize(events):
             per_day[t.date()][1] += 1
             code = re.search(r"HTTP (\d+)", msg)
             why = re.search(r'"message":"([^"]+)"', msg)
-            fails.append((t, f"HTTP {code.group(1)} " if code else "") + (why.group(1) if why else msg[:80]))
+            fails.append((t, (f"HTTP {code.group(1)} " if code else "") + (why.group(1) if why else msg[:80])))
     return per_day, sorted(fails)
 
 
