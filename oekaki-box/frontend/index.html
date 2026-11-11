@@ -220,7 +220,10 @@ async function watchModel(token, my) {
         setTimeout(() => { if (my === polling && mm.textContent === '3Dを読みこんでいます…') mm.textContent = '見えるまでに時間がかかっています。見えなくても、「3Dもいっしょに送信」か「2Dの絵だけ送信」を押してください。'; }, 20000);
         return;
       }
-      if (j.state !== 'failed') mm.textContent = `3Dをつくっています…(${Math.round((Date.now() - started) / 1000)}秒たちました。1〜3分くらいかかります。絵をかきなおすと、つくるのを止めます)`;
+      if (j.state !== 'failed') {
+        const wait = Number.isFinite(j.progress) ? `いま${j.progress}%です` : `${Math.round((Date.now() - started) / 1000)}秒たちました`;
+        mm.textContent = `3Dをつくっています…(${wait}。1〜3分くらいかかります。絵をかきなおすと、つくるのを止めます)`;
+      }
       if (j.state === 'failed') { previewToken = null; previewDone = false; refreshSend(); mm.textContent = '3Dをつくれませんでした。絵をかきなおすか、3Dなしで「送信」ボタンを押してください。'; return; }
     } catch { /* 通信が途切れても再試行する */ }
     await new Promise(res => setTimeout(res, 5000));

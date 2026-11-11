@@ -88,12 +88,17 @@ def tripo_create_task(file_token: str) -> str:
     return _data(raw)["task_id"]
 
 
-def tripo_wait(task_id: str) -> bytes:
-    """完了まで待って GLB のバイト列を返す。失敗・時間切れは例外"""
+def tripo_wait(task_id: str, on_progress=None) -> bytes:
+    """完了まで待って GLB のバイト列を返す。失敗・時間切れは例外。進み具合(0〜100)が変わるたびに on_progress を呼ぶ"""
     end = time.time() + DEADLINE_SECONDS
+    last = None
     while time.time() < end:
         data = _data(_request("GET", f"{BASE}/tasks/{task_id}"))   # GET /tasks/{task_id}
         status = str(data.get("status", "")).lower()
+        progress = data.get("progress")
+        if on_progress and isinstance(progress, (int, float)) and status in ("queued", "running") and progress != last:
+            last = progress
+            on_progress(int(progress))
         if status == "success":
             url = (data.get("output") or {}).get("model_url")
             if not url:
@@ -122,7 +127,7 @@ def handler(event, _context):
             png = s3.get_object(Bucket=BUCKET, Key=png_key.rsplit(".", 1)[0] + ".input.png")["Body"].read()
         except s3.exceptions.NoSuchKey:
             png = s3.get_object(Bucket=BUCKET, Key=png_key)["Body"].read()
-        glb = tripo_wait(tripo_create_task(tripo_upload(png)))
+        glb = tripo_wait(tripo_create_task(tripo_upload(png)), lambda p: _write_job(token, state="running", progress=p))
         s3.put_object(Bucket=BUCKET, Key=model_key, Body=glb, ContentType="model/gltf-binary")
         _write_job(token, state="done", model_key=model_key)
     except Exception as e:  # 絵そのものは保存済み。3Dだけ失敗として記録する

@@ -3,7 +3,7 @@
 
 使い方:
   export TRIPO_API_KEY=tsk_...        # シークレットキー
-  python3 tools/tripo_try.py ~/絵.png                  # 全パターン
+  python3 tools/tripo_try.py ~/絵.png                  # 既定の5パターン(かかった時間も表示)
   python3 tools/tripo_try.py ~/絵.png base autofix     # 指定したパターンだけ
   python3 tools/tripo_try.py ~/絵.png --crop           # 被写体を切り抜いて拡大してから送る (要 Pillow: pip3 install pillow)
 
@@ -21,14 +21,21 @@ BASE = os.environ.get("TRIPO_API_BASE", "https://openapi.tripo3d.ai/v3").rstrip(
 KEY = os.environ.get("TRIPO_API_KEY", "")
 
 COMMON = {"model": "v3.1-20260211", "texture": True, "pbr": False, "face_limit": 30000}   # 本番の基本設定(本番はこれに autofix を加えたもの)
+FAST = {"texture_quality": "fast", "texture_version": "v3.5-20260815"}   # 質感を少し簡単にして、いちばん速くする(公式: 費用は standard と同じ)
 VARIANTS = {
-    "base": {},                                                    # 現在の本番設定
-    "autofix": {"enable_image_autofix": True},                     # 入力画像を自動で補正
-    "align": {"orientation": "align_image"},                       # 絵の向きに合わせる
-    "geo_detailed": {"geometry_quality": "detailed"},              # 形状を細かく
-    "v30": {"model": "v3.0-20250812"},                             # 1つ前のモデル
-    "autofix_align_detailed": {"enable_image_autofix": True, "orientation": "align_image", "geometry_quality": "detailed"},
+    "prod": {"enable_image_autofix": True},                        # 現在の本番設定(基本設定 + autofix)
+    "prod_fast": {"enable_image_autofix": True, **FAST},           # 本番 + 速い質感
+    "prod_nouv": {"enable_image_autofix": True, "export_uv": False},   # 本番 + UV展開を省く(公式: 速く、軽くなる)
+    "prod_face10k": {"enable_image_autofix": True, "face_limit": 10000},   # 本番 + ポリゴン数を減らす
+    "prod_fast_nouv": {"enable_image_autofix": True, "export_uv": False, **FAST},   # 速さを狙う設定を全部入れる
+    "noautofix": {},                                               # autofix なし(autofix にどれだけ時間がかかるかを見る)
+    "base": {},
+    "autofix": {"enable_image_autofix": True},
+    "align": {"orientation": "align_image"},
+    "geo_detailed": {"geometry_quality": "detailed"},
+    "v30": {"model": "v3.0-20250812"},
 }
+DEFAULT_RUN = ["prod", "prod_fast", "prod_nouv", "prod_face10k", "prod_fast_nouv"]   # 引数なしで試すもの
 
 
 def call(method, url, body=None, headers=None):
@@ -85,7 +92,7 @@ def main():
     if not KEY or not args:
         sys.exit(__doc__)
     path = os.path.expanduser(args[0])
-    names = args[1:] or list(VARIANTS)
+    names = args[1:] or DEFAULT_RUN
     unknown = [n for n in names if n not in VARIANTS]
     if unknown:
         sys.exit(f"未知のパターン: {unknown} (使えるもの: {list(VARIANTS)})")
@@ -96,8 +103,9 @@ def main():
     before = balance()
     print(f"残高(前): {before}")
     token = upload(open(src, "rb").read())
-    tasks = {}
+    tasks, started = {}, {}
     for n in names:   # 先に全部依頼して、まとめて待つ
+        started[n] = time.time()
         tasks[n] = api("POST", "/generation/image-to-model", json.dumps({"input": token, **COMMON, **VARIANTS[n]}).encode(), {"Content-Type": "application/json"})["task_id"]
         print(f"依頼: {n} -> {tasks[n]}")
     pending = dict(tasks)
@@ -112,7 +120,7 @@ def main():
                     if out.get(key):
                         with urllib.request.urlopen(urllib.request.Request(out[key], headers={"User-Agent": "oekaki-box-try/1.0"}), timeout=120) as r:
                             open(os.path.join(outdir, f"{n}.{ext}"), "wb").write(r.read())
-                print(f"完了: {n} (消費 {d.get('credits_consumed')} クレジット)")
+                print(f"完了: {n:<16} {time.time() - started[n]:5.0f} 秒  (消費 {d.get('credits_consumed')} クレジット)")
                 del pending[n]
             elif d["status"] in ("failed", "cancelled"):
                 print(f"失敗: {n} {d.get('error_code')} {d.get('error_message')}")

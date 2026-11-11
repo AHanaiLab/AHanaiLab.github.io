@@ -140,6 +140,8 @@ def _model(token):
     except s3.exceptions.NoSuchKey:
         return _resp(404, {"error": "not found"})
     out = {"state": job.get("state", "pending")}
+    if out["state"] == "running" and isinstance(job.get("progress"), int):
+        out["progress"] = job["progress"]
     if out["state"] == "done":
         out["url"] = s3.generate_presigned_url(
             "get_object", Params={"Bucket": BUCKET, "Key": job["model_key"]}, ExpiresIn=900)
