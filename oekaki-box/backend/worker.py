@@ -113,6 +113,12 @@ def tripo_wait(task_id: str, on_progress=None) -> bytes:
     raise TimeoutError("tripo task timed out")
 
 
+def _metric(name):
+    """CloudWatch の指標(埋め込みメトリクス形式)。ログ出力だけで、アラーム用の数値になる"""
+    print(json.dumps({"_aws": {"Timestamp": int(time.time() * 1000), "CloudWatchMetrics": [
+        {"Namespace": "OekakiBox", "Dimensions": [[]], "Metrics": [{"Name": name, "Unit": "Count"}]}]}, name: 1}))
+
+
 def _write_job(token, **fields):
     s3.put_object(Bucket=BUCKET, Key=f"jobs/{token}.json",
                   Body=json.dumps(fields, ensure_ascii=False).encode(), ContentType="application/json")
@@ -130,6 +136,8 @@ def handler(event, _context):
         glb = tripo_wait(tripo_create_task(tripo_upload(png)), lambda p: _write_job(token, state="running", progress=p))
         s3.put_object(Bucket=BUCKET, Key=model_key, Body=glb, ContentType="model/gltf-binary")
         _write_job(token, state="done", model_key=model_key)
+        _metric("ModelSucceeded")
     except Exception as e:  # 絵そのものは保存済み。3Dだけ失敗として記録する
         print("model generation failed:", repr(e))
+        _metric("ModelFailed")
         _write_job(token, state="failed")

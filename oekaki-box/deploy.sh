@@ -51,6 +51,7 @@ PARAM_OVERRIDES=()
 [ -n "${TRIPO_API_KEY:-}" ] && PARAM_OVERRIDES+=("TripoApiKey=${TRIPO_API_KEY}")
 [ -n "${TRIPO_API_BASE:-}" ] && PARAM_OVERRIDES+=("TripoV3Base=${TRIPO_API_BASE}")
 [ -n "${TRIPO_GEN_PARAMS:-}" ] && PARAM_OVERRIDES+=("TripoGenParams=${TRIPO_GEN_PARAMS}")
+[ -n "${MIN_CREDITS:-}" ] && PARAM_OVERRIDES+=("MinCredits=${MIN_CREDITS}")
 [ -n "${DAILY_MODEL_LIMIT:-}" ] && PARAM_OVERRIDES+=("DailyModelLimit=${DAILY_MODEL_LIMIT}")
 [ -n "${RETENTION_DAYS:-}" ] && PARAM_OVERRIDES+=("RetentionDays=${RETENTION_DAYS}")
 

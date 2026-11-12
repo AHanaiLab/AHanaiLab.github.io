@@ -32,6 +32,10 @@ Parameters:
     Type: String
     Default: ""
     Description: "3D生成の設定を上書き (例: enable_image_autofix=true,orientation=align_image)。空なら既定"
+  MinCredits:
+    Type: Number
+    Default: 500
+    Description: Tripo のクレジット残高がこれを下回ったら、メールで知らせる
   DailyModelLimit:
     Type: Number
     Default: 100
@@ -164,6 +168,98 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref InboxBucket
+
+  # ---- 監視: 問題があればメール(NotifyEmail)で知らせる ----
+  MonitorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: monitor.handler
+      Runtime: python3.12
+      Timeout: 60
+      MemorySize: 128
+      Environment:
+        Variables:
+          INBOX_BUCKET: !Ref InboxBucket
+          NOTIFY_TOPIC_ARN: !Ref NotifyTopic
+          TRIPO_API_KEY: !Ref TripoApiKey
+          TRIPO_API_BASE: !Ref TripoV3Base
+          MIN_CREDITS: !Ref MinCredits
+          OPEN_UNTIL: !Ref OpenUntil
+          API_URL: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/api/status"
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref InboxBucket
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotifyTopic.TopicName
+      Events:
+        Every30Min:
+          Type: Schedule
+          Properties:
+            Schedule: rate(30 minutes)
+
+  ModelFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-3D-failed"
+      AlarmDescription: "3D生成が失敗しました。ログ(ModelWorkerFunction)の model generation failed: を確認してください"
+      Namespace: OekakiBox
+      MetricName: ModelFailed
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref NotifyTopic]
+
+  ApiFunctionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-api-errors"
+      AlarmDescription: "受付用の処理(ApiFunction)でエラーが起きました"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref ApiFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref NotifyTopic]
+
+  WorkerErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-worker-errors"
+      AlarmDescription: "3D生成の処理(ModelWorkerFunction)が、時間切れなどで異常終了しました"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref ModelWorkerFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref NotifyTopic]
+
+  Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-api-5xx"
+      AlarmDescription: "受付用APIが 5xx エラーを返しました"
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions: [{Name: ApiId, Value: !Ref ServerlessHttpApi}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref NotifyTopic]
 
   FrontendBucket:
     Type: AWS::S3::Bucket

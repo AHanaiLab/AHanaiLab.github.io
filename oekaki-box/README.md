@@ -25,6 +25,15 @@
 - 処理は非同期の Lambda(`worker.py`)。Tripo を呼ぶのは `tripo_*` の3関数だけ。API は v3。ベースURLは `TRIPO_API_BASE`(既定 `https://openapi.tripo3d.ai/v3`。キーを発行したサイトに合わせる)。仕様が変わったらここを直します。生成設定(ポリゴン数上限・PBR の有無)は `GEN_PARAMS`
 - キー未指定なら3D機能は無効(ボタンを押すとその旨が出て、絵だけ送れます)
 
+## 監視(問題があればメールで知らせる)
+
+`NOTIFY_EMAIL` を指定していると、問題が起きたときにも、同じアドレスにメールが届きます(購読確認メールの承認が必要)。
+
+- **30分ごとの自己点検**(`backend/monitor.py`): Tripo のキーが有効か、クレジットが `MinCredits`(既定500)以上あるか、受付用 API が 5xx を返していないか。同じ問題は6時間に1回まで。直ったときも知らせます。受付終了の1日後からは何もしません
+- **すぐに知らせるアラーム**(5分以内): 3D生成の失敗(`ModelFailed`)、受付用処理のエラー、3D生成の異常終了・時間切れ、API の 5xx
+- 3D生成の成功・失敗の回数は、CloudWatch の指標 `OekakiBox/ModelSucceeded`・`ModelFailed` でも見られます
+- 過去の集計は `python3 tools/usage_report.py`
+
 ## デプロイ
 
 ```bash
