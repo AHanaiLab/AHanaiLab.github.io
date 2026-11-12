@@ -27,6 +27,14 @@ if ! aws sts get-caller-identity >/dev/null 2>&1; then
   exit 1
 fi
 
+# メールアドレスを指定したときは、形が正しいか確かめる(説明用の文字をそのまま入れて、デプロイが途中で失敗するのを防ぐ)
+if [ -n "${NOTIFY_EMAIL:-}" ]; then
+  if ! [[ "${NOTIFY_EMAIL}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$ ]]; then
+    echo "エラー: NOTIFY_EMAIL が正しいメールアドレスではありません: ${NOTIFY_EMAIL}" >&2
+    exit 1
+  fi
+fi
+
 # Tripo のキーを指定したときは、デプロイの前に有効か確かめる(間違ったキーのままデプロイして、3Dが全部失敗するのを防ぐ)
 if [ -n "${TRIPO_API_KEY:-}" ]; then
   case "${TRIPO_API_KEY}" in
