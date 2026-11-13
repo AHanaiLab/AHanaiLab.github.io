@@ -3,7 +3,7 @@
 POST /api/preview -> {"image": "data:image/png;base64,..."}  => {"token"}  (3Dプレビュー。事務局には送られない)
 GET  /api/model/{token} -> {"state": "pending|running|done|failed", "url": "(done時のみ GLB の一時URL)"}
 GET  /api/status  -> {"state": "before|open|closed", "open_from", "open_until", "now"}
-POST /api/submit  -> {"image": "data:image/png;base64,...", "nickname": "", "message": "", "website": "", "preview_token": "(任意)"}
+POST /api/submit  -> {"image": "data:image/png;base64,...", "title": "", "nickname": "", "message": "", "website": "", "preview_token": "(任意)"}
 """
 import base64
 import json
@@ -21,6 +21,7 @@ OPEN_FROM = datetime.fromisoformat(os.environ["OPEN_FROM"])
 OPEN_UNTIL = datetime.fromisoformat(os.environ["OPEN_UNTIL"])
 
 MAX_PNG_BYTES = 3 * 1024 * 1024
+MAX_TITLE = 30
 MAX_NICKNAME = 40
 MAX_MESSAGE = 500
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -176,6 +177,7 @@ def _submit(event):
     if err:
         return err
 
+    title = str(body.get("title") or "").strip()[:MAX_TITLE]
     nickname = str(body.get("nickname") or "").strip()[:MAX_NICKNAME]
     message = str(body.get("message") or "").strip()[:MAX_MESSAGE]
 
@@ -187,7 +189,7 @@ def _submit(event):
         Bucket=BUCKET,
         Key=f"{key}.json",
         Body=json.dumps(
-            {"id": sid, "submitted_at": now.isoformat(), "nickname": nickname, "message": message,
+            {"id": sid, "submitted_at": now.isoformat(), "title": title, "nickname": nickname, "message": message,
              "has_3d_model": has_model},
             ensure_ascii=False,
         ).encode("utf-8"),
@@ -199,7 +201,7 @@ def _submit(event):
             sns.publish(
                 TopicArn=TOPIC_ARN,
                 Subject="お絵描きが届きました",
-                Message=f"ID: {sid}\nニックネーム: {nickname or '(なし)'}\nメッセージ: {message or '(なし)'}\n\n"
+                Message=f"ID: {sid}\nタイトル: {title or '(なし)'}\nニックネーム: {nickname or '(なし)'}\nメッセージ: {message or '(なし)'}\n\n"
                         f"s3://{BUCKET}/{key}.png",
             )
         except Exception:  # 通知失敗で投稿自体は失敗させない

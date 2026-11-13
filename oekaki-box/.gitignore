@@ -1,4 +1,5 @@
-__pycache__/
 *.pyc
 .aws-sam/
+__pycache__/
 inbox/
+unity_export/

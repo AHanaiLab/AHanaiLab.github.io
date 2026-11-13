@@ -67,6 +67,7 @@
     </section>
 
     <form id="form" autocomplete="off">
+      <label>タイトル(書かなくてもOK)<input id="title" type="text" maxlength="30"></label>
       <label>ニックネーム(書かなくてもOK)<input id="nickname" type="text" maxlength="40"></label>
       <label>コメント(書かなくてもOK)<textarea id="message" rows="3" maxlength="500"></textarea></label>
       <div class="hp" aria-hidden="true"><label>website <input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
@@ -237,10 +238,10 @@ let saveTimer = 0, restoring = false;
 function saveDraft() {
   if (restoring) return;
   try {
-    if (!drawn && !$('nickname').value && !$('message').value && !previewToken) { localStorage.removeItem(DRAFT_KEY); return; }
+    if (!drawn && !$('title').value && !$('nickname').value && !$('message').value && !previewToken) { localStorage.removeItem(DRAFT_KEY); return; }
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       image: drawn ? cv.toDataURL('image/png') : null,
-      nickname: $('nickname').value, message: $('message').value,
+      title: $('title').value, nickname: $('nickname').value, message: $('message').value,
       token: previewToken, stale: previewStale, previewImage: previewToken ? previewImage : null,
     }));
   } catch { /* 保存できなくても描画は続けられる */ }
@@ -249,7 +250,7 @@ function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveDr
 function clearDraft() { clearTimeout(saveTimer); try { localStorage.removeItem(DRAFT_KEY); } catch { /* 無視 */ } }
 ['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, scheduleSave));
 ['undo', 'redo', 'clear'].forEach(id => $(id).addEventListener('click', scheduleSave));
-['nickname', 'message'].forEach(id => $(id).addEventListener('input', scheduleSave));
+['title', 'nickname', 'message'].forEach(id => $(id).addEventListener('input', scheduleSave));
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
 addEventListener('pagehide', saveDraft);
 
@@ -258,11 +259,11 @@ function restoreDraft() {
   try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { /* 壊れていたら無視 */ }
   if (!d) return;
   restoring = true;
-  $('nickname').value = d.nickname || ''; $('message').value = d.message || '';
+  $('title').value = d.title || ''; $('nickname').value = d.nickname || ''; $('message').value = d.message || '';
   previewStale = !!d.stale;
   const resume = () => {
     restoring = false;
-    if (d.image || d.nickname || d.message) $('msg').textContent = '前にかいた絵と文字を、もとにもどしました。';
+    if (d.image || d.title || d.nickname || d.message) $('msg').textContent = '前にかいた絵と文字を、もとにもどしました。';
     if (d.token && !d.stale && d.previewImage) {      // 3Dの生成は、画面を閉じていてもサーバーで続いている
       previewToken = d.token; previewImage = d.previewImage; previewDone = false;
       $('model').hidden = false; $('modelMsg').textContent = '前の3Dのつづきを見ています…';
@@ -292,7 +293,7 @@ $('form').addEventListener('submit', async e => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image: (!only2d && previewDone && previewToken && previewImage) ? previewImage : cv.toDataURL('image/png'),   // 3Dを作った絵と同じ内容を送る
-        nickname: $('nickname').value, message: $('message').value, website: $('website').value,
+        title: $('title').value, nickname: $('nickname').value, message: $('message').value, website: $('website').value,
         preview_token: (!only2d && previewDone) ? previewToken : null,
       }),
     });
@@ -300,7 +301,7 @@ $('form').addEventListener('submit', async e => {
     if (!r.ok) throw new Error(j.error || `うまくいきませんでした (${r.status})`);
     msg.textContent = '送信できました。メタバースの中にかざらせていただきます。ありがとうございました。';
     polling++; previewToken = null; previewDone = false; previewStale = false; $('model').hidden = true; refreshSend();
-    snapshot(); fillWhite(); drawn = false; $('message').value = ''; $('nickname').value = ''; previewImage = null; clearDraft();
+    snapshot(); fillWhite(); drawn = false; $('message').value = ''; $('nickname').value = ''; $('title').value = ''; previewImage = null; clearDraft();
   } catch (err) {
     msg.textContent = '送信できませんでした: ' + err.message;
     $('send').disabled = $('send2d').disabled = false; return;
